@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block content %}
+<div class="text-center">
+  <h2 class="mb-4"><i class="fa-solid fa-user-shield me-2"></i>Admin Dashboard</h2>
+  <p class="lead">Welcome, {{ user.username }}! Manage users, checklists, and audits below.</p>
+
+  <div class="row mt-5">
+    <div class="col-md-4 mb-4">
+      <div class="card shadow-sm border-0 rounded-4 p-4">
+        <i class="fa-solid fa-users fa-2x text-primary mb-3"></i>
+        <h5>User Management</h5>
+        <a href="/admin/auth/user/" class="btn btn-outline-primary mt-2">Go to Admin</a>
+      </div>
+    </div>
+    <div class="col-md-4 mb-4">
+      <div class="card shadow-sm border-0 rounded-4 p-4">
+        <i class="fa-solid fa-clipboard-list fa-2x text-success mb-3"></i>
+        <h5>Checklist Overview</h5>
+        <a href="#" class="btn btn-outline-success mt-2">View Reports</a>
+      </div>
+    </div>
+    <div class="col-md-4 mb-4">
+      <div class="card shadow-sm border-0 rounded-4 p-4">
+        <i class="fa-solid fa-chart-line fa-2x text-warning mb-3"></i>
+        <h5>Analytics</h5>
+        <a href="#" class="btn btn-outline-warning mt-2">View Stats</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
