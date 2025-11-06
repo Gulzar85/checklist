@@ -6,3 +6,10 @@ __pycache__/
 staticfiles/
 media/
 .DS_Store
+venv/
+.env.local
+*.log
+
+# VSCode / IDE
+.vscode/
+.idea/
