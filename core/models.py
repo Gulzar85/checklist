@@ -1,11 +1,13 @@
-from django.db import models
 from django.contrib.auth import get_user_model
-from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.validators import MinValueValidator
+from django.db import models
+from django.db.models import Sum
 
 User = get_user_model()
 
+
 class Restaurant(models.Model):
-    code = models.CharField(max_length=50, verbose_name="Restaurant Code")
+    code = models.CharField(max_length=50, unique=True, verbose_name="Restaurant Code")
     name = models.CharField(max_length=255, verbose_name="Restaurant Name")
     address = models.CharField(max_length=255, verbose_name="Address")
     city = models.CharField(max_length=100, verbose_name="City")
@@ -21,16 +23,15 @@ class Restaurant(models.Model):
 
 class Audit(models.Model):
     GRADE_CHOICES = [
-        ('A', 'A'),
-        ('B', 'B'),
-        ('C', 'C'),
-        ('F', 'F'),
+        ('A', 'A (96.0 - 100)'),
+        ('B', 'B (90.0 - 95.9)'),
+        ('C', 'C (80.0 - 89.9)'),
+        ('F', 'F (Less than 80)'),
     ]
-
     restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, verbose_name="Restaurant")
     audit_date = models.DateField(verbose_name="Audit Date")
     manager_on_duty = models.CharField(max_length=255, verbose_name="Manager On Duty")
-    auditor_name = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Auditor Name")
+    auditor_name = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Auditor", related_name='audits')
     auditor_signature = models.TextField(blank=True, verbose_name="Auditor Signature")
     auditee_signature = models.TextField(blank=True, verbose_name="Auditee Signature")
 
@@ -58,25 +59,37 @@ class Audit(models.Model):
         return f"{self.restaurant.name} - {self.audit_date} - {self.grade}"
 
     def calculate_totals(self):
-        sections = self.auditsection_set.all()
-        total_scored = sum(section.scored_points for section in sections)
-        total_possible = sum(section.possible_points for section in sections)
+        """کل اسکور کا حساب لگاتا ہے"""
+        try:
+            sections = self.auditsection_set.all()
 
-        self.total_scored = total_scored
-        self.total_possible = total_possible
-        self.total_percentage = (total_scored / total_possible * 100) if total_possible > 0 else 0
+            total_scored = sum(float(section.scored_points) for section in sections)
+            total_possible = sum(float(section.possible_points) for section in sections)
 
-        # Grade calculation
-        if self.total_percentage >= 96:
-            self.grade = 'A'
-        elif self.total_percentage >= 90:
-            self.grade = 'B'
-        elif self.total_percentage >= 80:
-            self.grade = 'C'
-        else:
-            self.grade = 'F'
+            self.total_scored = total_scored
+            self.total_possible = total_possible
 
-        self.save()
+            # فیصد کیلکولیشن
+            if total_possible > 0:
+                percentage = (total_scored / total_possible) * 100
+                self.total_percentage = round(percentage, 2)
+            else:
+                self.total_percentage = 0
+
+            # گریڈ کیلکولیشن
+            if self.total_percentage >= 96:
+                self.grade = 'A'
+            elif self.total_percentage >= 90:
+                self.grade = 'B'
+            elif self.total_percentage >= 80:
+                self.grade = 'C'
+            else:
+                self.grade = 'F'
+
+            self.save()
+
+        except Exception as e:
+            print(f"Error calculating audit totals: {e}")
 
 
 class Section(models.Model):
@@ -90,7 +103,7 @@ class Section(models.Model):
         ordering = ['order']
 
     def __str__(self):
-        return self.get_name_display()
+        return f"{self.name}"
 
 
 class Question(models.Model):
@@ -107,7 +120,7 @@ class Question(models.Model):
         ordering = ['section', 'order']
 
     def __str__(self):
-        return f"{self.section.get_name_display()} - {self.question_text[:50]}..."
+        return f"{self.section.name} - {self.question_text[:50]}..."
 
 
 class AuditSection(models.Model):
@@ -115,38 +128,55 @@ class AuditSection(models.Model):
     section = models.ForeignKey(Section, on_delete=models.CASCADE, verbose_name="Section")
     scored_points = models.DecimalField(max_digits=6, decimal_places=2, default=0, verbose_name="Scored Points")
     possible_points = models.DecimalField(max_digits=6, decimal_places=2, default=0, verbose_name="Possible Points")
-    section_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0, verbose_name="Section Percentage")
+    section_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0,
+                                             verbose_name="Section Percentage")
     has_critical_failure = models.BooleanField(default=False, verbose_name="Critical Failure?")
 
     class Meta:
         verbose_name = "Audit Section"
         verbose_name_plural = "Audit Sections"
         unique_together = ['audit', 'section']
+        ordering = ['audit', 'section']
 
     def __str__(self):
-        return f"{self.audit} - {self.section.get_name_display()}"
+        return f"{self.audit} - {self.section.name}"
 
     def calculate_section_score(self):
-        responses = self.auditquestionresponse_set.filter(question__section=self.section)
+        """سیکشن کا اسکور کیلکولیٹ کرتا ہے"""
+        try:
+            responses = self.auditquestionresponse_set.all()
 
-        self.possible_points = sum(response.question.possible_points for response in responses)
-        self.scored_points = sum(response.scored_points for response in responses)
+            # ممکنہ پوائنٹس کا مجموعہ
+            total_possible = responses.aggregate(
+                total=Sum('question__possible_points')
+            )['total'] or 0
 
-        # Check for critical failures
-        critical_failures = responses.filter(
-            question__is_critical=True,
-            scored_points=0
-        )
-        self.has_critical_failure = critical_failures.exists()
+            # حاصل شدہ پوائنٹس کا مجموعہ
+            total_scored = responses.aggregate(
+                total=Sum('scored_points')
+            )['total'] or 0
 
-        # If critical failure, section percentage is 0
-        if self.has_critical_failure:
-            self.section_percentage = 0
-        else:
-            self.section_percentage = (
-                    self.scored_points / self.possible_points * 100) if self.possible_points > 0 else 0
+            self.possible_points = total_possible
+            self.scored_points = total_scored
 
-        self.save()
+            # کریٹیکل فیلئرز چیک کریں
+            critical_failures = responses.filter(
+                question__is_critical=True,
+                scored_points=0
+            ).exists()
+
+            self.has_critical_failure = critical_failures
+
+            # اگر کریٹیکل فیل ہے تو فیصد 0
+            if self.has_critical_failure:
+                self.section_percentage = 0
+            else:
+                self.section_percentage = (total_scored / total_possible * 100) if total_possible > 0 else 0
+
+            self.save()
+
+        except Exception as e:
+            print(f"Error calculating section score: {e}")
 
 
 class AuditQuestionResponse(models.Model):
@@ -193,7 +223,8 @@ class CorrectiveAction(models.Model):
     ]
 
     audit = models.ForeignKey(Audit, on_delete=models.CASCADE, verbose_name="Audit")
-    question_response = models.ForeignKey(AuditQuestionResponse, on_delete=models.CASCADE, verbose_name="Question Response")
+    question_response = models.ForeignKey(AuditQuestionResponse, on_delete=models.CASCADE,
+                                          verbose_name="Question Response")
     description = models.TextField(verbose_name="Description")
     risk_level = models.CharField(max_length=10, choices=RISK_LEVELS, verbose_name="Risk Level")
     assigned_to = models.CharField(max_length=255, verbose_name="Assigned To")

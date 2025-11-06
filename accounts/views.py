@@ -1,40 +1,41 @@
 from django.contrib import messages
-from django.contrib.auth import login
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
-from django.shortcuts import render, redirect
+from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.views.generic import CreateView
 
-from .forms import UserRegistrationForm, UserLoginForm
+from .forms import UserRegistrationForm, CustomAuthenticationForm
 from .models import User
 
 
 class CustomLoginView(LoginView):
     template_name = 'accounts/login.html'
-    form_class = UserLoginForm
+    form_class = CustomAuthenticationForm
+    redirect_authenticated_user = True
 
     def get_success_url(self):
         return reverse_lazy('core:dashboard')
+
+    def form_invalid(self, form):
+        messages.error(self.request, 'Invalid username or password. Please try again.')
+        return super().form_invalid(form)
 
 
 class UserRegistrationView(CreateView):
     model = User
     form_class = UserRegistrationForm
     template_name = 'accounts/register.html'
-    success_url = reverse_lazy('core:dashboard')
+    success_url = reverse_lazy('accounts:login')
 
     def form_valid(self, form):
-        user = form.save(commit=False)
-        user.save()
+        response = super().form_valid(form)
+        messages.success(self.request, 'Account created successfully! You can now login.')
+        return response
 
-        # Log the new user in immediately
-        login(self.request, user)
-        messages.success(self.request, "Registration successful. Welcome!")
-
-        return redirect(self.get_success_url())
+    def form_invalid(self, form):
+        messages.error(self.request, 'Please correct the errors below.')
+        return super().form_invalid(form)
 
 
-@login_required
 def dashboard(request):
     return render(request, 'accounts/dashboard.html')

@@ -1,68 +1,190 @@
-{% load static %}
 <!DOCTYPE html>
-<html lang="en" x-data="{ darkMode: false }" x-bind:class="{ 'bg-dark text-light': darkMode }">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{% block title %}Checklist App{% endblock %}</title>
-
-    <!-- Bootstrap 5 -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- Font Awesome -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" rel="stylesheet">
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}McDonald's Pakistan - Food Safety Audit{% endblock %}</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-
+    
+    <style>
+        .sidebar {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #ffcc00 0%, #d40000 100%);
+        }
+        .navbar-brand {
+            font-weight: bold;
+        }
+        .mc-donalds-primary {
+            background-color: #ffcc00;
+            color: #d40000;
+        }
+        .mc-donalds-secondary {
+            background-color: #d40000;
+            color: white;
+        }
+        .btn-mc-primary {
+            background-color: #ffcc00;
+            color: #d40000;
+            border: none;
+            font-weight: bold;
+        }
+        .btn-mc-primary:hover {
+            background-color: #e6b800;
+            color: #d40000;
+        }
+        .btn-mc-secondary {
+            background-color: #d40000;
+            color: white;
+            border: none;
+            font-weight: bold;
+        }
+        .btn-mc-secondary:hover {
+            background-color: #b30000;
+            color: white;
+        }
+    </style>
+    
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+    {% if user.is_authenticated %}
+    <!-- Authenticated Layout -->
     <div class="container-fluid">
-        <a class="navbar-brand fw-bold" href="">
-            <i class="fa-solid fa-clipboard-check me-2"></i> Checklist
-        </a>
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse mc-donalds-secondary">
+                <div class="position-sticky pt-3">
+                    <div class="text-center mb-4">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/McDonald%27s_Golden_Arches.svg/1200px-McDonald%27s_Golden_Arches.svg.png" 
+                             alt="McDonald's" height="50" class="mb-2">
+                        <h5 class="text-white">Food Safety Audit</h5>
+                        <p class="text-warning small">Pakistan</p>
+                    </div>
+                    
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="{% url 'core:dashboard' %}">
+                                <i class="fas fa-tachometer-alt me-2"></i>
+                                Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="{% url 'core:audit_list' %}">
+                                <i class="fas fa-clipboard-list me-2"></i>
+                                Audits
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="{% url 'core:audit_create' %}">
+                                <i class="fas fa-plus-circle me-2"></i>
+                                New Audit
+                            </a>
+                        </li>
+                        {% if user.is_admin %}
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="/admin/">
+                                <i class="fas fa-cog me-2"></i>
+                                Admin Panel
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                    
+                    <div class="mt-5 p-3">
+                        <div class="text-white small">
+                            <i class="fas fa-user me-2"></i>
+                            {{ user.username }}
+                        </div>
+                        <div class="text-warning small">
+                            {{ user.get_role_display }}
+                        </div>
+                        {% if user.designation %}
+                        <div class="text-white small mt-2">
+                            <i class="fas fa-briefcase me-2"></i>
+                            {{ user.designation }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </nav>
 
-        <div class="d-flex align-items-center">
-            <button class="btn btn-outline-light me-3" @click="darkMode = !darkMode">
-                <i :class="darkMode ? 'fa-solid fa-sun' : 'fa-solid fa-moon'"></i>
-            </button>
-            {% if user.is_authenticated %}
-                <span class="me-3 fw-semibold">{{ user.username }}</span>
-                    <form method="post" action="{% url 'accounts:logout' %}" class="d-inline">
-                      {% csrf_token %}
-                      <button type="submit" class="btn btn-outline-danger btn-sm">
-                        <i class="fa fa-sign-out-alt"></i> Logout
-                      </button>
-                    </form>
-            {% else %}
-                <a href="{% url 'accounts:login' %}" class="btn btn-light btn-sm me-2">Login</a>
-                <a href="{% url 'accounts:register' %}" class="btn btn-outline-light btn-sm">Register</a>
-            {% endif %}
+            <!-- Main content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <!-- Top Navbar -->
+                <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
+                    <div class="container-fluid">
+                        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+                            <span class="navbar-toggler-icon"></span>
+                        </button>
+
+                        <div class="collapse navbar-collapse" id="navbarContent">
+                            <ul class="navbar-nav me-auto">
+                                <li class="nav-item">
+                                    <span class="navbar-text">
+                                        <i class="fas fa-calendar-alt me-1"></i>
+                                        {% now "F j, Y" %}
+                                    </span>
+                                </li>
+                            </ul>
+                            <ul class="navbar-nav">
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                                        <i class="fas fa-user-circle me-1"></i>
+                                        {{ user.get_full_name|default:user.username }}
+                                    </a>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i>Settings</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <form method="post" action="{% url 'accounts:logout' %}">
+                                                {% csrf_token %}
+                                                <button type="submit" class="dropdown-item">
+                                                    <i class="fas fa-sign-out-alt me-2"></i>Logout
+                                                </button>
+                                            </form>
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </nav>
+
+                <!-- Messages -->
+                {% if messages %}
+                <div class="container-fluid">
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- Page Content -->
+                <div class="container-fluid">
+                    {% block content %}{% endblock %}
+                </div>
+            </main>
         </div>
     </div>
-</nav>
-
-<main class="container py-4">
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        {% endfor %}
+    {% else %}
+    <!-- Non-authenticated Layout (for login/register pages) -->
+    <div class="min-vh-100" style="background: linear-gradient(135deg, #ffcc00 0%, #d40000 100%);">
+        {% block auth_content %}{% endblock %}
+    </div>
     {% endif %}
 
-    {% block content %}{% endblock %}
-</main>
-
-<footer class="text-center py-4 border-top mt-5">
-    <p class="mb-0 small">&copy; {{ now|date:"Y" }} Checklist App. Built with ❤️ using Django + Bootstrap 5.</p>
-</footer>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-{% block extra_js %}{% endblock %}
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    {% block extra_js %}{% endblock %}
 </body>
 </html>
