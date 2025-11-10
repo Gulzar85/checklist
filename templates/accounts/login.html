@@ -1,90 +1,114 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 {% load crispy_forms_tags %}
 
-{% block title %}Login - McDonald's Pakistan{% endblock %}
+{% block title %}Login - McDonald's Audit System{% endblock %}
 
-{% block auth_content %}
-<div class="container">
-    <div class="row justify-content-center align-items-center min-vh-100">
-        <div class="col-md-6 col-lg-4">
-            <div class="card shadow-lg border-0">
-                <div class="card-body p-5">
-                    <!-- Logo and Header -->
-                    <div class="text-center mb-4">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/McDonald%27s_Golden_Arches.svg/1200px-McDonald%27s_Golden_Arches.svg.png"
-                             alt="McDonald's" height="60" class="mb-3">
-                        <h3 class="card-title fw-bold text-danger">Food Safety Audit</h3>
-                        <p class="text-muted">McDonald's Pakistan</p>
-                    </div>
-
-                    <!-- Messages -->
-                    {% if messages %}
-                    <div class="mb-4">
-                        {% for message in messages %}
-                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                            {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% endif %}
-
-                    <!-- Login Form -->
-                    <form method="post" novalidate>
-                        {% csrf_token %}
-                        {{ form|crispy }}
-
-                        <div class="d-grid gap-2 mt-4">
-                            <button type="submit" class="btn btn-mc-secondary btn-lg">
-                                <i class="fas fa-sign-in-alt me-2"></i>
-                                Login
-                            </button>
-                        </div>
-                    </form>
-
-                    <!-- Additional Links -->
-                    <div class="text-center mt-4">
-                        <p class="mb-2">
-                            <a href="#" class="text-decoration-none text-muted">
-                                <i class="fas fa-question-circle me-1"></i>
-                                Forgot Password?
-                            </a>
-                        </p>
-                        <hr>
-                        <p class="text-muted">
-                            New to the system?
-                            <a href="{% url 'accounts:register' %}" class="text-danger text-decoration-none fw-bold">
-                                Register here
-                            </a>
-                        </p>
-                    </div>
-
-                    <!-- Footer -->
-                    <div class="text-center mt-4 pt-3 border-top">
-                        <small class="text-muted">
-                            &copy; {% now "Y" %} McDonald's Pakistan. All rights reserved.
-                        </small>
-                    </div>
+{% block content %}
+<div class="row justify-content-center align-items-center min-vh-100 bg-light">
+    <div class="col-md-5 col-lg-4">
+        <!-- McDonald's Logo Header -->
+        <div class="text-center mb-4">
+            <div class="mb-3">
+                <div style="width: 120px; height: 120px; background: var(--mcd-yellow); border-radius: 50%; margin: 0 auto; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 25px rgba(255, 0, 0, 0.2);">
+                    <i class="bi bi-star-fill text-danger" style="font-size: 3rem;"></i>
                 </div>
             </div>
+            <h3 class="text-danger fw-bold">McDonald's Pakistan</h3>
+            <p class="text-muted">Quality Audit System</p>
+        </div>
+
+        <div class="card border-0 shadow-lg">
+            <div class="card-header bg-danger text-white text-center py-4">
+                <h4 class="mb-0">
+                    <i class="bi bi-shield-lock me-2"></i>
+                    Auditor Login
+                </h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="mb-4">
+                        <label class="form-label text-danger fw-bold">
+                            <i class="bi bi-person me-1"></i>Username
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0">
+                                <i class="bi bi-person text-muted"></i>
+                            </span>
+                            <input type="text" name="username" class="form-control" placeholder="Enter your username" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label text-danger fw-bold">
+                            <i class="bi bi-key me-1"></i>Password
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0">
+                                <i class="bi bi-lock text-muted"></i>
+                            </span>
+                            <input type="password" name="password" class="form-control" placeholder="Enter your password" required>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 mb-3">
+                        <button type="submit" class="btn mcd-btn-primary btn-lg py-3 fw-bold">
+                            <i class="bi bi-box-arrow-in-right me-2"></i>
+                            Login to Audit System
+                        </button>
+                    </div>
+
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="rememberMe">
+                        <label class="form-check-label text-muted" for="rememberMe">
+                            Remember me
+                        </label>
+                    </div>
+                </form>
+
+                <div class="text-center mt-4 pt-3 border-top">
+                    <p class="mb-2 text-muted">
+                        Don't have auditor access?
+                    </p>
+                    <a href="{% url 'accounts:register' %}" class="text-danger text-decoration-none fw-bold">
+                        <i class="bi bi-person-plus me-1"></i>Request Access
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- McDonald's Footer -->
+        <div class="text-center mt-4">
+            <small class="text-muted">
+                <i class="bi bi-c-circle me-1"></i>2024 McDonald's Pakistan. All rights reserved.<br>
+                <span class="text-danger">Quality Assurance Department</span>
+            </small>
         </div>
     </div>
 </div>
 
 <style>
-    .card {
-        border-radius: 15px;
+    .min-vh-100 {
+        min-height: 100vh;
     }
-    .btn {
-        border-radius: 10px;
+
+    input[type="text"], input[type="password"] {
+        border: 2px solid #e9ecef;
+        border-left: none;
+        border-radius: 0 8px 8px 0;
+        padding: 12px;
+        transition: all 0.3s ease;
     }
-    .form-control, .form-select {
-        border-radius: 10px;
-        padding: 12px 15px;
+
+    input[type="text"]:focus, input[type="password"]:focus {
+        border-color: var(--mcd-red);
+        box-shadow: 0 0 0 0.2rem rgba(255, 0, 0, 0.25);
     }
-    .alert {
-        border-radius: 10px;
-        border: none;
+
+    .input-group-text {
+        border-radius: 8px 0 0 8px !important;
+        border-right: none;
     }
 </style>
 {% endblock %}

@@ -1,0 +1,203 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}New Audit - McDonald's{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+    <h1 class="h2 mcd-text-red">
+        <i class="bi bi-clipboard-plus"></i>
+        New Quality Audit
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'core:audit_list' %}" class="btn btn-outline-danger">
+            <i class="bi bi-arrow-left"></i> Back to Audits
+        </a>
+    </div>
+</div>
+
+<!-- McDonald's Audit Banner -->
+<div class="alert mcd-bg-yellow text-dark border-0 mb-4">
+    <div class="d-flex align-items-center">
+        <i class="bi bi-info-circle-fill me-3 display-6 text-danger"></i>
+        <div>
+            <strong>Quality Audit Process:</strong> Complete this form to initiate a new quality audit for McDonald's standards compliance.
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card border-0">
+            <div class="card-header bg-danger text-white">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-clipboard-data"></i>
+                    Audit Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-danger fw-bold">Restaurant</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">
+                                    <i class="bi bi-shop text-muted"></i>
+                                </span>
+                                {{ form.restaurant }}
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-danger fw-bold">Audit Date</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">
+                                    <i class="bi bi-calendar text-muted"></i>
+                                </span>
+                                {{ form.audit_date }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label text-danger fw-bold">Manager on Duty</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light">
+                                <i class="bi bi-person-badge text-muted"></i>
+                            </span>
+                            {{ form.manager_on_duty }}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label text-danger fw-bold">Auditor</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light">
+                                <i class="bi bi-person-check text-muted"></i>
+                            </span>
+                            <input type="text" class="form-control" value="{{ user.get_full_name|default:user.username }}" readonly>
+                            <small class="form-text text-muted">You are the assigned auditor for this audit</small>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn mcd-btn-primary btn-lg py-3">
+                            <i class="bi bi-clipboard-check"></i>
+                            Start Quality Audit
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <!-- Audit Guidelines -->
+        <div class="card border-0 mb-4">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-info-circle"></i>
+                    Audit Guidelines
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item px-0">
+                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                        <small>Complete all sections thoroughly</small>
+                    </div>
+                    <div class="list-group-item px-0">
+                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                        <small>Document any critical findings</small>
+                    </div>
+                    <div class="list-group-item px-0">
+                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                        <small>Take photos if necessary</small>
+                    </div>
+                    <div class="list-group-item px-0">
+                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                        <small>Get manager signatures</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- McDonald's Standards -->
+        <div class="card border-0">
+            <div class="card-header bg-danger text-white">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-award"></i>
+                    Quality Standards
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    <div class="golden-arches mx-auto mb-2">
+                        M
+                    </div>
+                    <h6 class="text-danger">McDonald's Excellence</h6>
+                </div>
+                <div class="row text-center">
+                    <div class="col-6 mb-3">
+                        <i class="bi bi-egg-fried text-warning display-6"></i>
+                        <small class="d-block mt-1">Food Safety</small>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <i class="bi bi-people-fill text-warning display-6"></i>
+                        <small class="d-block mt-1">Service</small>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <i class="bi bi-droplet text-warning display-6"></i>
+                        <small class="d-block mt-1">Cleanliness</small>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <i class="bi bi-shield-check text-warning display-6"></i>
+                        <small class="d-block mt-1">Quality</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Audits Preview -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-0">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0 text-dark">
+                    <i class="bi bi-clock-history"></i>
+                    Your Recent Audits
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if recent_audits %}
+                <div class="row">
+                    {% for audit in recent_audits|slice:":3" %}
+                    <div class="col-md-4 mb-3">
+                        <div class="card border">
+                            <div class="card-body text-center">
+                                <h6 class="text-danger">{{ audit.restaurant.name }}</h6>
+                                <span class="badge badge-grade-{{ audit.grade }} mb-2">{{ audit.grade }}</span>
+                                <p class="mb-1 small text-muted">{{ audit.audit_date|date:"M d, Y" }}</p>
+                                <div class="progress" style="height: 6px;">
+                                    <div class="progress-bar {% if audit.total_percentage >= 90 %}bg-success{% elif audit.total_percentage >= 80 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                         style="width: {{ audit.total_percentage }}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-3">
+                    <i class="bi bi-clipboard-x text-muted display-1"></i>
+                    <p class="text-muted mt-2">No previous audits found</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

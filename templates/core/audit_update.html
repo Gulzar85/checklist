@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Update Audit - McDonald's{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+    <h1 class="h2 mcd-text-red">
+        <i class="bi bi-pencil-square"></i>
+        Update Audit
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'core:audit_detail' object.pk %}" class="btn btn-outline-danger me-2">
+            <i class="bi bi-eye"></i> View Details
+        </a>
+        <a href="{% url 'core:audit_list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to List
+        </a>
+    </div>
+</div>
+
+<!-- McDonald's Update Banner -->
+<div class="alert mcd-bg-yellow text-dark border-0 mb-4">
+    <div class="d-flex align-items-center">
+        <i class="bi bi-info-circle-fill me-3 display-6 text-danger"></i>
+        <div>
+            <strong>Update Audit Information:</strong> Modify the audit details as needed. All changes will be tracked in the audit history.
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card border-0">
+            <div class="card-header bg-danger text-white">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-clipboard-data"></i>
+                    Edit Audit Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-danger fw-bold">Restaurant</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">
+                                    <i class="bi bi-shop text-muted"></i>
+                                </span>
+                                {{ form.restaurant }}
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-danger fw-bold">Audit Date</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">
+                                    <i class="bi bi-calendar text-muted"></i>
+                                </span>
+                                {{ form.audit_date }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label text-danger fw-bold">Manager on Duty</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light">
+                                <i class="bi bi-person-badge text-muted"></i>
+                            </span>
+                            {{ form.manager_on_duty }}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label text-danger fw-bold">Previous Audit Date</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light">
+                                <i class="bi bi-calendar-check text-muted"></i>
+                            </span>
+                            {{ form.previous_audit_date }}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-danger fw-bold">Previous Audit Score</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">
+                                    <i class="bi bi-graph-up text-muted"></i>
+                                </span>
+                                {{ form.previous_audit_score }}
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-danger fw-bold">Previous Auditor</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">
+                                    <i class="bi bi-person text-muted"></i>
+                                </span>
+                                {{ form.previous_auditor }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn mcd-btn-primary btn-lg py-3">
+                            <i class="bi bi-check-circle"></i>
+                            Update Audit Information
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <!-- Current Audit Summary -->
+        <div class="card border-0 mb-4">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-info-circle"></i>
+                    Current Audit Summary
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    <div class="display-4 fw-bold text-danger">{{ object.total_percentage }}%</div>
+                    <span class="badge badge-grade-{{ object.grade }} fs-6">{{ object.grade }} Grade</span>
+                </div>
+                
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item px-0 d-flex justify-content-between">
+                        <small>Restaurant:</small>
+                        <strong>{{ object.restaurant.name }}</strong>
+                    </div>
+                    <div class="list-group-item px-0 d-flex justify-content-between">
+                        <small>Audit Date:</small>
+                        <strong>{{ object.audit_date|date:"M d, Y" }}</strong>
+                    </div>
+                    <div class="list-group-item px-0 d-flex justify-content-between">
+                        <small>Manager:</small>
+                        <strong>{{ object.manager_on_duty }}</strong>
+                    </div>
+                    <div class="list-group-item px-0 d-flex justify-content-between">
+                        <small>Status:</small>
+                        {% if object.has_critical_failure %}
+                            <span class="badge bg-danger">Critical Issues</span>
+                        {% else %}
+                            <span class="badge bg-success">Completed</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Update Guidelines -->
+        <div class="card border-0">
+            <div class="card-header bg-danger text-white">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-lightbulb"></i>
+                    Update Guidelines
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item px-0">
+                        <i class="bi bi-check-circle text-success me-2"></i>
+                        <small>Update information accurately</small>
+                    </div>
+                    <div class="list-group-item px-0">
+                        <i class="bi bi-check-circle text-success me-2"></i>
+                        <small>Maintain audit integrity</small>
+                    </div>
+                    <div class="list-group-item px-0">
+                        <i class="bi bi-check-circle text-success me-2"></i>
+                        <small>Document changes properly</small>
+                    </div>
+                    <div class="list-group-item px-0">
+                        <i class="bi bi-check-circle text-success me-2"></i>
+                        <small>Notify relevant parties</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- McDonald's Quality Commitment -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-danger">
+            <div class="card-body text-center py-3">
+                <div class="golden-arches mx-auto mb-2" style="width: 50px; height: 50px;">
+                    M
+                </div>
+                <h6 class="text-danger mb-2">McDonald's Quality Commitment</h6>
+                <p class="mb-0 text-muted small">
+                    "We are committed to maintaining the highest standards of quality and accuracy in all our audit processes."
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

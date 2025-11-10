@@ -1,0 +1,210 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}My Profile - McDonald's{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+    <h1 class="h2 mcd-text-red">
+        <i class="bi bi-person-circle"></i>
+        {{ user.get_full_name|default:user.username }}
+    </h1>
+</div>
+
+<div class="row">
+    <div class="col-lg-4">
+        <!-- Profile Card -->
+        <div class="card border-0 mb-4">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <div style="width: 120px; height: 120px; background: var(--mcd-yellow); border-radius: 50%; margin: 0 auto; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                        <span style="color: var(--mcd-red); font-weight: bold; font-size: 3rem;">M</span>
+                    </div>
+                </div>
+                <h4 class="text-danger">{{ user.get_full_name|default:user.username }}</h4>
+                <p class="text-muted">{{ user.designation|default:"Quality Auditor" }}</p>
+
+                <div class="d-grid gap-2">
+                    <button class="btn mcd-btn-primary">
+                        <i class="bi bi-camera"></i> Change Photo
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="card border-0">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-graph-up"></i>
+                    Audit Statistics
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                        <span>Total Audits</span>
+                        <span class="badge mcd-bg-red text-white">{{ total_audits }}</span>
+                    </div>
+                    <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                        <span>Average Score</span>
+                        <span class="badge bg-success">{{ average_score|floatformat:2 }}%</span>
+                    </div>
+                    <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                        <span>A Grade Audits</span>
+                        <span class="badge bg-success">{{ grade_a_count }}</span>
+                    </div>
+                    <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                        <span>Restaurants Covered</span>
+                        <span class="badge bg-info">{{ restaurant_count }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <!-- Profile Information -->
+        <div class="card border-0">
+            <div class="card-header bg-danger text-white">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-person-lines-fill"></i>
+                    Profile Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-danger fw-bold">Username</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">
+                                    <i class="bi bi-person text-muted"></i>
+                                </span>
+                                {{ form.username }}
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-danger fw-bold">Email</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">
+                                    <i class="bi bi-envelope text-muted"></i>
+                                </span>
+                                {{ form.email }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-danger fw-bold">First Name</label>
+                            {{ form.first_name }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-danger fw-bold">Last Name</label>
+                            {{ form.last_name }}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-danger fw-bold">Designation</label>
+                            {{ form.designation }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-danger fw-bold">Department</label>
+                            {{ form.department }}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label text-danger fw-bold">Phone Number</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light">
+                                <i class="bi bi-phone text-muted"></i>
+                            </span>
+                            {{ form.phone_number }}
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn mcd-btn-primary btn-lg py-3">
+                            <i class="bi bi-check-circle"></i>
+                            Update Profile
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="card border-0 mt-4">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-clock-history"></i>
+                    Recent Activity
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if recent_activity %}
+                <div class="list-group list-group-flush">
+                    {% for activity in recent_activity %}
+                    <div class="list-group-item px-0">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-danger rounded-circle me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                <i class="bi bi-clipboard-check text-white"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">{{ activity.action }}</h6>
+                                <small class="text-muted">{{ activity.timestamp|timesince }} ago</small>
+                            </div>
+                            <div class="text-end">
+                                <small class="text-muted">{{ activity.audit.restaurant.name }}</small>
+                                <br>
+                                <span class="badge {% if activity.audit.total_percentage >= 90 %}bg-success{% elif activity.audit.total_percentage >= 80 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                                    {{ activity.audit.total_percentage }}%
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-activity text-muted display-1"></i>
+                    <p class="text-muted mt-2">No recent activity</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- McDonald's Auditor Badge -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-danger">
+            <div class="card-body text-center py-4">
+                <div class="row align-items-center">
+                    <div class="col-md-2 text-center">
+                        <div class="golden-arches mx-auto" style="width: 80px; height: 80px;">
+                            M
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <h4 class="text-danger mb-2">McDonald's Certified Quality Auditor</h4>
+                        <p class="text-muted mb-0">
+                            "Dedicated to upholding the highest standards of quality and excellence across all McDonald's Pakistan locations."
+                        </p>
+                    </div>
+                    <div class="col-md-2 text-center">
+                        <i class="bi bi-award-fill text-warning display-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

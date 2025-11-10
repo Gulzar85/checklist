@@ -1,0 +1,642 @@
+<!-- templates/audit/audit_results.html -->
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block title %}Audit Results - {{ audit.restaurant.name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Audit Summary -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-chart-bar"></i> Audit Summary</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <div class="display-4 fw-bold text-{{ audit.total_percentage|format_percentage }}">
+                        {{ audit.grade }}
+                    </div>
+                    <div class="h3">{{ audit.total_percentage|floatformat:1 }}%</div>
+                    <small class="text-muted">Overall Score</small>
+                </div>
+
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>Restaurant:</span>
+                        <strong>{{ audit.restaurant.name }}</strong>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>Audit Date:</span>
+                        <strong>{{ audit.audit_date }}</strong>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>Manager:</span>
+                        <strong>{{ audit.manager_on_duty }}</strong>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>Auditor:</span>
+                        <strong>{{ audit.auditor_name }}</strong>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>Total Score:</span>
+                        <strong>{{ audit.total_scored|floatformat:1 }}/{{ audit.total_possible|floatformat:1 }}</strong>
+                    </div>
+                    {% if audit.is_submitted %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>Submitted:</span>
+                        <strong>{{ audit.submitted_at|date:"M d, Y H:i" }}</strong>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="mt-3 d-grid gap-2">
+                    {% if not audit.is_submitted %}
+                    <a href="{% url 'core:audit_form' audit.id %}" class="btn btn-outline-primary">
+                        <i class="fas fa-edit"></i> Continue Editing
+                    </a>
+                    {% endif %}
+                    <a href="{% url 'core:audit_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-list"></i> All Audits
+                    </a>
+                    <a href="{% url 'core:dashboard' %}" class="btn btn-outline-info">
+                        <i class="fas fa-home"></i> Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section-wise Results -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="fas fa-tasks"></i> Section-wise Results</h5>
+            </div>
+            <div class="card-body">
+                {% for section in sections %}
+                <div class="card mb-3">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">{{ section.section.name }}</h6>
+                        <div>
+                            <span class="badge bg-{{ section.section_percentage|format_percentage }}">
+                                {{ section.section_percentage|floatformat:1 }}%
+                            </span>
+                            <small class="text-muted ms-2">
+                                {{ section.scored_points|floatformat:1 }}/{{ section.possible_points|floatformat:1 }}
+                            </small>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        {% if section.has_critical_failure %}
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <strong>Critical Failure:</strong> This section has critical failures that need immediate attention.
+                        </div>
+                        {% endif %}
+
+                        <!-- Questions in this section -->
+                        {% for response in responses %}
+                            {% if response.audit_section.section.id == section.section.id %}
+                            <div class="question-result mb-2 p-2 border rounded
+                                {% if response.question.is_critical and response.scored_points == 0 %}bg-danger text-white
+                                {% elif response.question.is_critical %}bg-warning
+                                {% else %}bg-light{% endif %}">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <small class="fw-bold">{{ response.question.question_text }}</small>
+                                        {% if response.question.is_critical %}
+                                        <span class="badge {% if response.scored_points == 0 %}bg-dark{% else %}bg-danger{% endif %} ms-1">
+                                            Critical
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-4 text-end">
+                                        <span class="badge
+                                            {% if response.scored_points == response.question.possible_points %}bg-success
+                                            {% elif response.scored_points > 0 %}bg-warning
+                                            {% else %}bg-danger{% endif %}">
+                                            {{ response.scored_points }}/{{ response.question.possible_points }}
+                                        </span>
+                                    </div>
+                                </div>
+                                {% if response.comments %}
+                                <div class="mt-1">
+                                    <small><strong>Comments:</strong> {{ response.comments }}</small>
+                                </div>
+                                {% endif %}
+                                {% if response.needs_corrective_action %}
+                                <div class="mt-1">
+                                    <span class="badge bg-dark">Corrective Action Needed</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Corrective Actions Summary -->
+        <div class="card mt-4">
+            <div class="card-header bg-warning">
+                <h5 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Corrective Actions Summary</h5>
+            </div>
+            <div class="card-body">
+                {% with critical_failures=responses|critical_failures %}
+                    {% if critical_failures %}
+                    <div class="alert alert-danger">
+                        <h6><i class="fas fa-exclamation-circle"></i> Critical Failures Found:</h6>
+                        <ul class="mb-0">
+                            {% for response in critical_failures %}
+                            <li>
+                                <strong>{{ response.question.question_text }}</strong>
+                                {% if response.comments %} - {{ response.comments }}{% endif %}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle"></i> No critical failures found. Good job!
+                    </div>
+                    {% endif %}
+                {% endwith %}
+
+                <!-- Action Plan -->
+                <div class="mt-3">
+                    <h6>Recommended Actions:</h6>
+                    <ul class="list-group">
+                        {% for response in responses|needs_corrective_action %}
+                        <li class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <strong>{{ response.question.question_text }}</strong>
+                                    {% if response.comments %}
+                                    <br><small class="text-muted">{{ response.comments }}</small>
+                                    {% endif %}
+                                </div>
+                                <span class="badge bg-danger">Critical</span>
+                            </div>
+                        </li>
+                        {% empty %}
+                        <li class="list-group-item text-muted">
+                            No corrective actions needed at this time.
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <!-- Signatures Section (Print Only) -->
+                <div class="signatures-section mt-5 d-none d-print-block">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="signature-box">
+                                <div class="signature-line"></div>
+                                <p class="signature-label">Auditor Signature</p>
+                                <p class="signature-name">{{ audit.auditor_name }}</p>
+                                <p class="signature-date">Date: {{ audit.audit_date }}</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="signature-box">
+                                <div class="signature-line"></div>
+                                <p class="signature-label">Auditee Signature</p>
+                                <p class="signature-name">{{ audit.manager_on_duty }}</p>
+                                <p class="signature-date">Date: {{ audit.audit_date }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Action Buttons -->
+<div class="row mt-4">
+    <div class="col-12 text-center">
+        <button class="btn btn-primary" onclick="printReport()">
+            <i class="fas fa-print"></i> Print Report
+        </button>
+        <button class="btn btn-success" onclick="downloadPDF()">
+            <i class="fas fa-download"></i> Download PDF
+        </button>
+        <a href="{% url 'core:audit_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Audits
+        </a>
+    </div>
+</div>
+
+<!-- Print Preview Modal -->
+<div class="modal fade" id="printPreviewModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Print Preview - Audit Report</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="print-preview-content">
+                    <!-- Print preview content will be loaded here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="window.print()">
+                    <i class="fas fa-print"></i> Print Now
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function printReport() {
+        // Show print preview modal
+        $('#printPreviewModal').modal('show');
+
+        // Generate print preview content
+        const printContent = generatePrintContent();
+        $('#print-preview-content').html(printContent);
+    }
+
+    function generatePrintContent() {
+        return `
+            <div class="print-container">
+                <div class="print-header text-center mb-4">
+                    <img src="/static/images/mcdonalds-logo.png" alt="McDonald's Logo" class="print-logo" style="height: 60px; margin-bottom: 20px;">
+                    <h1 class="print-title">Food Safety Audit Report</h1>
+                    <div class="print-subtitle">McDonald's Pakistan - Quality Assurance</div>
+                </div>
+
+                <div class="print-summary mb-4">
+                    <div class="row">
+                        <div class="col-6">
+                            <table class="table table-bordered table-sm">
+                                <tr>
+                                    <th width="40%">Restaurant:</th>
+                                    <td>${$('.list-group-item:contains("Restaurant:")').find('strong').text()}</td>
+                                </tr>
+                                <tr>
+                                    <th>Audit Date:</th>
+                                    <td>${$('.list-group-item:contains("Audit Date:")').find('strong').text()}</td>
+                                </tr>
+                                <tr>
+                                    <th>Manager:</th>
+                                    <td>${$('.list-group-item:contains("Manager:")').find('strong').text()}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-6">
+                            <table class="table table-bordered table-sm">
+                                <tr>
+                                    <th width="40%">Auditor:</th>
+                                    <td>${$('.list-group-item:contains("Auditor:")').find('strong').text()}</td>
+                                </tr>
+                                <tr>
+                                    <th>Total Score:</th>
+                                    <td>${$('.list-group-item:contains("Total Score:")').find('strong').text()}</td>
+                                </tr>
+                                <tr>
+                                    <th>Grade:</th>
+                                    <td><strong class="text-{{ audit.total_percentage|format_percentage }}">{{ audit.grade }} ({{ audit.total_percentage|floatformat:1 }}%)</strong></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="print-sections">
+                    <h4 class="print-section-title">Section-wise Results</h4>
+                    ${generateSectionsPrintContent()}
+                </div>
+
+                <div class="print-signatures mt-5">
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="signature-box-print">
+                                <div class="signature-line-print"></div>
+                                <p class="signature-label-print">Auditor Signature</p>
+                                <p class="signature-name-print">{{ audit.auditor_name }}</p>
+                                <p class="signature-date-print">Date: {{ audit.audit_date }}</p>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="signature-box-print">
+                                <div class="signature-line-print"></div>
+                                <p class="signature-label-print">Auditee Signature</p>
+                                <p class="signature-name-print">{{ audit.manager_on_duty }}</p>
+                                <p class="signature-date-print">Date: {{ audit.audit_date }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="print-footer text-center mt-4">
+                    <hr>
+                    <small class="text-muted">
+                        Generated on ${new Date().toLocaleDateString()} | McDonald's Pakistan QA System
+                    </small>
+                </div>
+            </div>
+        `;
+    }
+
+    function generateSectionsPrintContent() {
+        let sectionsHtml = '';
+        {% for section in sections %}
+        sectionsHtml += `
+            <div class="print-section mb-3">
+                <div class="print-section-header">
+                    <h5 class="print-section-title">
+                        {{ section.section.get_name_display }}
+                        <span class="print-section-score badge bg-{{ section.section_percentage|format_percentage }}">
+                            {{ section.section_percentage|floatformat:1 }}%
+                        </span>
+                    </h5>
+                </div>
+                <div class="print-section-questions">
+                    {% for response in responses %}
+                        {% if response.audit_section.section.id == section.section.id %}
+                        <div class="print-question ${'{% if response.question.is_critical and response.scored_points == 0 %}'}critical-failure${'{% endif %}'}">
+                            <div class="print-question-text">
+                                {{ response.question.question_text }}
+                                ${'{% if response.question.is_critical %}'}
+                                <span class="print-critical-badge">[Critical]</span>
+                                ${'{% endif %}'}
+                            </div>
+                            <div class="print-question-score">
+                                <span class="print-score ${'{% if response.scored_points == response.question.possible_points %}'}text-success${'{% elif response.scored_points > 0 %}'}text-warning${'{% else %}'}text-danger${'{% endif %}'}">
+                                    {{ response.scored_points }}/{{ response.question.possible_points }}
+                                </span>
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        `;
+        {% endfor %}
+        return sectionsHtml;
+    }
+
+    function downloadPDF() {
+        // Simple PDF download using browser print to PDF
+        window.print();
+    }
+
+    // Add print styles
+    const printStyle = document.createElement('style');
+    printStyle.textContent = `
+        @media print {
+            /* Hide unnecessary elements */
+            .navbar, footer, .btn, .modal, .alert, .nav-tabs,
+            .card-header .badge, .action-buttons {
+                display: none !important;
+            }
+
+            /* Print container */
+            .print-container {
+                font-family: 'Arial', sans-serif;
+                font-size: 12px;
+                line-height: 1.4;
+                color: #000;
+            }
+
+            /* Header */
+            .print-header {
+                border-bottom: 2px solid #333;
+                padding-bottom: 20px;
+                margin-bottom: 20px;
+            }
+
+            .print-title {
+                font-size: 24px;
+                font-weight: bold;
+                color: #333;
+                margin: 10px 0 5px 0;
+            }
+
+            .print-subtitle {
+                font-size: 14px;
+                color: #666;
+            }
+
+            /* Summary */
+            .print-summary table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+
+            .print-summary th,
+            .print-summary td {
+                padding: 8px;
+                border: 1px solid #ddd;
+            }
+
+            .print-summary th {
+                background-color: #f8f9fa;
+                font-weight: bold;
+            }
+
+            /* Sections */
+            .print-section {
+                page-break-inside: avoid;
+                margin-bottom: 15px;
+            }
+
+            .print-section-header {
+                background-color: #f8f9fa;
+                padding: 10px;
+                border: 1px solid #ddd;
+                border-bottom: none;
+            }
+
+            .print-section-title {
+                font-size: 14px;
+                font-weight: bold;
+                margin: 0;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .print-section-score {
+                font-size: 12px;
+                padding: 4px 8px;
+            }
+
+            .print-section-questions {
+                border: 1px solid #ddd;
+                border-top: none;
+            }
+
+            .print-question {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                padding: 8px 10px;
+                border-bottom: 1px solid #eee;
+            }
+
+            .print-question:last-child {
+                border-bottom: none;
+            }
+
+            .print-question.critical-failure {
+                background-color: #fff5f5;
+                border-left: 3px solid #dc3545;
+            }
+
+            .print-question-text {
+                flex: 1;
+                font-size: 11px;
+            }
+
+            .print-critical-badge {
+                color: #dc3545;
+                font-weight: bold;
+                font-size: 10px;
+            }
+
+            .print-question-score {
+                font-weight: bold;
+                font-size: 11px;
+                min-width: 60px;
+                text-align: right;
+            }
+
+            /* Signatures */
+            .print-signatures {
+                margin-top: 40px;
+                page-break-inside: avoid;
+            }
+
+            .signature-box-print {
+                text-align: center;
+                margin-top: 30px;
+            }
+
+            .signature-line-print {
+                border-bottom: 1px solid #000;
+                width: 80%;
+                margin: 0 auto 10px auto;
+                height: 1px;
+            }
+
+            .signature-label-print {
+                font-size: 12px;
+                margin: 5px 0;
+                font-weight: bold;
+            }
+
+            .signature-name-print {
+                font-size: 11px;
+                margin: 2px 0;
+            }
+
+            .signature-date-print {
+                font-size: 10px;
+                color: #666;
+                margin: 2px 0;
+            }
+
+            /* Footer */
+            .print-footer {
+                font-size: 10px;
+                color: #666;
+                margin-top: 30px;
+            }
+
+            /* General print styles */
+            body {
+                background: white !important;
+                color: black !important;
+            }
+
+            .card {
+                border: 1px solid #000 !important;
+                background: white !important;
+            }
+
+            .container-fluid {
+                padding: 0 !important;
+                margin: 0 !important;
+                width: 100% !important;
+            }
+
+            .row {
+                margin: 0 !important;
+            }
+
+            .col-md-4, .col-md-8 {
+                width: 100% !important;
+                max-width: 100% !important;
+                flex: 0 0 100% !important;
+            }
+        }
+
+        /* Screen-only styles */
+        @media screen {
+            .signatures-section {
+                display: none;
+            }
+
+            .signature-box {
+                text-align: center;
+                padding: 20px;
+                border: 2px dashed #ccc;
+                border-radius: 8px;
+                background: #f9f9f9;
+            }
+
+            .signature-line {
+                border-bottom: 1px solid #333;
+                width: 80%;
+                margin: 0 auto 15px auto;
+                height: 1px;
+            }
+
+            .signature-label {
+                font-size: 14px;
+                font-weight: bold;
+                margin: 10px 0 5px 0;
+            }
+
+            .signature-name {
+                font-size: 13px;
+                margin: 5px 0;
+            }
+
+            .signature-date {
+                font-size: 12px;
+                color: #666;
+                margin: 5px 0;
+            }
+        }
+    `;
+    document.head.appendChild(printStyle);
+</script>
+
+<style>
+    /* Additional screen styles */
+    .print-preview-btn {
+        margin: 5px;
+    }
+
+    .modal-xl {
+        max-width: 95%;
+    }
+
+    #print-preview-content {
+        background: white;
+        padding: 20px;
+        border: 1px solid #ddd;
+    }
+</style>
+{% endblock %}

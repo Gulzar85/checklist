@@ -74,6 +74,7 @@ def auto_create_corrective_action(sender, instance, created, **kwargs):
             )
 
 
+'''
 @receiver(post_save, sender=Audit)
 def initialize_audit_sections(sender, instance, created, **kwargs):
     """
@@ -91,7 +92,7 @@ def initialize_audit_sections(sender, instance, created, **kwargs):
                 possible_points=0,
                 section_percentage=0
             )
-
+'''
 
 @receiver(post_save, sender=CorrectiveAction)
 def update_completion_date(sender, instance, **kwargs):

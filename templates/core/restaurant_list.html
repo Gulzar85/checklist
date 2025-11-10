@@ -1,0 +1,215 @@
+{% extends 'base.html' %}
+
+{% block title %}McDonald's Restaurants - Audit System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+    <h1 class="h2 mcd-text-red">
+        <i class="bi bi-shop-window"></i>
+        McDonald's Restaurants - Pakistan
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <span class="badge mcd-bg-yellow text-dark me-2 p-2">
+            <i class="bi bi-geo-alt-fill"></i> {{ restaurants.count }} Locations
+        </span>
+    </div>
+</div>
+
+<!-- McDonald's Location Banner -->
+<div class="alert mcd-bg-yellow text-dark border-0 mb-4">
+    <div class="d-flex align-items-center">
+        <i class="bi bi-info-circle-fill me-3 display-6 text-danger"></i>
+        <div>
+            <strong>Quality Assurance Coverage:</strong> All McDonald's locations across Pakistan are subject to regular quality audits to maintain our brand standards.
+        </div>
+    </div>
+</div>
+
+<div class="card border-0">
+    <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">
+            <i class="bi bi-geo-alt-fill"></i>
+            Restaurant Locations
+        </h5>
+        <div class="input-group" style="width: 300px;">
+            <input type="text" class="form-control" placeholder="Search restaurants...">
+            <button class="btn btn-warning" type="button">
+                <i class="bi bi-search"></i>
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        {% if restaurants %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-danger">
+                        <tr>
+                            <th>Restaurant Code</th>
+                            <th>Restaurant Details</th>
+                            <th>Location</th>
+                            <th>City</th>
+                            <th>Last Audit</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for restaurant in restaurants %}
+                        <tr>
+                            <td>
+                                <span class="badge mcd-bg-red text-white fs-6">{{ restaurant.code }}</span>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-warning rounded-circle me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                        <i class="bi bi-shop text-dark"></i>
+                                    </div>
+                                    <div>
+                                        <strong class="d-block">{{ restaurant.name }}</strong>
+                                        <small class="text-muted">
+                                            <i class="bi bi-telephone"></i> Contact: Store Manager
+                                        </small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <small class="text-muted">
+                                    <i class="bi bi-geo-alt"></i> {{ restaurant.address }}
+                                </small>
+                            </td>
+                            <td>
+                                <span class="badge bg-dark">{{ restaurant.city }}</span>
+                            </td>
+                            <td>
+                                <small class="text-muted">
+                                    {% if restaurant.latest_audit %}
+                                        {{ restaurant.latest_audit.audit_date|date:"M d, Y" }}
+                                        <br>
+                                        <span class="badge {% if restaurant.latest_audit.total_percentage >= 90 %}bg-success{% elif restaurant.latest_audit.total_percentage >= 80 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                                            {{ restaurant.latest_audit.total_percentage }}%
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">No audit</span>
+                                    {% endif %}
+                                </small>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'core:audit_create' %}?restaurant={{ restaurant.id }}"
+                                       class="btn mcd-btn-primary">
+                                        <i class="bi bi-clipboard-plus"></i> Audit
+                                    </a>
+                                    <button class="btn btn-outline-warning text-dark">
+                                        <i class="bi bi-info-circle"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if is_paginated %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link text-danger" href="?page={{ page_obj.previous_page_number }}">
+                            <i class="bi bi-chevron-left"></i> Previous
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <li class="page-item active">
+                                <a class="page-link mcd-bg-red border-red" href="?page={{ num }}">{{ num }}</a>
+                            </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link text-danger" href="?page={{ num }}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link text-danger" href="?page={{ page_obj.next_page_number }}">
+                            Next <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+        {% else %}
+            <div class="text-center py-5">
+                <div class="mb-4">
+                    <i class="bi bi-shop text-muted display-1"></i>
+                </div>
+                <h5 class="text-muted">No Restaurants Available</h5>
+                <p class="text-muted">Please contact system administrator to add McDonald's restaurant locations.</p>
+                <button class="btn mcd-btn-secondary" disabled>
+                    <i class="bi bi-telephone"></i> Contact Admin
+                </button>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- McDonald's Pakistan Map -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-0">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-map"></i>
+                    McDonald's Pakistan Coverage
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-2 col-4 mb-3">
+                        <div class="bg-danger text-white rounded-circle mx-auto d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                            <i class="bi bi-building"></i>
+                        </div>
+                        <small class="d-block mt-2">Karachi</small>
+                    </div>
+                    <div class="col-md-2 col-4 mb-3">
+                        <div class="bg-danger text-white rounded-circle mx-auto d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                            <i class="bi bi-building"></i>
+                        </div>
+                        <small class="d-block mt-2">Lahore</small>
+                    </div>
+                    <div class="col-md-2 col-4 mb-3">
+                        <div class="bg-danger text-white rounded-circle mx-auto d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                            <i class="bi bi-building"></i>
+                        </div>
+                        <small class="d-block mt-2">Islamabad</small>
+                    </div>
+                    <div class="col-md-2 col-4 mb-3">
+                        <div class="bg-danger text-white rounded-circle mx-auto d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                            <i class="bi bi-building"></i>
+                        </div>
+                        <small class="d-block mt-2">Rawalpindi</small>
+                    </div>
+                    <div class="col-md-2 col-4 mb-3">
+                        <div class="bg-danger text-white rounded-circle mx-auto d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                            <i class="bi bi-building"></i>
+                        </div>
+                        <small class="d-block mt-2">Faisalabad</small>
+                    </div>
+                    <div class="col-md-2 col-4 mb-3">
+                        <div class="bg-danger text-white rounded-circle mx-auto d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                            <i class="bi bi-building"></i>
+                        </div>
+                        <small class="d-block mt-2">Multan</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

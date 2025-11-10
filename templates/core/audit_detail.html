@@ -1,0 +1,291 @@
+{% extends 'base.html' %}
+
+{% block title %}Audit Details - McDonald's{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+    <h1 class="h2 mcd-text-red">
+        <i class="bi bi-clipboard-check"></i>
+        Audit Details
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'core:audit_list' %}" class="btn btn-outline-danger me-2">
+            <i class="bi bi-arrow-left"></i> Back
+        </a>
+        <button class="btn mcd-btn-primary">
+            <i class="bi bi-download"></i> Export PDF
+        </button>
+    </div>
+</div>
+
+<!-- Audit Summary Card -->
+<div class="card border-0 mb-4">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-warning rounded-circle me-3" style="width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;">
+                        <i class="bi bi-shop text-dark display-6"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-danger mb-1">{{ audit.restaurant.name }}</h3>
+                        <p class="text-muted mb-0">
+                            <i class="bi bi-geo-alt"></i> {{ audit.restaurant.address }}, {{ audit.restaurant.city }}
+                            <span class="badge mcd-bg-red text-white ms-2">{{ audit.restaurant.code }}</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 text-end">
+                <div class="d-flex justify-content-end">
+                    <div class="text-center me-4">
+                        <div class="display-4 fw-bold text-danger">{{ audit.total_percentage }}%</div>
+                        <span class="badge badge-grade-{{ audit.grade }} fs-6">{{ audit.grade }} Grade</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="progress mb-3" style="height: 10px;">
+            <div class="progress-bar {% if audit.total_percentage >= 90 %}bg-success{% elif audit.total_percentage >= 80 %}bg-warning{% else %}bg-danger{% endif %}" 
+                 style="width: {{ audit.total_percentage }}%"></div>
+        </div>
+
+        <!-- Audit Metadata -->
+        <div class="row text-center">
+            <div class="col-md-3">
+                <small class="text-muted d-block">Audit Date</small>
+                <strong>{{ audit.audit_date|date:"M d, Y" }}</strong>
+            </div>
+            <div class="col-md-3">
+                <small class="text-muted d-block">Manager</small>
+                <strong>{{ audit.manager_on_duty }}</strong>
+            </div>
+            <div class="col-md-3">
+                <small class="text-muted d-block">Auditor</small>
+                <strong>{{ audit.auditor_name.get_full_name|default:audit.auditor_name.username }}</strong>
+            </div>
+            <div class="col-md-3">
+                <small class="text-muted d-block">Status</small>
+                {% if audit.has_critical_failure %}
+                    <span class="badge bg-danger">Critical Issues</span>
+                {% else %}
+                    <span class="badge bg-success">Completed</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Sections Overview -->
+    <div class="col-lg-8">
+        <div class="card border-0 mb-4">
+            <div class="card-header bg-danger text-white">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-list-check"></i>
+                    Audit Sections
+                </h5>
+            </div>
+            <div class="card-body">
+                {% for section in audit_sections %}
+                <div class="card border mb-3">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                <h6 class="text-danger mb-1">{{ section.section.name }}</h6>
+                                <small class="text-muted">{{ section.section.description }}</small>
+                            </div>
+                            <div class="col-md-3 text-center">
+                                <div class="progress mb-2" style="height: 6px;">
+                                    <div class="progress-bar {% if section.section_percentage >= 90 %}bg-success{% elif section.section_percentage >= 80 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                         style="width: {{ section.section_percentage }}%"></div>
+                                </div>
+                                <span class="badge {% if section.section_percentage >= 90 %}bg-success{% elif section.section_percentage >= 80 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                                    {{ section.section_percentage }}%
+                                </span>
+                            </div>
+                            <div class="col-md-3 text-end">
+                                <span class="badge bg-dark me-2">{{ section.scored_points }}/{{ section.possible_points }}</span>
+                                {% if section.has_critical_failure %}
+                                    <span class="badge bg-danger">Critical</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Corrective Actions -->
+        <div class="card border-0">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    Corrective Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if corrective_actions %}
+                    {% for action in corrective_actions %}
+                    <div class="card border mb-3">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h6 class="text-danger mb-0">{{ action.description }}</h6>
+                                <span class="badge {% if action.risk_level == 'CRITICAL' %}bg-danger{% elif action.risk_level == 'HIGH' %}bg-warning text-dark{% elif action.risk_level == 'MEDIUM' %}bg-info{% else %}bg-secondary{% endif %}">
+                                    {{ action.get_risk_level_display }}
+                                </span>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <small class="text-muted">Assigned To:</small>
+                                    <div class="fw-bold">{{ action.assigned_to }}</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <small class="text-muted">Deadline:</small>
+                                    <div class="fw-bold">{{ action.deadline|date:"M d, Y" }}</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <small class="text-muted">Status:</small>
+                                    <div>
+                                        {% if action.completed %}
+                                            <span class="badge bg-success">Completed</span>
+                                        {% else %}
+                                            <span class="badge bg-warning text-dark">Pending</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-check-circle text-success display-1"></i>
+                        <p class="text-muted mt-2">No corrective actions required</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar Information -->
+    <div class="col-lg-4">
+        <!-- McDonald's Quality Score -->
+        <div class="card border-0 mb-4">
+            <div class="card-header bg-danger text-white text-center">
+                <h5 class="card-title mb-0">Quality Score</h5>
+            </div>
+            <div class="card-body text-center">
+                <div class="display-1 fw-bold text-danger">{{ audit.total_percentage }}%</div>
+                <div class="mb-3">
+                    <span class="badge badge-grade-{{ audit.grade }} fs-5">{{ audit.grade }} Grade</span>
+                </div>
+                <div class="progress mb-3" style="height: 8px;">
+                    <div class="progress-bar {% if audit.total_percentage >= 90 %}bg-success{% elif audit.total_percentage >= 80 %}bg-warning{% else %}bg-danger{% endif %}" 
+                         style="width: {{ audit.total_percentage }}%"></div>
+                </div>
+                <small class="text-muted">Overall Quality Assessment</small>
+            </div>
+        </div>
+
+        <!-- Audit Timeline -->
+        <div class="card border-0 mb-4">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-clock"></i>
+                    Audit Timeline
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-success"></div>
+                        <div class="timeline-content">
+                            <small class="text-muted">Created</small>
+                            <div class="fw-bold">{{ audit.created_at|date:"M d, Y" }}</div>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-primary"></div>
+                        <div class="timeline-content">
+                            <small class="text-muted">Conducted</small>
+                            <div class="fw-bold">{{ audit.audit_date|date:"M d, Y" }}</div>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-info"></div>
+                        <div class="timeline-content">
+                            <small class="text-muted">Last Updated</small>
+                            <div class="fw-bold">{{ audit.updated_at|date:"M d, Y" }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- McDonald's Standards -->
+        <div class="card border-0">
+            <div class="card-header bg-danger text-white">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-award"></i>
+                    Quality Standards
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    <div class="golden-arches mx-auto mb-2">
+                        M
+                    </div>
+                    <small class="text-muted">McDonald's Excellence</small>
+                </div>
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item px-0 d-flex align-items-center">
+                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                        <small>Food Safety & Hygiene</small>
+                    </div>
+                    <div class="list-group-item px-0 d-flex align-items-center">
+                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                        <small>Customer Service Excellence</small>
+                    </div>
+                    <div class="list-group-item px-0 d-flex align-items-center">
+                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                        <small>Cleanliness Standards</small>
+                    </div>
+                    <div class="list-group-item px-0 d-flex align-items-center">
+                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                        <small>Operational Efficiency</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .timeline {
+        position: relative;
+        padding-left: 20px;
+    }
+    
+    .timeline-item {
+        position: relative;
+        padding-bottom: 20px;
+    }
+    
+    .timeline-marker {
+        position: absolute;
+        left: -20px;
+        top: 5px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+    }
+    
+    .timeline-content {
+        margin-left: 10px;
+    }
+</style>
+{% endblock %}

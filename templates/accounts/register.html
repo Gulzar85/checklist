@@ -1,107 +1,138 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 {% load crispy_forms_tags %}
 
-{% block title %}Register - McDonald's Pakistan{% endblock %}
+{% block title %}Register - McDonald's Audit System{% endblock %}
 
-{% block auth_content %}
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8 col-lg-6">
-            <div class="card shadow-lg border-0">
-                <div class="card-body p-5">
-                    <!-- Logo and Header -->
-                    <div class="text-center mb-4">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/McDonald%27s_Golden_Arches.svg/1200px-McDonald%27s_Golden_Arches.svg.png"
-                             alt="McDonald's" height="60" class="mb-3">
-                        <h3 class="card-title fw-bold text-danger">Create Account</h3>
-                        <p class="text-muted">Join McDonald's Pakistan Food Safety Audit System</p>
+{% block content %}
+<div class="row justify-content-center align-items-center min-vh-100 bg-light">
+    <div class="col-md-6 col-lg-5">
+        <!-- McDonald's Logo Header -->
+        <div class="text-center mb-4">
+            <div class="mb-3">
+                <div style="width: 100px; height: 100px; background: var(--mcd-yellow); border-radius: 50%; margin: 0 auto; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 25px rgba(255, 0, 0, 0.2);">
+                    <i class="bi bi-star-fill text-danger" style="font-size: 2.5rem;"></i>
+                </div>
+            </div>
+            <h3 class="text-danger fw-bold">McDonald's Pakistan</h3>
+            <p class="text-muted">Auditor Registration</p>
+        </div>
+
+        <div class="card border-0 shadow-lg">
+            <div class="card-header bg-warning text-dark text-center py-4">
+                <h4 class="mb-0">
+                    <i class="bi bi-person-plus me-2"></i>
+                    Auditor Registration
+                </h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-danger fw-bold">Username</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="bi bi-person text-muted"></i>
+                                </span>
+                                <input type="text" name="username" class="form-control" placeholder="Choose username" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-danger fw-bold">Email</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="bi bi-envelope text-muted"></i>
+                                </span>
+                                <input type="email" name="email" class="form-control" placeholder="your@email.com" required>
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- Messages -->
-                    {% if messages %}
-                    <div class="mb-4">
-                        {% for message in messages %}
-                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                            {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% endif %}
-
-                    <!-- Registration Form -->
-                    <form method="post" novalidate>
-                        {% csrf_token %}
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                {{ form.username|as_crispy_field }}
-                            </div>
-                            <div class="col-md-6">
-                                {{ form.email|as_crispy_field }}
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-danger fw-bold">Password</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="bi bi-lock text-muted"></i>
+                                </span>
+                                <input type="password" name="password1" class="form-control" placeholder="Create password" required>
                             </div>
                         </div>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                {{ form.password1|as_crispy_field }}
-                            </div>
-                            <div class="col-md-6">
-                                {{ form.password2|as_crispy_field }}
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                {{ form.role|as_crispy_field }}
-                            </div>
-                            <div class="col-md-6">
-                                {{ form.phone_number|as_crispy_field }}
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-danger fw-bold">Confirm Password</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="bi bi-lock-fill text-muted"></i>
+                                </span>
+                                <input type="password" name="password2" class="form-control" placeholder="Confirm password" required>
                             </div>
                         </div>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                {{ form.designation|as_crispy_field }}
-                            </div>
-                            <div class="col-md-6">
-                                {{ form.department|as_crispy_field }}
-                            </div>
-                        </div>
-
-                        <!-- Role Information -->
-                        <div class="alert alert-info mt-3" role="alert">
-                            <h6 class="alert-heading"><i class="fas fa-info-circle me-2"></i>Role Information</h6>
-                            <ul class="mb-0 ps-3">
-                                <li><strong>Admin:</strong> Full system access, can manage all audits and users</li>
-                                <li><strong>Quality Assurance:</strong> Can create and manage own audits</li>
-                            </ul>
-                        </div>
-
-                        <div class="d-grid gap-2 mt-4">
-                            <button type="submit" class="btn btn-mc-secondary btn-lg">
-                                <i class="fas fa-user-plus me-2"></i>
-                                Create Account
-                            </button>
-                        </div>
-                    </form>
-
-                    <!-- Login Link -->
-                    <div class="text-center mt-4 pt-3 border-top">
-                        <p class="text-muted mb-0">
-                            Already have an account?
-                            <a href="{% url 'accounts:login' %}" class="text-danger text-decoration-none fw-bold">
-                                Login here
-                            </a>
-                        </p>
                     </div>
 
-                    <!-- Footer -->
-                    <div class="text-center mt-4">
-                        <small class="text-muted">
-                            &copy; {% now "Y" %} McDonald's Pakistan. All rights reserved.
-                        </small>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-danger fw-bold">First Name</label>
+                            <input type="text" name="first_name" class="form-control" placeholder="First name">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-danger fw-bold">Last Name</label>
+                            <input type="text" name="last_name" class="form-control" placeholder="Last name">
+                        </div>
                     </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-danger fw-bold">Designation</label>
+                            <input type="text" name="designation" class="form-control" placeholder="Your designation">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-danger fw-bold">Department</label>
+                            <input type="text" name="department" class="form-control" placeholder="Your department">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label text-danger fw-bold">Phone Number</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0">
+                                <i class="bi bi-phone text-muted"></i>
+                            </span>
+                            <input type="tel" name="phone_number" class="form-control" placeholder="0300-1234567">
+                        </div>
+                        <small class="text-muted">Format: 03XX-XXXXXXX</small>
+                    </div>
+
+                    <div class="d-grid gap-2 mb-3">
+                        <button type="submit" class="btn mcd-btn-primary btn-lg py-3 fw-bold">
+                            <i class="bi bi-person-check me-2"></i>
+                            Register as Auditor
+                        </button>
+                    </div>
+                </form>
+
+                <div class="text-center mt-4 pt-3 border-top">
+                    <p class="mb-2 text-muted">
+                        Already have an account?
+                    </p>
+                    <a href="{% url 'accounts:login' %}" class="text-danger text-decoration-none fw-bold">
+                        <i class="bi bi-box-arrow-in-right me-1"></i>Login Here
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- McDonald's Quality Message -->
+        <div class="text-center mt-4">
+            <div class="card border-danger">
+                <div class="card-body py-3">
+                    <h6 class="text-danger mb-2">
+                        <i class="bi bi-patch-check-fill"></i>
+                        McDonald's Quality Standards
+                    </h6>
+                    <p class="mb-0 text-muted small">
+                        Registered auditors maintain the highest quality standards across all McDonald's Pakistan locations.
+                    </p>
                 </div>
             </div>
         </div>
@@ -109,41 +140,25 @@
 </div>
 
 <style>
-    .card {
-        border-radius: 15px;
+    .min-vh-100 {
+        min-height: 100vh;
     }
-    .btn {
-        border-radius: 10px;
+
+    input[type="text"], input[type="email"], input[type="password"], input[type="tel"] {
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        padding: 12px;
+        transition: all 0.3s ease;
     }
-    .form-control, .form-select {
-        border-radius: 10px;
-        padding: 12px 15px;
+
+    input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focus, input[type="tel"]:focus {
+        border-color: var(--mcd-red);
+        box-shadow: 0 0 0 0.2rem rgba(255, 0, 0, 0.25);
     }
-    .alert {
-        border-radius: 10px;
-        border: none;
-    }
-    /* Crispy forms customization */
-    .form-control:focus, .form-select:focus {
-        border-color: #d40000;
-        box-shadow: 0 0 0 0.2rem rgba(212, 0, 0, 0.25);
+
+    .input-group-text {
+        border-radius: 8px 0 0 8px !important;
+        border-right: none;
     }
 </style>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Show/hide fields based on role selection
-    const roleSelect = document.getElementById('id_role');
-
-    function toggleFields() {
-        // You can add logic here to show/hide fields based on role if needed
-        console.log('Role changed to:', roleSelect.value);
-    }
-
-    if (roleSelect) {
-        roleSelect.addEventListener('change', toggleFields);
-        toggleFields(); // Initial call
-    }
-});
-</script>
 {% endblock %}

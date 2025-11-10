@@ -1,0 +1,77 @@
+<!-- templates/audit/create_audit.html -->
+{% extends 'base.html' %}
+
+{% block title %}Create New Audit{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-plus-circle"></i> Create New Audit</h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="restaurant" class="form-label">Restaurant *</label>
+                            <select class="form-select" id="restaurant" name="restaurant" required>
+                                <option value="">Select Restaurant</option>
+                                {% for restaurant in restaurants %}
+                                <option value="{{ restaurant.id }}">{{ restaurant.name }} ({{ restaurant.code }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="audit_date" class="form-label">Audit Date *</label>
+                            <input type="date" class="form-control" id="audit_date" name="audit_date"
+                                   value="{{ today|date:'Y-m-d' }}" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="manager_name" class="form-label">Manager on Duty *</label>
+                            <input type="text" class="form-control" id="manager_name" name="manager_name"
+                                   placeholder="Enter manager name" required>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="auditor_name" class="form-label">Auditor Name *</label>
+                            <input type="text" class="form-control" value="{{ user.get_full_name|default:user.username }}" id="auditor_name" name="auditor_name"
+                                   placeholder="Enter auditor name" readonly>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Note:</strong> After creating the audit, you will be redirected to the audit form where you can start filling the sections.
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'core:dashboard' %}" class="btn btn-secondary me-md-2">
+                            <i class="fas fa-arrow-left"></i> Back to Dashboard
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Create Audit
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // Set minimum date to today
+        const today = new Date().toISOString().split('T')[0];
+        $('#audit_date').attr('min', today);
+    });
+</script>
+{% endblock %}

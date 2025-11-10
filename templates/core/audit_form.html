@@ -1,0 +1,604 @@
+<!-- templates/audit/audit_form.html -->
+{% extends 'base.html' %}
+
+{% block title %}{% if audit.is_submitted %}View Audit -{% else %}Audit Form -{% endif %} {{ audit.restaurant.name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Progress Sidebar -->
+    <div class="col-md-3">
+        <div class="card progress-section">
+            <div class="card-header {% if audit.is_submitted %}bg-secondary{% else %}bg-primary{% endif %} text-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-chart-line"></i>
+                    {% if audit.is_submitted %}Audit Results{% else %}Audit Progress{% endif %}
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>Restaurant:</strong> {{ audit.restaurant.name }}<br>
+                    <strong>Date:</strong> {{ audit.audit_date }}<br>
+                    <strong>Auditor:</strong> {{ audit.auditor_name }}
+                    {% if audit.is_submitted %}
+                    <br><strong>Submitted:</strong> {{ audit.submitted_at|date:"M d, Y H:i" }}
+                    {% endif %}
+                </div>
+
+                <div id="progress-container">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submission Status Badge -->
+                {% if audit.is_submitted %}
+                <div class="alert alert-success text-center">
+                    <i class="fas fa-check-circle"></i><br>
+                    <strong>SUBMITTED</strong><br>
+                    <small>This audit is completed and read-only</small>
+                </div>
+                {% endif %}
+
+                <!-- Auto-save Status -->
+                <div id="save-status" class="mt-2" style="display: none;">
+                    <div class="alert alert-success alert-dismissible fade show py-2" role="alert">
+                        <small><i class="fas fa-check-circle"></i> <span id="save-message">Changes saved</span></small>
+                        <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button>
+                    </div>
+                </div>
+
+                <!-- Submit Button (Only show if not submitted) -->
+                {% if not audit.is_submitted %}
+                <div class="mt-3">
+                    <button class="btn btn-success w-100" onclick="submitAudit()">
+                        <i class="fas fa-paper-plane"></i> Submit Audit
+                    </button>
+                </div>
+                {% endif %}
+
+                <!-- Navigation Links -->
+                <div class="mt-2">
+                    <a href="{% url 'core:dashboard' %}" class="btn btn-outline-primary btn-sm w-100 mb-1">
+                        <i class="fas fa-home"></i> Dashboard
+                    </a>
+                    <a href="{% url 'core:audit_list' %}" class="btn btn-outline-secondary btn-sm w-100">
+                        <i class="fas fa-list"></i> All Audits
+                    </a>
+                    {% if audit.is_submitted %}
+                    <a href="{% url 'core:audit_results' audit.id %}" class="btn btn-outline-info btn-sm w-100 mt-1">
+                        <i class="fas fa-chart-bar"></i> View Results
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Form -->
+    <div class="col-md-9">
+        <div class="card">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">
+                    <i class="fas fa-clipboard-check"></i>
+                    {% if audit.is_submitted %}View Audit -{% else %}Audit Form -{% endif %} {{ audit.restaurant.name }}
+                </h4>
+                <div id="global-save-status" class="text-muted small">
+                    {% if audit.is_submitted %}
+                    <i class="fas fa-lock"></i> Read Only
+                    {% else %}
+                    <i class="fas fa-save"></i> Auto-save enabled
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Sections Navigation -->
+                <nav>
+                    <div class="nav nav-tabs" id="nav-tab" role="tablist">
+                        {% for data in section_data %}
+                        <button class="nav-link {% if forloop.first %}active{% endif %}"
+                                id="nav-{{ data.section.id }}-tab"
+                                data-bs-toggle="tab"
+                                data-bs-target="#nav-{{ data.section.id }}"
+                                type="button"
+                                role="tab"
+                                aria-controls="nav-{{ data.section.id }}"
+                                aria-selected="{% if forloop.first %}true{% else %}false{% endif %}"
+                                {% if audit.is_submitted %}onclick="return false;" style="cursor: not-allowed;"{% endif %}>
+                            {{ data.section.name }}
+                        </button>
+                        {% endfor %}
+                    </div>
+                </nav>
+
+                <!-- Sections Content -->
+                <div class="tab-content mt-3" id="nav-tabContent">
+                    {% for data in section_data %}
+                    <div class="tab-pane fade {% if forloop.first %}show active{% endif %}"
+                         id="nav-{{ data.section.id }}"
+                         role="tabpanel"
+                         aria-labelledby="nav-{{ data.section.id }}-tab">
+
+                        <div class="card section-card {% if audit.is_submitted %}border-secondary{% endif %}">
+                            <div class="card-header d-flex justify-content-between align-items-center {% if audit.is_submitted %}bg-light{% endif %}">
+                                <div>
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-folder"></i>
+                                        {{ data.section.name }}
+                                    </h5>
+                                    {% if data.section.description %}
+                                    <p class="text-muted mb-0">{{ data.section.description }}</p>
+                                    {% endif %}
+                                </div>
+                                {% if not audit.is_submitted %}
+                                <div id="section-{{ data.section.id }}-status" class="text-success small" style="display: none;">
+                                    <i class="fas fa-check"></i> Saved
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="card-body">
+                                {% for question in data.questions %}
+                                <div class="card question-card mb-3 {% if question.is_critical %}critical-question{% endif %} {% if audit.is_submitted %}border-light{% endif %}"
+                                     id="question-{{ data.section.id }}-{{ question.id }}">
+                                    <div class="card-body {% if audit.is_submitted %}bg-light{% endif %}">
+                                        <div class="row">
+                                            <div class="col-md-8">
+                                                <h6 class="card-title">
+                                                    {{ question.text }}
+                                                    {% if question.is_critical %}
+                                                    <span class="badge bg-danger score-badge">Critical</span>
+                                                    {% endif %}
+                                                </h6>
+                                                <p class="text-muted small mb-2">
+                                                    Possible Points: <strong>{{ question.possible_points }}</strong>
+                                                </p>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <!-- Score Input (Read-only if submitted) -->
+                                                <div class="mb-2">
+                                                    <label class="form-label">Score:</label>
+                                                    {% if audit.is_submitted %}
+                                                    <div class="form-control bg-light">
+                                                        <strong>{{ question.scored_points }}</strong>
+                                                        <small class="text-muted float-end">/ {{ question.possible_points }}</small>
+                                                    </div>
+                                                    {% else %}
+                                                    <input type="number"
+                                                           class="form-control score-input"
+                                                           data-section="{{ data.section.id }}"
+                                                           data-question="{{ question.id }}"
+                                                           min="0"
+                                                           max="{{ question.possible_points }}"
+                                                           step="0.01"
+                                                           value="{{ question.scored_points }}"
+                                                           oninput="scheduleSave(this)">
+                                                    {% endif %}
+                                                </div>
+
+                                                <!-- Comments -->
+                                                <div>
+                                                    <label class="form-label">Comments:</label>
+                                                    {% if audit.is_submitted %}
+                                                    <div class="form-control bg-light" style="min-height: 80px;">
+                                                        {% if question.comments %}
+                                                        {{ question.comments }}
+                                                        {% else %}
+                                                        <span class="text-muted">No comments</span>
+                                                        {% endif %}
+                                                    </div>
+                                                    {% else %}
+                                                    <textarea class="form-control comments-input"
+                                                              data-section="{{ data.section.id }}"
+                                                              data-question="{{ question.id }}"
+                                                              rows="2"
+                                                              placeholder="Add comments..."
+                                                              oninput="scheduleSave(this)">{{ question.comments }}</textarea>
+                                                    {% endif %}
+                                                </div>
+
+                                                <!-- Question Save Status (Only for editable mode) -->
+                                                {% if not audit.is_submitted %}
+                                                <div id="question-{{ data.section.id }}-{{ question.id }}-status"
+                                                     class="save-status-indicator mt-1" style="display: none;">
+                                                    <small class="text-success"><i class="fas fa-check"></i> Saved</small>
+                                                </div>
+                                                {% endif %}
+
+                                                <!-- Corrective Action Indicator -->
+                                                {% if question.needs_corrective_action %}
+                                                <div class="mt-2">
+                                                    <span class="badge bg-warning text-dark">
+                                                        <i class="fas fa-exclamation-triangle"></i>
+                                                        Corrective Action Needed
+                                                    </span>
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% empty %}
+                                <div class="alert alert-info">
+                                    No questions available for this section.
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success Modal -->
+<div class="modal fade" id="successModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">Success</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p id="successMessage"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Error Modal -->
+<div class="modal fade" id="errorModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Error</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p id="errorMessage"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Global variables for auto-save
+    let saveTimeouts = {};
+    let isSaving = false;
+    const SAVE_DELAY = 1500; // 1.5 seconds delay
+
+    // Check if audit is submitted
+    const isSubmitted = {% if audit.is_submitted %}true{% else %}false{% endif %};
+
+    // CSRF token for AJAX requests
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    const csrftoken = getCookie('csrftoken');
+
+    // Load progress on page load
+    $(document).ready(function() {
+        loadProgress();
+
+        // Only set interval for progress updates if not submitted
+        if (!isSubmitted) {
+            setInterval(loadProgress, 30000);
+        }
+
+        // Disable all inputs if submitted
+        if (isSubmitted) {
+            $('.score-input, .comments-input').prop('readonly', true).addClass('bg-light');
+            $('.nav-link').removeAttr('data-bs-toggle').css('cursor', 'not-allowed');
+        } else {
+            // Auto-save functionality for editable mode
+            $('.comments-input').on('input', function() {
+                if (!isSubmitted) {
+                    clearTimeout($(this).data('timeout'));
+                    $(this).data('timeout', setTimeout(() => {
+                        const sectionId = $(this).data('section');
+                        const questionId = $(this).data('question');
+                        saveResponse(sectionId, questionId);
+                    }, 1000));
+                }
+            });
+        }
+    });
+
+    function scheduleSave(element) {
+        if (isSubmitted) return; // Don't save if submitted
+
+        const $input = $(element);
+        const sectionId = $input.data('section');
+        const questionId = $input.data('question');
+        const key = `${sectionId}_${questionId}`;
+
+        // Clear existing timeout for this question
+        if (saveTimeouts[key]) {
+            clearTimeout(saveTimeouts[key]);
+        }
+
+        // Show "Saving..." indicator
+        showSavingIndicator(sectionId, questionId);
+
+        // Set new timeout
+        saveTimeouts[key] = setTimeout(() => {
+            saveResponse(sectionId, questionId);
+        }, SAVE_DELAY);
+    }
+
+    function showSavingIndicator(sectionId, questionId) {
+        if (isSubmitted) return;
+        const $indicator = $(`#question-${sectionId}-${questionId}-status`);
+        $indicator.html('<small class="text-warning"><i class="fas fa-spinner fa-spin"></i> Saving...</small>');
+        $indicator.fadeIn(200);
+    }
+
+    function showSavedIndicator(sectionId, questionId) {
+        if (isSubmitted) return;
+        const $indicator = $(`#question-${sectionId}-${questionId}-status`);
+        $indicator.html('<small class="text-success"><i class="fas fa-check"></i> Saved</small>');
+
+        // Hide after 2 seconds
+        setTimeout(() => {
+            $indicator.fadeOut(1000);
+        }, 2000);
+    }
+
+    function saveResponse(sectionId, questionId) {
+        if (isSubmitted) {
+            showError('This audit has been submitted and cannot be modified.');
+            return;
+        }
+
+        if (isSaving) {
+            setTimeout(() => saveResponse(sectionId, questionId), 500);
+            return;
+        }
+
+        isSaving = true;
+
+        // Find the correct inputs within the current tab
+        const $sectionTab = $(`#nav-${sectionId}`);
+        const scoredPoints = $sectionTab.find(`.score-input[data-section="${sectionId}"][data-question="${questionId}"]`).val();
+        const comments = $sectionTab.find(`.comments-input[data-section="${sectionId}"][data-question="${questionId}"]`).val();
+
+        $.ajax({
+            url: "{% url 'core:save_response' %}",
+            type: "POST",
+            headers: {'X-CSRFToken': csrftoken},
+            data: {
+                'audit_id': {{ audit.id }},
+                'section_id': sectionId,
+                'question_id': questionId,
+                'scored_points': scoredPoints || 0,
+                'comments': comments || ''
+            },
+            success: function(response) {
+                isSaving = false;
+
+                if (response.success) {
+                    showSavedIndicator(sectionId, questionId);
+
+                    const $sectionStatus = $(`#section-${sectionId}-status`);
+                    $sectionStatus.fadeIn(200);
+                    setTimeout(() => $sectionStatus.fadeOut(1000), 1500);
+
+                    loadProgress();
+
+                    const $questionCard = $(`#question-${sectionId}-${questionId}`);
+                    if (parseFloat(scoredPoints) === 0) {
+                        $questionCard.addClass('border-warning');
+                    } else {
+                        $questionCard.removeClass('border-warning');
+                    }
+                } else {
+                    showError('Failed to save: ' + response.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                isSaving = false;
+                console.error('Error saving response:', error);
+                showError('Error saving response. Please check your connection.');
+
+                const $indicator = $(`#question-${sectionId}-${questionId}-status`);
+                $indicator.html('<small class="text-danger"><i class="fas fa-exclamation-triangle"></i> Save failed</small>');
+                $indicator.fadeIn(200);
+            }
+        });
+    }
+
+    function loadProgress() {
+        $.ajax({
+            url: "{% url 'core:audit_progress' audit.id %}",
+            type: "GET",
+            success: function(response) {
+                let progressHtml = '';
+
+                if (response.progress && response.progress.length > 0) {
+                    response.progress.forEach(function(section) {
+                        const progressPercent = Math.round(section.percentage);
+                        const sectionScore = section.section_score || 0;
+                        const sectionPercentage = section.section_percentage || 0;
+
+                        progressHtml += `
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <small><strong>${section.section_name}</strong></small>
+                                    <small>${section.answered || 0}/${section.total || 0}</small>
+                                </div>
+                                <div class="progress mb-1" style="height: 8px;">
+                                    <div class="progress-bar" role="progressbar"
+                                         style="width: ${progressPercent}%"
+                                         aria-valuenow="${progressPercent}"
+                                         aria-valuemin="0"
+                                         aria-valuemax="100">
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <small class="text-muted">Score: ${sectionScore.toFixed(2)}</small>
+                                    <small class="text-muted">${sectionPercentage.toFixed(1)}%</small>
+                                </div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    progressHtml = '<div class="alert alert-info">No progress data available</div>';
+                }
+
+                $('#progress-container').html(progressHtml);
+            },
+            error: function(xhr, status, error) {
+                console.error('Error loading progress:', error);
+                $('#progress-container').html('<div class="alert alert-danger">Error loading progress data</div>');
+            }
+        });
+    }
+
+    function submitAudit() {
+        if (isSubmitted) {
+            showError('This audit has already been submitted.');
+            return;
+        }
+
+        if (confirm('Are you sure you want to submit this audit? This action cannot be undone.')) {
+            // Show loading state
+            const $submitBtn = $('button[onclick="submitAudit()"]');
+            const originalText = $submitBtn.html();
+            $submitBtn.html('<i class="fas fa-spinner fa-spin"></i> Submitting...');
+            $submitBtn.prop('disabled', true);
+
+            // First, save any pending changes
+            const pendingSaves = Object.keys(saveTimeouts);
+            if (pendingSaves.length > 0) {
+                pendingSaves.forEach(key => {
+                    const [sectionId, questionId] = key.split('_');
+                    clearTimeout(saveTimeouts[key]);
+                    saveResponse(sectionId, questionId);
+                });
+            }
+
+            setTimeout(() => {
+                $.ajax({
+                    url: "{% url 'core:submit_audit' audit.id %}",
+                    type: "POST",
+                    headers: {'X-CSRFToken': csrftoken},
+                    success: function(response) {
+                        if (response.success) {
+                            showSuccess(`
+                                Audit submitted successfully!<br><br>
+                                <strong>Total Score:</strong> ${response.total_score.toFixed(2)}<br>
+                                <strong>Percentage:</strong> ${response.total_percentage.toFixed(1)}%<br>
+                                <strong>Grade:</strong> ${response.grade}<br><br>
+                                Redirecting to results page...
+                            `);
+
+                            // Disable form and redirect
+                            disableForm();
+                            setTimeout(function() {
+                                window.location.href = "{% url 'core:audit_results' audit.id %}";
+                            }, 3000);
+                        } else {
+                            showError(response.message);
+                            $submitBtn.html(originalText);
+                            $submitBtn.prop('disabled', false);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error submitting audit:', error);
+                        showError('Error submitting audit. Please try again.');
+                        $submitBtn.html(originalText);
+                        $submitBtn.prop('disabled', false);
+                    }
+                });
+            }, 1000);
+        }
+    }
+
+    function disableForm() {
+        // Disable all inputs
+        $('.score-input, .comments-input').prop('readonly', true).addClass('bg-light');
+        $('.nav-link').removeAttr('data-bs-toggle').css('cursor', 'not-allowed');
+        $('button[onclick="submitAudit()"]').prop('disabled', true).html('<i class="fas fa-check"></i> Submitted');
+    }
+
+    function showSuccess(message) {
+        $('#successMessage').html(message);
+        $('#successModal').modal('show');
+    }
+
+    function showError(message) {
+        $('#errorMessage').text(message);
+        $('#errorModal').modal('show');
+    }
+
+    // Keyboard shortcuts (only for editable mode)
+    $(document).keydown(function(e) {
+        if (isSubmitted) return;
+
+        if (e.ctrlKey && e.key === 's') {
+            e.preventDefault();
+            const activeTab = $('.tab-pane.active');
+            const sectionId = activeTab.attr('id').replace('nav-', '');
+
+            activeTab.find('.score-input, .comments-input').each(function() {
+                const questionId = $(this).data('question');
+                saveResponse(sectionId, questionId);
+            });
+
+            const $saveStatus = $('#save-status');
+            $('#save-message').text('All changes in current section saved!');
+            $saveStatus.fadeIn(200);
+            setTimeout(() => $saveStatus.fadeOut(1000), 2000);
+        }
+    });
+</script>
+
+<style>
+    .save-status-indicator {
+        transition: all 0.3s ease;
+    }
+
+    .question-card {
+        transition: all 0.3s ease;
+    }
+
+    .question-card.border-warning {
+        border-left: 4px solid #ffc107 !important;
+    }
+
+    .critical-question {
+        border-left: 4px solid #dc3545 !important;
+    }
+
+    /* Read-only styles */
+    .bg-light {
+        background-color: #f8f9fa !important;
+    }
+
+    .form-control[readonly] {
+        background-color: #f8f9fa !important;
+        border-color: #dee2e6;
+    }
+</style>
+{% endblock %}
