@@ -1,10 +1,5 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-from django.core.validators import RegexValidator
-from .models import User
-
-from django import forms
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm, SetPasswordForm
 from django.core.validators import RegexValidator
 from .models import User
 
@@ -78,7 +73,7 @@ class UserRegistrationForm(UserCreationForm):
                               'first_name', 'last_name', 'designation', 'department', 'phone_number']:
                 field.widget.attrs['class'] = 'form-control'
 
-            # Set specific placeholders - FIXED: Don't use field.label.lower() as it might be None
+            # Set specific placeholders
             if field_name == 'username':
                 field.widget.attrs['placeholder'] = 'Choose a username'
             elif field_name == 'email':
@@ -218,78 +213,34 @@ class UserProfileForm(forms.ModelForm):
         return phone_number
 
 
-class UserProfileForm(forms.ModelForm):
-    # Custom fields with improved styling
-    email = forms.EmailField(
-        required=True,
-        widget=forms.EmailInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'your.email@mcdonalds.com'
-        })
-    )
-
-    designation = forms.CharField(
-        max_length=100,
-        required=False,
+class CustomPasswordResetForm(forms.Form):
+    username = forms.CharField(
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Quality Auditor'
+            'placeholder': 'Enter your username'
         })
     )
 
-    department = forms.CharField(
-        max_length=100,
-        required=False,
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Quality Assurance'
-        })
-    )
+    def clean_username(self):
+        username = self.cleaned_data.get('username')
+        if not User.objects.filter(username=username).exists():
+            raise forms.ValidationError("User with this username does not exist.")
+        return username
 
-    phone_number = forms.CharField(
-        max_length=12,
-        required=False,
-        validators=[RegexValidator(
-            regex=r'^03\d{2}-?\d{7}$',
-            message='Enter a valid Pakistani mobile number (e.g., 0300-1234567)'
-        )],
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': '0300-1234567'
-        })
-    )
 
+class CustomSetPasswordForm(SetPasswordForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Add Bootstrap classes to all fields
-        for field_name, field in self.fields.items():
-            if field_name not in ['role']:  # Role is handled separately
-                field.widget.attrs['class'] = 'form-control'
+        # Add Bootstrap styling to password fields
+        self.fields['new_password1'].widget.attrs.update({
+            'class': 'form-control',
+            'placeholder': 'Enter new password'
+        })
+        self.fields['new_password2'].widget.attrs.update({
+            'class': 'form-control',
+            'placeholder': 'Confirm new password'
+        })
 
-            # Add specific placeholders
-            if field_name == 'username':
-                field.widget.attrs['placeholder'] = 'Enter username'
-            elif field_name == 'first_name':
-                field.widget.attrs['placeholder'] = 'Enter first name'
-            elif field_name == 'last_name':
-                field.widget.attrs['placeholder'] = 'Enter last name'
-
-    class Meta:
-        model = User
-        fields = [
-            'username', 'email', 'first_name', 'last_name',
-            'designation', 'department', 'phone_number'
-        ]
-
-    def clean_email(self):
-        email = self.cleaned_data.get('email')
-        if User.objects.filter(email=email).exclude(pk=self.instance.pk).exists():
-            raise forms.ValidationError("This email is already registered.")
-        return email
-
-    def clean_phone_number(self):
-        phone_number = self.cleaned_data.get('phone_number')
-        if phone_number and User.objects.filter(phone_number=phone_number).exclude(pk=self.instance.pk).exists():
-            raise forms.ValidationError("This phone number is already registered.")
-        return phone_number
+        # Remove help text
+        self.fields['new_password1'].help_text = ''

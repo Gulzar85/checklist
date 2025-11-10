@@ -1,5 +1,4 @@
 {% extends 'base.html' %}
-{% load crispy_forms_tags %}
 
 {% block title %}Register - McDonald's Audit System{% endblock %}
 
@@ -35,8 +34,11 @@
                                 <span class="input-group-text bg-light border-end-0">
                                     <i class="bi bi-person text-muted"></i>
                                 </span>
-                                <input type="text" name="username" class="form-control" placeholder="Choose username" required>
+                                {{ form.username }}
                             </div>
+                            {% if form.username.errors %}
+                                <div class="text-danger small">{{ form.username.errors }}</div>
+                            {% endif %}
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label text-danger fw-bold">Email</label>
@@ -44,8 +46,11 @@
                                 <span class="input-group-text bg-light border-end-0">
                                     <i class="bi bi-envelope text-muted"></i>
                                 </span>
-                                <input type="email" name="email" class="form-control" placeholder="your@email.com" required>
+                                {{ form.email }}
                             </div>
+                            {% if form.email.errors %}
+                                <div class="text-danger small">{{ form.email.errors }}</div>
+                            {% endif %}
                         </div>
                     </div>
 
@@ -56,8 +61,11 @@
                                 <span class="input-group-text bg-light border-end-0">
                                     <i class="bi bi-lock text-muted"></i>
                                 </span>
-                                <input type="password" name="password1" class="form-control" placeholder="Create password" required>
+                                {{ form.password1 }}
                             </div>
+                            {% if form.password1.errors %}
+                                <div class="text-danger small">{{ form.password1.errors }}</div>
+                            {% endif %}
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label text-danger fw-bold">Confirm Password</label>
@@ -65,30 +73,45 @@
                                 <span class="input-group-text bg-light border-end-0">
                                     <i class="bi bi-lock-fill text-muted"></i>
                                 </span>
-                                <input type="password" name="password2" class="form-control" placeholder="Confirm password" required>
+                                {{ form.password2 }}
                             </div>
+                            {% if form.password2.errors %}
+                                <div class="text-danger small">{{ form.password2.errors }}</div>
+                            {% endif %}
                         </div>
                     </div>
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label text-danger fw-bold">First Name</label>
-                            <input type="text" name="first_name" class="form-control" placeholder="First name">
+                            {{ form.first_name }}
+                            {% if form.first_name.errors %}
+                                <div class="text-danger small">{{ form.first_name.errors }}</div>
+                            {% endif %}
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label text-danger fw-bold">Last Name</label>
-                            <input type="text" name="last_name" class="form-control" placeholder="Last name">
+                            {{ form.last_name }}
+                            {% if form.last_name.errors %}
+                                <div class="text-danger small">{{ form.last_name.errors }}</div>
+                            {% endif %}
                         </div>
                     </div>
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label text-danger fw-bold">Designation</label>
-                            <input type="text" name="designation" class="form-control" placeholder="Your designation">
+                            {{ form.designation }}
+                            {% if form.designation.errors %}
+                                <div class="text-danger small">{{ form.designation.errors }}</div>
+                            {% endif %}
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label text-danger fw-bold">Department</label>
-                            <input type="text" name="department" class="form-control" placeholder="Your department">
+                            {{ form.department }}
+                            {% if form.department.errors %}
+                                <div class="text-danger small">{{ form.department.errors }}</div>
+                            {% endif %}
                         </div>
                     </div>
 
@@ -98,8 +121,11 @@
                             <span class="input-group-text bg-light border-end-0">
                                 <i class="bi bi-phone text-muted"></i>
                             </span>
-                            <input type="tel" name="phone_number" class="form-control" placeholder="0300-1234567">
+                            {{ form.phone_number }}
                         </div>
+                        {% if form.phone_number.errors %}
+                            <div class="text-danger small">{{ form.phone_number.errors }}</div>
+                        {% endif %}
                         <small class="text-muted">Format: 03XX-XXXXXXX</small>
                     </div>
 
@@ -138,27 +164,4 @@
         </div>
     </div>
 </div>
-
-<style>
-    .min-vh-100 {
-        min-height: 100vh;
-    }
-
-    input[type="text"], input[type="email"], input[type="password"], input[type="tel"] {
-        border: 2px solid #e9ecef;
-        border-radius: 8px;
-        padding: 12px;
-        transition: all 0.3s ease;
-    }
-
-    input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focus, input[type="tel"]:focus {
-        border-color: var(--mcd-red);
-        box-shadow: 0 0 0 0.2rem rgba(255, 0, 0, 0.25);
-    }
-
-    .input-group-text {
-        border-radius: 8px 0 0 8px !important;
-        border-right: none;
-    }
-</style>
 {% endblock %}

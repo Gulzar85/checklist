@@ -1,15 +1,18 @@
 from core.models import Restaurant, Audit
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.views import LoginView
+from django.contrib.auth.views import LoginView, LogoutView
+from django.contrib.messages.views import SuccessMessageMixin
 from django.db.models import Avg
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
-from django.views.generic import CreateView
-from django.views.generic import UpdateView
+from django.views.generic import CreateView, UpdateView, FormView, TemplateView
+from django.contrib.auth.models import User
+import secrets
+import string
 
-from .forms import UserProfileForm
-from .forms import UserRegistrationForm, CustomAuthenticationForm
+from .forms import UserProfileForm, UserRegistrationForm, CustomAuthenticationForm, CustomPasswordResetForm, \
+    CustomSetPasswordForm
 from .models import User
 
 
@@ -26,6 +29,14 @@ class CustomLoginView(LoginView):
         return super().form_invalid(form)
 
 
+class CustomLogoutView(LogoutView):
+    next_page = reverse_lazy('accounts:login')
+
+    def dispatch(self, request, *args, **kwargs):
+        messages.success(request, 'Successfully logged out!')
+        return super().dispatch(request, *args, **kwargs)
+
+
 class UserRegistrationView(CreateView):
     model = User
     form_class = UserRegistrationForm
@@ -40,10 +51,6 @@ class UserRegistrationView(CreateView):
     def form_invalid(self, form):
         messages.error(self.request, 'Please correct the errors below.')
         return super().form_invalid(form)
-
-
-def dashboard(request):
-    return render(request, 'accounts/dashboard.html')
 
 
 class UserProfileView(LoginRequiredMixin, UpdateView):
@@ -75,6 +82,71 @@ class UserProfileView(LoginRequiredMixin, UpdateView):
 
     def form_valid(self, form):
         messages.success(self.request, 'Profile updated successfully!')
-        return super(
+        return super().form_valid(form)
 
-        ).form_valid(form)
+
+class PasswordResetView(FormView):
+    template_name = 'accounts/password_reset.html'
+    form_class = CustomPasswordResetForm
+    success_url = reverse_lazy('accounts:password_reset_done')
+
+    def form_valid(self, form):
+        username = form.cleaned_data['username']
+        try:
+            user = User.objects.get(username=username)
+
+            # Generate a random password
+            alphabet = string.ascii_letters + string.digits
+            new_password = ''.join(secrets.choice(alphabet) for i in range(12))
+
+            # Set the new password
+            user.set_password(new_password)
+            user.save()
+
+            # Store the new password in session to display on the next page
+            self.request.session['new_password'] = new_password
+            self.request.session['reset_username'] = username
+
+            messages.success(
+                self.request,
+                f"Password reset successful for user: {username}"
+            )
+
+        except User.DoesNotExist:
+            form.add_error('username', 'User with this username does not exist.')
+            return self.form_invalid(form)
+
+        return super().form_valid(form)
+
+
+class PasswordResetDoneView(TemplateView):
+    template_name = 'accounts/password_reset_done.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['new_password'] = self.request.session.get('new_password', '')
+        context['username'] = self.request.session.get('reset_username', '')
+
+        # Clear the session data
+        if 'new_password' in self.request.session:
+            del self.request.session['new_password']
+        if 'reset_username' in self.request.session:
+            del self.request.session['reset_username']
+
+        return context
+
+
+class PasswordChangeView(LoginRequiredMixin, SuccessMessageMixin, FormView):
+    template_name = 'accounts/password_change.html'
+    form_class = CustomSetPasswordForm
+    success_url = reverse_lazy('accounts:profile')
+    success_message = "Password changed successfully!"
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
+    def form_valid(self, form):
+        form.save()
+        return super().form_valid(form)
