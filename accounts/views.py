@@ -26,6 +26,8 @@ class CustomLoginView(LoginView):
 
     def form_invalid(self, form):
         messages.error(self.request, 'Invalid username or password. Please try again.')
+        # Log the error for debugging
+        print(f"Login failed for user: {form.cleaned_data.get('username', 'unknown')}")
         return super().form_invalid(form)
 
 

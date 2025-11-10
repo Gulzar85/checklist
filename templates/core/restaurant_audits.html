@@ -1,0 +1,280 @@
+{% extends 'base.html' %}
+
+{% load static %}
+{% load custom_filters %} {# For score_badge_class and grade_badge_class #}
+
+{% block title %}{{ restaurant.name }} - Audits{% endblock %}
+
+{% block content %}
+<div class="container">
+
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+        <div>
+            <h1 class="h2 mcd-text-red">
+                <i class="fas fa-store" aria-hidden="true"></i>
+                {{ restaurant.name }}
+            </h1>
+            <p class="text-muted mb-0">
+                <i class="fas fa-code" aria-hidden="true"></i> {{ restaurant.code }}
+                | <i class="fas fa-map-marker-alt" aria-hidden="true"></i> {{ restaurant.location }}
+            </p>
+        </div>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{% url 'core:create_audit' %}" class="btn mcd-btn-primary"
+               aria-label="Create new audit">
+                <i class="fas fa-plus-circle"></i> New Audit
+            </a>
+            <a href="{% url 'core:dashboard' %}" class="btn mcd-btn-secondary ms-2" aria-label="Back to dashboard">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Restaurant Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body mcd-bg-red text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="card-title">{{ total_audits }}</h3>
+                            <p class="card-text mb-0">Total Audits</p>
+                        </div>
+                        <i class="fas fa-clipboard-list fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body bg-success text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="card-title">{{ avg_score|floatformat:1 }}%</h3>
+                            <p class="card-text mb-0">Average Score</p>
+                        </div>
+                        <i class="fas fa-chart-line fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body bg-warning text-dark">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="card-title">{{ grade_a_count }}</h3>
+                            <p class="card-text mb-0">A Grade Audits</p>
+                        </div>
+                        <i class="fas fa-award fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body bg-info text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="card-title">
+                                {% if latest_audit %}
+                                {{ latest_audit.audit_date|date:"M d, Y" }}
+                                {% else %}
+                                N/A
+                                {% endif %}
+                            </h3>
+                            <p class="card-text mb-0">Last Audit</p>
+                        </div>
+                        <i class="fas fa-calendar-alt fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audits Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header mcd-bg-red text-white">
+            <h5 class="mb-0"><i class="fas fa-clipboard-list"></i> Audit History</h5>
+        </div>
+        <div class="card-body">
+            {% if audits %}
+            <div class="table-responsive">
+                <table class="table table-hover table-sm">
+                    <thead class="table-light">
+                    <tr>
+                        <th scope="col">Audit Date</th>
+                        <th scope="col">Auditor</th>
+                        <th scope="col">Overall Score</th>
+                        <th scope="col">Grade</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for audit in audits %}
+                    <tr>
+                        <td>
+                            <strong>{{ audit.audit_date|date:"M d, Y" }}</strong>
+                            {% if audit.created_at %}
+                            <br><small class="text-muted">{{ audit.created_at|date:"h:i A" }}</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {{ audit.auditor_name.get_full_name|default:audit.auditor_name.username }}
+                            <br><small class="text-muted">{{ audit.auditor_name.designation|default:"Auditor" }}</small>
+                        </td>
+                        <td>
+                                <span class="badge {{ audit.total_percentage|score_badge_class }}">
+                                    {{ audit.total_percentage|floatformat:1 }}%
+                                </span>
+                        </td>
+                        <td>
+                                <span class="badge {{ audit.grade|grade_badge_class }}">
+                                    {{ audit.grade }}
+                                </span>
+                        </td>
+                        <td>
+                                <span class="badge {% if audit.is_completed %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                                    {% if audit.is_completed %}Completed{% else %}In Progress{% endif %}
+                                </span>
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm flex-nowrap">
+                                <a href="{% url 'core:audit_results' audit.id %}" class="btn btn-outline-primary"
+                                   title="View Audit">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'core:audit_form' audit.id %}" class="btn btn-outline-success"
+                                   title="Edit Audit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% if user.is_superuser or user.role == 'admin' %}
+                                <button type="button" class="btn btn-outline-danger" title="Delete Audit"
+                                        data-bs-toggle="modal" data-bs-target="#deleteAuditModal"
+                                        data-audit-id="{{ audit.id }}"
+                                        data-restaurant-name="{{ restaurant.name }}"
+                                        data-audit-date="{{ audit.audit_date|date:'M d, Y' }}"
+                                        data-auditor-name="{{ audit.auditor_name.get_full_name|default:audit.auditor_name.username }}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if is_paginated %}
+            <nav aria-label="Audit pagination" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+                    </li>
+                    {% endif %}
+                    {% for num in page_obj.paginator.page_range %}
+                    <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                    </li>
+                    {% endfor %}
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-clipboard-list fa-4x text-muted mb-4"></i>
+                <h4 class="text-muted">No Audits Found</h4>
+                <p class="text-muted mb-4">This restaurant doesn't have any audit records yet.</p>
+                <a href="{% url 'core:create_audit' %}"
+                   class="btn mcd-btn-primary btn-lg">
+                    <i class="fas fa-plus-circle"></i> Conduct First Audit
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Delete Modal -->
+    {% if user.is_superuser or user.role == 'admin' %}
+    <div class="modal fade" id="deleteAuditModal" tabindex="-1" aria-labelledby="deleteAuditModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title text-danger" id="deleteAuditModalLabel">
+                        <i class="fas fa-exclamation-triangle"></i> Confirm Deletion
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="deleteModalBody"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form id="deleteAuditForm" method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> Delete Audit
+                        </button>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+<!-- JS for Modal -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const deleteModal = document.getElementById('deleteAuditModal');
+        if (!deleteModal) return;
+
+        deleteModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            const auditId = button.getAttribute('data-audit-id');
+            const restaurantName = button.getAttribute('data-restaurant-name');
+            const auditDate = button.getAttribute('data-audit-date');
+            const auditorName = button.getAttribute('data-auditor-name');
+
+            const modalBody = document.getElementById('deleteModalBody');
+            modalBody.innerHTML = `
+                <p>Are you sure you want to delete the following audit?</p>
+                <div class="alert alert-warning">
+                    <strong>Restaurant:</strong> ${restaurantName}<br>
+                    <strong>Audit Date:</strong> ${auditDate}<br>
+                    <strong>Auditor:</strong> ${auditorName}
+                </div>
+                <p class="text-danger small">
+                    <i class="fas fa-exclamation-circle"></i>
+                    This action cannot be undone. All audit data will be permanently deleted.
+                </p>
+            `;
+            document.getElementById('deleteAuditForm').action = "{% url 'core:delete_audit' 0 %}".replace('/0/', `/${auditId}/`);
+        });
+    });
+</script>
+
+<style>
+    .card { transition: transform 0.2s ease-in-out; }
+    .card:hover { transform: translateY(-2px); }
+    .table th { border-top: none; font-weight: 600; color: var(--mcd-red); }
+    .btn-group-sm > .btn, .btn-group-sm > button { margin: 0 1px; }
+    .page-link { color: var(--mcd-red); }
+    .page-item.active .page-link { background-color: var(--mcd-red); border-color: var(--mcd-red); }
+</style>
+{% endblock %}

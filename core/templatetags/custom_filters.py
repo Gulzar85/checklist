@@ -121,3 +121,31 @@ def format_percentage(percentage):
     else:
         return 'danger'
 
+
+@register.filter
+def score_badge_class(score):
+    """Return Bootstrap badge class based on score percentage"""
+    try:
+        score = float(score)
+    except (ValueError, TypeError):
+        score = 0
+
+    if score >= 90:
+        return "bg-success"
+    elif score >= 80:
+        return "bg-warning text-dark"
+    return "bg-danger"
+
+@register.filter
+def grade_badge_class(grade):
+    """Return Bootstrap badge class based on grade"""
+    grade = str(grade).upper()
+    if grade == 'A':
+        return "bg-success"
+    elif grade == 'B':
+        return "bg-primary"
+    elif grade == 'C':
+        return "bg-warning text-dark"
+    return "bg-danger"
+
+

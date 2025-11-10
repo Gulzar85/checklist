@@ -1,11 +1,14 @@
-from django.contrib.auth.decorators import login_required
-from django.db import models
+from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import Avg
 from django.http import JsonResponse
-from django.shortcuts import render, get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import render
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
+from django.views.generic import ListView, TemplateView, View, DetailView
 
-from .models import Audit, Restaurant, Section, Question, AuditSection, AuditQuestionResponse
+from .models import Restaurant, Audit, Section, Question, AuditSection, AuditQuestionResponse
 
 
 def audit_results(request, audit_id):
@@ -25,26 +28,43 @@ def audit_results(request, audit_id):
     }
     return render(request, 'core/audit_results.html', context)
 
-@login_required
-def audit_dashboard(request):
-    """Main dashboard"""
-    recent_audits = Audit.objects.all().order_by('-audit_date')[:10]
-    restaurants = Restaurant.objects.all()
 
-    # Calculate some statistics
-    total_audits = Audit.objects.count()
-    if total_audits > 0:
-        avg_score = Audit.objects.aggregate(avg=models.Avg('total_percentage'))['avg'] or 0
-    else:
-        avg_score = 0
+class AuditDashboardView(LoginRequiredMixin, TemplateView):
+    """Main dashboard - Login Required"""
+    template_name = 'core/dashboard.html'
+    login_url = '/accounts/login/'
+    redirect_field_name = 'next'
 
-    context = {
-        'recent_audits': recent_audits,
-        'restaurants': restaurants,
-        'total_audits': total_audits,
-        'avg_score': avg_score,
-    }
-    return render(request, 'core/dashboard.html', context)
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Filter audits by current user if not admin/superuser
+        if self.request.user.is_superuser or self.request.user.role == 'admin':
+            recent_audits = Audit.objects.all().order_by('-audit_date')[:10]
+            total_audits = Audit.objects.count()
+            if total_audits > 0:
+                avg_score = Audit.objects.aggregate(avg=Avg('total_percentage'))['avg'] or 0
+            else:
+                avg_score = 0
+        else:
+            recent_audits = Audit.objects.filter(auditor_name=self.request.user).order_by('-audit_date')[:10]
+            total_audits = recent_audits.count()
+            if total_audits > 0:
+                avg_score = Audit.objects.filter(auditor_name=self.request.user).aggregate(
+                    avg=Avg('total_percentage')
+                )['avg'] or 0
+            else:
+                avg_score = 0
+
+        restaurants = Restaurant.objects.all()
+
+        context.update({
+            'recent_audits': recent_audits,
+            'restaurants': restaurants,
+            'total_audits': total_audits,
+            'avg_score': avg_score,
+        })
+        return context
 
 
 def create_audit(request):
@@ -53,7 +73,7 @@ def create_audit(request):
         restaurant_id = request.POST.get('restaurant')
         audit_date = request.POST.get('audit_date')
         manager_name = request.POST.get('manager_name')
-        #auditor_name = request.POST.get('auditor_name')
+        # auditor_name = request.POST.get('auditor_name')
 
         restaurant = get_object_or_404(Restaurant, id=restaurant_id)
 
@@ -74,14 +94,40 @@ def create_audit(request):
     return render(request, 'core/create_audit.html', context)
 
 
-def audit_list(request):
-    """List all audits"""
-    audits = Audit.objects.all().order_by('-audit_date')
+class AuditListView(LoginRequiredMixin, ListView):
+    """List all audits with user filtering - Login Required"""
+    model = Audit
+    template_name = 'core/audit_list.html'
+    context_object_name = 'audits'
+    paginate_by = 20
+    ordering = ['-audit_date']
+    login_url = '/accounts/login/'
+    redirect_field_name = 'next'
 
-    context = {
-        'audits': audits
-    }
-    return render(request, 'core/audit_list.html', context)
+    def get_queryset(self):
+        queryset = super().get_queryset()
+
+        # Filter by restaurant if provided
+        restaurant_id = self.request.GET.get('restaurant')
+        if restaurant_id:
+            queryset = queryset.filter(restaurant_id=restaurant_id)
+
+        # Filter by current user if not admin/superuser
+        if not (self.request.user.is_superuser or self.request.user.role == 'admin'):
+            queryset = queryset.filter(auditor_name=self.request.user)
+
+        return queryset.select_related('restaurant', 'auditor_name')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['restaurants'] = Restaurant.objects.all()
+
+        # Add filter information
+        restaurant_id = self.request.GET.get('restaurant')
+        if restaurant_id:
+            context['selected_restaurant'] = get_object_or_404(Restaurant, id=restaurant_id)
+
+        return context
 
 
 # views.py
@@ -247,3 +293,75 @@ def audit_progress(request, audit_id):
         })
 
     return JsonResponse({'progress': progress_data})
+
+
+class RestaurantAuditsView(LoginRequiredMixin, ListView):
+    """Restaurant audits view - Login Required"""
+    template_name = 'core/restaurant_audits.html'
+    context_object_name = 'audits'
+    paginate_by = 10
+    login_url = '/accounts/login/'
+    redirect_field_name = 'next'
+
+    def get_queryset(self):
+        self.restaurant = get_object_or_404(Restaurant, pk=self.kwargs['restaurant_id'])
+
+        # Filter audits by current user if not admin/superuser
+        if self.request.user.is_superuser or self.request.user.role == 'admin':
+            return Audit.objects.filter(restaurant=self.restaurant).select_related('auditor_name').order_by(
+                '-audit_date')
+        else:
+            return Audit.objects.filter(
+                restaurant=self.restaurant,
+                auditor_name=self.request.user
+            ).select_related('auditor_name').order_by('-audit_date')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['restaurant'] = self.restaurant
+
+        # Add statistics
+        audits = self.get_queryset()
+        context['total_audits'] = audits.count()
+        if audits.exists():
+            context['avg_score'] = audits.aggregate(avg=Avg('total_percentage'))['avg']
+            context['latest_audit'] = audits.first()
+            context['grade_a_count'] = audits.filter(grade='A').count()
+        else:
+            context['avg_score'] = 0
+            context['latest_audit'] = None
+            context['grade_a_count'] = 0
+
+        # Add user permissions for template
+        context['user_can_delete'] = self.request.user.is_superuser or self.request.user.role == 'admin'
+
+        return context
+
+
+class DeleteAuditView(LoginRequiredMixin, View):
+    """Delete audit - Login Required"""
+    login_url = '/accounts/login/'
+    redirect_field_name = 'next'
+
+    def post(self, request, audit_id):
+        # Validate user access to audit
+        if request.user.is_superuser or request.user.role == 'admin':
+            audit = get_object_or_404(Audit, id=audit_id)
+        else:
+            audit = get_object_or_404(Audit, id=audit_id, auditor_name=request.user)
+
+        restaurant_id = audit.restaurant.id
+        audit_name = f"{audit.restaurant.name} - {audit.audit_date}"
+
+        # Delete the audit
+        audit.delete()
+
+        messages.success(request, f"Audit '{audit_name}' has been deleted successfully.")
+
+        # Redirect back to restaurant audits page
+        return redirect('core:restaurant_audits', restaurant_id=restaurant_id)
+
+    def get(self, request, audit_id):
+        # For safety, only allow POST requests for deletion
+        return redirect('core:dashboard')
+

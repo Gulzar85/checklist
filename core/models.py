@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models import Sum
-
+from django.utils import timezone
 User = get_user_model()
 
 
@@ -47,16 +47,40 @@ class Audit(models.Model):
                                                verbose_name="Previous Audit Score")
     previous_auditor = models.CharField(max_length=255, blank=True, verbose_name="Previous Auditor Name")
 
+    # Status fields
+    is_completed = models.BooleanField(default=False, verbose_name="Audit Completed")
+    is_submitted = models.BooleanField(default=False, verbose_name="Audit Submitted")
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    submitted_at = models.DateTimeField(null=True, blank=True, verbose_name="Submitted At")
+    completed_at = models.DateTimeField(null=True, blank=True, verbose_name="Completed At")
 
     class Meta:
         verbose_name = "Audit"
         verbose_name_plural = "Audits"
         ordering = ['-audit_date']
+        indexes = [
+            models.Index(fields=['restaurant', 'audit_date']),
+            models.Index(fields=['auditor_name', 'audit_date']),
+            models.Index(fields=['grade']),
+            models.Index(fields=['is_completed']),
+        ]
 
     def __str__(self):
         return f"{self.restaurant.name} - {self.audit_date} - {self.grade}"
+
+    def save(self, *args, **kwargs):
+        """Save method with automatic timestamp updates"""
+        # Set submitted_at when audit is first submitted
+        if self.is_submitted and not self.submitted_at:
+            self.submitted_at = timezone.now()
+
+        # Set completed_at when audit is first completed
+        if self.is_completed and not self.completed_at:
+            self.completed_at = timezone.now()
+
+        super().save(*args, **kwargs)
 
     def calculate_totals(self):
         """کل اسکور کا حساب لگاتا ہے"""

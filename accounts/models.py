@@ -1,5 +1,4 @@
 import re
-
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import RegexValidator
 from django.db import models
@@ -20,15 +19,18 @@ class User(AbstractUser):
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='auditor')
     designation = models.CharField(max_length=100, blank=True, null=True)
     department = models.CharField(max_length=100, blank=True, null=True)
-    phone_number = models.CharField(max_length=12, blank=True, null=True, validators=[mobile_validator], )
+    phone_number = models.CharField(max_length=12, blank=True, null=True, validators=[mobile_validator])
 
     def save(self, *args, **kwargs):
+        # Format phone number before saving
         if self.phone_number:
             # remove any non-digit characters
             digits = re.sub(r'\D', '', self.phone_number)
             # if valid length and starts with 03, format it
             if re.match(r'^03\d{9}$', digits):
                 self.phone_number = f"{digits[:4]}-{digits[4:]}"
+
+        # Call the parent save method which handles password hashing
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -55,11 +57,9 @@ class User(AbstractUser):
             return self.username
 
     def get_absolute_url(self):
-        # You can later make this dynamic per role if needed
-        return reverse('auditor_detail', args=[str(self.id)])
+        return reverse('accounts:profile')
 
     def is_admin(self):
-        # Either explicit admin role or Django superuser flag
         return self.role == 'admin' or self.is_superuser
 
     def is_auditor(self):
