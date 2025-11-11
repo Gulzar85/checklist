@@ -85,7 +85,7 @@
     </div>
 
     <div class="row">
-        <!-- Quick Actions -->
+        <!-- Quick Actions & User Profile -->
         <div class="col-md-4 mb-4">
             <div class="card border-0 shadow-sm">
                 <div class="card-header mcd-bg-red text-white">
@@ -99,7 +99,29 @@
                         <a href="{% url 'core:audit_list' %}" class="btn mcd-btn-secondary">
                             <i class="fas fa-list"></i> View All Audits
                         </a>
+                        {% if user.is_superuser or user.role == 'admin' %}
+                        <a href="/admin/" class="btn btn-outline-danger" target="_blank">
+                            <i class="fas fa-cog"></i> Admin Panel
+                        </a>
+                        {% endif %}
                     </div>
+                </div>
+            </div>
+
+            <!-- User Profile Card -->
+            <div class="card border-0 shadow-sm mt-4">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <div style="width: 80px; height: 80px; background: var(--mcd-yellow); border-radius: 50%; margin: 0 auto; display: flex; align-items: center; justify-content: center;">
+                            <span style="color: var(--mcd-red); font-weight: bold; font-size: 2rem;">M</span>
+                        </div>
+                    </div>
+                    <h6 class="text-danger">{{ user.get_full_name|default:user.username }}</h6>
+                    <p class="text-muted small mb-2">{{ user.designation|default:"Quality Auditor" }}</p>
+                    <p class="text-muted small mb-3">{{ user.department|default:"Quality Assurance" }}</p>
+                    <a href="{% url 'accounts:profile' %}" class="btn btn-outline-danger btn-sm">
+                        <i class="fas fa-user-edit"></i> Edit Profile
+                    </a>
                 </div>
             </div>
         </div>
@@ -120,6 +142,7 @@
                                 <th>Date</th>
                                 <th>Score</th>
                                 <th>Grade</th>
+                                <th>Status</th>
                                 <th>Actions</th>
                             </tr>
                             </thead>
@@ -129,28 +152,38 @@
                                 <td>
                                     <strong>{{ audit.restaurant.name }}</strong>
                                     <br>
-                                    <small class="text-muted">{{ audit.auditor_name }}</small>
+                                    <small class="text-muted">
+                                        {{ audit.auditor_name.get_full_name|default:audit.auditor_name.username }}
+                                    </small>
                                 </td>
                                 <td>{{ audit.audit_date|date:"M d, Y" }}</td>
                                 <td>
-                                        <span class="badge {% if audit.total_percentage >= 90 %}bg-success{% elif audit.total_percentage >= 80 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
-                                            {{ audit.total_percentage|floatformat:1 }}%
-                                        </span>
+                                    <span class="badge {% if audit.total_percentage >= 90 %}bg-success{% elif audit.total_percentage >= 80 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                                        {{ audit.total_percentage|floatformat:1 }}%
+                                    </span>
                                 </td>
                                 <td>
-                                        <span class="badge {% if audit.grade == 'A' %}bg-success{% elif audit.grade == 'B' %}bg-primary{% elif audit.grade == 'C' %}bg-warning text-dark{% else %}bg-danger{% endif %}">
-                                            {{ audit.grade }}
-                                        </span>
+                                    <span class="badge {% if audit.grade == 'A' %}bg-success{% elif audit.grade == 'B' %}bg-primary{% elif audit.grade == 'C' %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                                        {{ audit.grade }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if audit.is_completed %}
+                                    <span class="badge bg-success">Completed</span>
+                                    {% else %}
+                                    <span class="badge bg-warning text-dark">Draft</span>
+                                    {% endif %}
                                 </td>
                                 <td>
                                     <div class="btn-group btn-group-sm">
-                                        <a href="{% url 'core:audit_results' audit.id %}"
-                                           class="btn btn-outline-primary">
+                                        <a href="{% url 'core:audit_results' audit.id %}" class="btn btn-outline-primary" title="View Results">
                                             <i class="fas fa-eye"></i>
                                         </a>
-                                        <a href="{% url 'core:audit_form' audit.id %}" class="btn btn-outline-success">
+                                        {% if not audit.is_completed %}
+                                        <a href="{% url 'core:audit_form' audit.id %}" class="btn btn-outline-success" title="Continue Audit">
                                             <i class="fas fa-edit"></i>
                                         </a>
+                                        {% endif %}
                                     </div>
                                 </td>
                             </tr>
@@ -175,7 +208,7 @@
         </div>
     </div>
 
-    <!-- In your dashboard.html - Restaurant List Section -->
+    <!-- Restaurant List Section -->
     <div class="row mt-4">
         <div class="col-12">
             <div class="card border-0 shadow-sm">
@@ -195,16 +228,14 @@
                                         </div>
                                     </div>
                                     <h6 class="text-danger mb-1">
-                                        <a href="{% url 'core:restaurant_audits' restaurant.id %}"
-                                           class="text-danger text-decoration-none">
+                                        <a href="{% url 'core:restaurant_audits' restaurant.id %}" class="text-danger text-decoration-none">
                                             {{ restaurant.name }}
                                         </a>
                                     </h6>
                                     <small class="text-muted d-block">{{ restaurant.code }}</small>
                                     <small class="text-muted">{{ restaurant.location }}</small>
                                     <div class="mt-2">
-                                        <a href="{% url 'core:restaurant_audits' restaurant.id %}"
-                                           class="btn btn-sm btn-outline-danger">
+                                        <a href="{% url 'core:restaurant_audits' restaurant.id %}" class="btn btn-sm btn-outline-danger">
                                             <i class="fas fa-clipboard-list"></i> View Audits
                                         </a>
                                     </div>
@@ -229,6 +260,7 @@
             </div>
         </div>
     </div>
+
     <!-- McDonald's Quality Message -->
     <div class="row mt-4">
         <div class="col-12">

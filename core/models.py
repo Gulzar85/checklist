@@ -3,6 +3,7 @@ from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models import Sum
 from django.utils import timezone
+
 User = get_user_model()
 
 
@@ -51,6 +52,7 @@ class Audit(models.Model):
     is_completed = models.BooleanField(default=False, verbose_name="Audit Completed")
     is_submitted = models.BooleanField(default=False, verbose_name="Audit Submitted")
 
+    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     submitted_at = models.DateTimeField(null=True, blank=True, verbose_name="Submitted At")
@@ -101,19 +103,193 @@ class Audit(models.Model):
                 self.total_percentage = 0
 
             # گریڈ کیلکولیشن
-            if self.total_percentage >= 96:
-                self.grade = 'A'
-            elif self.total_percentage >= 90:
-                self.grade = 'B'
-            elif self.total_percentage >= 80:
-                self.grade = 'C'
-            else:
-                self.grade = 'F'
+            self.grade = self.calculate_grade(self.total_percentage)
 
-            self.save()
+            # If all sections are completed, mark audit as completed
+            total_sections = sections.count()
+            completed_sections = sections.filter(is_completed=True).count()
+
+            if total_sections > 0 and completed_sections == total_sections:
+                self.is_completed = True
+            else:
+                self.is_completed = False
+
+            self.save(update_fields=[
+                'total_scored', 'total_possible', 'total_percentage',
+                'grade', 'is_completed', 'updated_at'
+            ])
+
+            return True
 
         except Exception as e:
             print(f"Error calculating audit totals: {e}")
+            return False
+
+    def calculate_grade(self, percentage):
+        """گریڈ کا حساب لگاتا ہے"""
+        if percentage >= 96:
+            return 'A'
+        elif percentage >= 90:
+            return 'B'
+        elif percentage >= 80:
+            return 'C'
+        else:
+            return 'F'
+
+    def get_previous_audit(self):
+        """پچھلا آڈٹ حاصل کرتا ہے"""
+        try:
+            return Audit.objects.filter(
+                restaurant=self.restaurant,
+                audit_date__lt=self.audit_date,
+                is_completed=True
+            ).order_by('-audit_date').first()
+        except Exception as e:
+            print(f"Error getting previous audit: {e}")
+            return None
+
+    def update_previous_audit_info(self):
+        """پچھلے آڈٹ کی معلومات اپڈیٹ کرتا ہے"""
+        previous_audit = self.get_previous_audit()
+        if previous_audit:
+            self.previous_audit_date = previous_audit.audit_date
+            self.previous_audit_score = previous_audit.total_percentage
+            self.previous_auditor = previous_audit.auditor_name.get_full_name() or previous_audit.auditor_name.username
+            self.save(update_fields=[
+                'previous_audit_date', 'previous_audit_score',
+                'previous_auditor', 'updated_at'
+            ])
+
+    def get_progress_percentage(self):
+        """آڈٹ کی ترقی کا فیصد حاصل کرتا ہے"""
+        try:
+            total_questions = 0
+            answered_questions = 0
+
+            for section in self.auditsection_set.all():
+                section_questions = section.auditquestionresponse_set.count()
+                answered_section_questions = section.auditquestionresponse_set.exclude(
+                    scored_points=0
+                ).count()
+
+                total_questions += section_questions
+                answered_questions += answered_section_questions
+
+            if total_questions > 0:
+                return (answered_questions / total_questions) * 100
+            return 0
+        except Exception as e:
+            print(f"Error calculating progress: {e}")
+            return 0
+
+    def get_section_stats(self):
+        """سیکشن کی تفصیلی معلومات حاصل کرتا ہے"""
+        try:
+            sections = self.auditsection_set.select_related('section').all()
+            stats = []
+
+            for audit_section in sections:
+                section_data = {
+                    'section_name': audit_section.section.name,
+                    'answered': audit_section.auditquestionresponse_set.exclude(scored_points=0).count(),
+                    'total': audit_section.auditquestionresponse_set.count(),
+                    'section_score': float(audit_section.scored_points),
+                    'section_percentage': float(audit_section.section_percentage),
+                    'is_completed': audit_section.is_completed
+                }
+                stats.append(section_data)
+
+            return stats
+        except Exception as e:
+            print(f"Error getting section stats: {e}")
+            return []
+
+    def submit_audit(self):
+        """آڈٹ جمع کرتا ہے"""
+        try:
+            # Calculate final totals
+            self.calculate_totals()
+
+            # Update previous audit info
+            self.update_previous_audit_info()
+
+            # Mark as submitted and completed
+            self.is_submitted = True
+            self.is_completed = True
+            self.submitted_at = timezone.now()
+            self.completed_at = timezone.now()
+
+            self.save(update_fields=[
+                'is_submitted', 'is_completed', 'submitted_at',
+                'completed_at', 'updated_at'
+            ])
+
+            return True
+        except Exception as e:
+            print(f"Error submitting audit: {e}")
+            return False
+
+    @property
+    def status(self):
+        """آڈٹ کی حالت حاصل کرتا ہے"""
+        if self.is_completed and self.is_submitted:
+            return "Completed"
+        elif self.is_completed:
+            return "Ready for Submission"
+        elif self.get_progress_percentage() > 0:
+            return "In Progress"
+        else:
+            return "Not Started"
+
+    @property
+    def can_be_submitted(self):
+        """چیک کرتا ہے کہ آیا آڈٹ جمع کیا جا سکتا ہے"""
+        return self.is_completed and not self.is_submitted
+
+    @property
+    def duration(self):
+        """آڈٹ کی مدت حاصل کرتی ہے"""
+        if self.created_at and self.completed_at:
+            return self.completed_at - self.created_at
+        elif self.created_at:
+            return timezone.now() - self.created_at
+        return None
+
+    def get_absolute_url(self):
+        """آڈٹ کا URL حاصل کرتا ہے"""
+        from django.urls import reverse
+        return reverse('core:audit_results', kwargs={'pk': self.pk})
+
+    def check_completion_status(self):
+        """Check karta hai ke audit complete hua hai ya nahi"""
+        try:
+            # Agar koi section nahi hai to incomplete
+            sections = self.auditsection_set.all()
+            if not sections.exists():
+                self.is_completed = False
+                return
+
+            # Har section ke liye check karein
+            all_sections_completed = all(section.is_completed for section in sections)
+
+            # All questions answered check (optional - agar aap chahein)
+            total_questions = AuditQuestionResponse.objects.filter(
+                audit_section__audit=self
+            ).count()
+
+            answered_questions = AuditQuestionResponse.objects.filter(
+                audit_section__audit=self
+            ).exclude(scored_points=0).count()
+
+            # Agar saare sections complete hain aur koi question unanswered nahi hai
+            if all_sections_completed and total_questions > 0 and answered_questions == total_questions:
+                self.is_completed = True
+            else:
+                self.is_completed = False
+
+        except Exception as e:
+            print(f"Error checking completion status: {e}")
+            self.is_completed = False
 
 
 class Section(models.Model):
@@ -155,6 +331,7 @@ class AuditSection(models.Model):
     section_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0,
                                              verbose_name="Section Percentage")
     has_critical_failure = models.BooleanField(default=False, verbose_name="Critical Failure?")
+    is_completed = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = "Audit Section"
@@ -182,6 +359,17 @@ class AuditSection(models.Model):
 
             self.possible_points = total_possible
             self.scored_points = total_scored
+
+            if total_possible > 0:
+                percentage = (total_scored / total_possible) * 100
+                self.section_percentage = round(percentage, 2)
+            else:
+                self.section_percentage = 0
+
+            # Completion status check
+            total_questions = responses.count()
+            answered_questions = responses.exclude(scored_points=0).count()
+            self.is_completed = (total_questions > 0 and answered_questions == total_questions)
 
             # کریٹیکل فیلئرز چیک کریں
             critical_failures = responses.filter(

@@ -3,28 +3,33 @@
 {% block title %}All Audits - QA Audit System{% endblock %}
 
 {% block content %}
-<div class="card">
-    <div class="card-header bg-light d-flex justify-content-between align-items-center">
-        <h4 class="mb-0"><i class="fas fa-list"></i> All Audits</h4>
-        <a href="{% url 'core:create_audit' %}" class="btn btn-primary">
-            <i class="fas fa-plus-circle"></i> New Audit
+<section class="card shadow-sm border-0 mb-4">
+    <!-- Header -->
+    <div class="card-header bg-light d-flex justify-content-between align-items-center flex-wrap">
+        <h4 class="mb-2 mb-md-0 text-dark fw-bold">
+            <i class="fas fa-list mcd-text-red me-2"></i> All Audits
+        </h4>
+        <a href="{% url 'core:create_audit' %}" class="btn mcd-btn-primary">
+            <i class="fas fa-plus-circle me-1"></i> New Audit
         </a>
     </div>
-    <div class="card-body">
+
+    <!-- Table Body -->
+    <div class="card-body" x-data="{ sortColumn: null, sortAsc: true }">
         {% if audits %}
         <div class="table-responsive">
-            <table class="table table-striped table-hover" id="auditsTable">
-                <thead>
+            <table class="table table-hover align-middle" id="auditsTable">
+                <thead class="table-light">
                     <tr>
-                        <th>#</th>
-                        <th>Restaurant</th>
-                        <th>Date</th>
-                        <th>Manager</th>
-                        <th>Auditor</th>
-                        <th>Score</th>
-                        <th>Grade</th>
-                        <th>Status</th>
-                        <th>Actions</th>
+                        <th scope="col" @click="sort('index')"># <i class="fa fa-sort text-muted"></i></th>
+                        <th scope="col" @click="sort('restaurant')">Restaurant <i class="fa fa-sort text-muted"></i></th>
+                        <th scope="col" @click="sort('date')">Date <i class="fa fa-sort text-muted"></i></th>
+                        <th scope="col">Manager</th>
+                        <th scope="col">Auditor</th>
+                        <th scope="col" @click="sort('score')">Score <i class="fa fa-sort text-muted"></i></th>
+                        <th scope="col">Grade</th>
+                        <th scope="col">Status</th>
+                        <th scope="col" class="text-center">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -32,40 +37,50 @@
                     <tr>
                         <td>{{ forloop.counter }}</td>
                         <td>
-                            <strong>{{ audit.restaurant.name }}</strong>
-                            <br>
+                            <strong>{{ audit.restaurant.name }}</strong><br>
                             <small class="text-muted">{{ audit.restaurant.code }}</small>
                         </td>
                         <td>{{ audit.audit_date }}</td>
                         <td>{{ audit.manager_on_duty }}</td>
                         <td>{{ audit.auditor_name }}</td>
                         <td>
-                            <span class="badge {% if audit.total_percentage >= 90 %}bg-success{% elif audit.total_percentage >= 80 %}bg-warning{% else %}bg-danger{% endif %}">
+                            <span class="badge rounded-pill
+                                {% if audit.total_percentage >= 90 %}bg-success
+                                {% elif audit.total_percentage >= 80 %}bg-warning text-dark
+                                {% else %}bg-danger{% endif %}">
                                 {{ audit.total_percentage|floatformat:1 }}%
                             </span>
                             <br>
-                            <small class="text-muted">{{ audit.total_scored|floatformat:1 }}/{{ audit.total_possible|floatformat:1 }}</small>
+                            <small class="text-muted">
+                                {{ audit.total_scored|floatformat:1 }}/{{ audit.total_possible|floatformat:1 }}
+                            </small>
                         </td>
                         <td>
-                            <span class="badge {% if audit.grade == 'A' %}bg-success{% elif audit.grade == 'B' %}bg-primary{% elif audit.grade == 'C' %}bg-warning{% else %}bg-danger{% endif %}">
+                            <span class="badge rounded-pill
+                                {% if audit.grade == 'A' %}bg-success
+                                {% elif audit.grade == 'B' %}bg-primary
+                                {% elif audit.grade == 'C' %}bg-warning text-dark
+                                {% else %}bg-danger{% endif %}">
                                 {{ audit.grade }}
                             </span>
                         </td>
                         <td>
-                            {% if audit.total_percentage > 0 %}
-                            <span class="badge bg-success">Completed</span>
+                            {% if audit.is_completed %}
+                            <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i> Completed</span>
                             {% else %}
-                            <span class="badge bg-secondary">Draft</span>
+                            <span class="badge bg-secondary"><i class="fas fa-pencil-alt me-1"></i> Draft</span>
                             {% endif %}
                         </td>
-                        <td>
-                            <div class="btn-group btn-group-sm">
+                        <td class="text-center">
+                            <div class="btn-group btn-group-sm" role="group" aria-label="Audit actions">
                                 <a href="{% url 'core:audit_results' audit.id %}" class="btn btn-outline-primary" title="View Results">
                                     <i class="fas fa-eye"></i>
                                 </a>
+                                {% if not audit.is_completed %}
                                 <a href="{% url 'core:audit_form' audit.id %}" class="btn btn-outline-success" title="Edit Audit">
                                     <i class="fas fa-edit"></i>
                                 </a>
+                                {% endif %}
                             </div>
                         </td>
                     </tr>
@@ -76,53 +91,55 @@
 
         <!-- Pagination -->
         <nav aria-label="Audit pagination">
-            <ul class="pagination justify-content-center">
-                <!-- Add pagination logic here if needed -->
+            <ul class="pagination justify-content-center mt-3">
                 <li class="page-item disabled">
-                    <a class="page-link" href="#">Showing {{ audits.count }} audits</a>
+                    <a class="page-link bg-light text-dark fw-semibold" href="#">
+                        Showing {{ audits.count }} audit{{ audits.count|pluralize }}
+                    </a>
                 </li>
             </ul>
         </nav>
+
         {% else %}
+        <!-- No Audits Placeholder -->
         <div class="text-center py-5">
             <i class="fas fa-clipboard-list fa-4x text-muted mb-3"></i>
-            <h4 class="text-muted">No Audits Found</h4>
-            <p class="text-muted">You haven't conducted any audits yet.</p>
-            <a href="{% url 'core:create_audit' %}" class="btn btn-primary btn-lg">
-                <i class="fas fa-plus-circle"></i> Create Your First Audit
+            <h4 class="fw-semibold text-secondary">No Audits Found</h4>
+            <p class="text-muted">You haven’t conducted any audits yet.</p>
+            <a href="{% url 'core:create_audit' %}" class="btn mcd-btn-primary btn-lg">
+                <i class="fas fa-plus-circle me-2"></i> Create Your First Audit
             </a>
         </div>
         {% endif %}
     </div>
-</div>
+</section>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    $(document).ready(function() {
-        // Simple sorting functionality
-        $('th').click(function() {
-            const table = $(this).parents('table').eq(0);
-            const rows = table.find('tr:gt(0)').toArray().sort(comparer($(this).index()));
+    $(function() {
+        // Accessible sorting feedback
+        $('th').on('click', function() {
+            const table = $(this).closest('table');
+            const rows = table.find('tbody tr').toArray().sort(comparer($(this).index()));
             this.asc = !this.asc;
-            if (!this.asc) {
-                rows.reverse();
-            }
-            for (let i = 0; i < rows.length; i++) {
-                table.append(rows[i]);
-            }
+            if (!this.asc) rows.reverse();
+            for (let row of rows) table.children('tbody').append(row);
+            $('th i').removeClass('fa-sort-up fa-sort-down').addClass('fa-sort');
+            $(this).find('i').removeClass('fa-sort').addClass(this.asc ? 'fa-sort-up' : 'fa-sort-down');
         });
 
         function comparer(index) {
-            return function(a, b) {
+            return (a, b) => {
                 const valA = getCellValue(a, index);
                 const valB = getCellValue(b, index);
-                return $.isNumeric(valA) && $.isNumeric(valB) ? valA - valB : valA.toString().localeCompare(valB);
+                return $.isNumeric(valA) && $.isNumeric(valB)
+                    ? valA - valB
+                    : valA.localeCompare(valB);
             };
         }
-
         function getCellValue(row, index) {
-            return $(row).children('td').eq(index).text();
+            return $(row).children('td').eq(index).text().trim();
         }
     });
 </script>

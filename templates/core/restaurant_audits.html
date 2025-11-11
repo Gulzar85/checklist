@@ -140,7 +140,7 @@
                         </td>
                         <td>
                                 <span class="badge {% if audit.is_completed %}bg-success{% else %}bg-warning text-dark{% endif %}">
-                                    {% if audit.is_completed %}Completed{% else %}In Progress{% endif %}
+                                    {% if audit.is_completed %}Completed{% else %}Draft{% endif %}
                                 </span>
                         </td>
                         <td>
@@ -149,10 +149,12 @@
                                    title="View Audit">
                                     <i class="fas fa-eye"></i>
                                 </a>
+                                {% if not audit.is_completed %}
                                 <a href="{% url 'core:audit_form' audit.id %}" class="btn btn-outline-success"
                                    title="Edit Audit">
                                     <i class="fas fa-edit"></i>
                                 </a>
+                                {% endif %}
                                 {% if user.is_superuser or user.role == 'admin' %}
                                 <button type="button" class="btn btn-outline-danger" title="Delete Audit"
                                         data-bs-toggle="modal" data-bs-target="#deleteAuditModal"

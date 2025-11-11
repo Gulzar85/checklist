@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Avg
 from django.http import JsonResponse
@@ -66,7 +67,7 @@ class AuditDashboardView(LoginRequiredMixin, TemplateView):
         })
         return context
 
-
+@login_required
 def create_audit(request):
     """Create new audit"""
     if request.method == 'POST':
@@ -129,8 +130,7 @@ class AuditListView(LoginRequiredMixin, ListView):
 
         return context
 
-
-# views.py
+@login_required
 def audit_form(request, audit_id):
     """Main audit form with section-wise questions"""
     audit = get_object_or_404(Audit, id=audit_id)
@@ -181,6 +181,7 @@ def audit_form(request, audit_id):
 
 
 @csrf_exempt
+@login_required
 def save_response(request):
     """Save question response via AJAX"""
     if request.method == 'POST':
@@ -191,13 +192,18 @@ def save_response(request):
             scored_points = request.POST.get('scored_points', '0')
             comments = request.POST.get('comments', '')
 
+            # Validate user access to audit
+            if request.user.is_superuser or request.user.role == 'admin':
+                audit = get_object_or_404(Audit, id=audit_id)
+            else:
+                audit = get_object_or_404(Audit, id=audit_id, auditor_name=request.user)
+
             # Convert to float, handle empty values
             try:
                 scored_points = float(scored_points) if scored_points else 0.0
             except (ValueError, TypeError):
                 scored_points = 0.0
 
-            audit = get_object_or_404(Audit, id=audit_id)
             section = get_object_or_404(Section, id=section_id)
             question = get_object_or_404(Question, id=question_id)
 
@@ -229,15 +235,24 @@ def save_response(request):
                 response.needs_corrective_action = False
             response.save()
 
-            # Refresh section scores
+            # MANUAL CALCULATION (Signals alternative)
+            # Calculate section score
             audit_section.calculate_section_score()
+
+            # Calculate audit totals with completion check
             audit.calculate_totals()
 
             return JsonResponse({
                 'success': True,
                 'message': 'Response saved successfully',
                 'section_score': float(audit_section.scored_points),
-                'section_percentage': float(audit_section.section_percentage)
+                'section_percentage': float(audit_section.section_percentage),
+                'total_score': float(audit.total_scored),
+                'total_percentage': float(audit.total_percentage),
+                'grade': audit.grade,
+                'is_completed': audit.is_completed,
+                'audit_status': audit.status,
+                'progress_percentage': audit.get_progress_percentage()  # Add progress percentage
             })
 
         except Exception as e:
@@ -251,7 +266,7 @@ def save_response(request):
 
     return JsonResponse({'success': False, 'message': 'Invalid request'})
 
-
+@login_required
 def submit_audit(request, audit_id):
     """Final submission of audit"""
     if request.method == 'POST':
@@ -270,7 +285,7 @@ def submit_audit(request, audit_id):
 
     return JsonResponse({'success': False, 'message': 'Invalid request'})
 
-
+@login_required
 def audit_progress(request, audit_id):
     """Get audit progress data"""
     audit = get_object_or_404(Audit, id=audit_id)

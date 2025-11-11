@@ -6,189 +6,182 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}McDonald's Pakistan - QA Audit System{% endblock %}</title>
 
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- SEO Meta -->
+    <meta name="description" content="McDonald's Pakistan Quality Assurance Audit System">
+    <meta name="keywords" content="McDonald's, Pakistan, QA, Audit, System, Quality Assurance">
+    <meta name="author" content="McDonald's Pakistan">
 
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Font Awesome 6 -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+
+    <!-- Bootstrap Icons (Optional) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+    <!-- Alpine.js -->
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+
+    <!-- jQuery (Latest) -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+    <!-- McDonald’s Pakistan Theme -->
     <style>
         :root {
-            --mcd-red: #ff0000;
-            --mcd-yellow: #ffc72c;
-            --mcd-dark-red: #cc0000;
+            --mcd-red: #DA291C;
+            --mcd-yellow: #FFC72C;
+            --mcd-black: #27251F;
+            --mcd-white: #FFFFFF;
         }
 
-        .mcd-bg-red {
-            background-color: var(--mcd-red) !important;
+        body {
+            background-color: var(--mcd-white);
+            color: var(--mcd-black);
+            font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
         }
 
-        .mcd-bg-yellow {
-            background-color: var(--mcd-yellow) !important;
-        }
+        /* Theme Utility Classes */
+        .mcd-bg-red { background-color: var(--mcd-red) !important; }
+        .mcd-bg-yellow { background-color: var(--mcd-yellow) !important; }
+        .mcd-text-red { color: var(--mcd-red) !important; }
+        .mcd-text-yellow { color: var(--mcd-yellow) !important; }
+        .mcd-text-black { color: var(--mcd-black) !important; }
 
-        .mcd-text-red {
-            color: var(--mcd-red) !important;
-        }
-
-        .mcd-text-yellow {
-            color: var(--mcd-yellow) !important;
-        }
-
+        /* Buttons */
         .mcd-btn-primary {
             background-color: var(--mcd-red);
             border-color: var(--mcd-red);
-            color: white;
+            color: var(--mcd-white);
             font-weight: 600;
         }
-
         .mcd-btn-primary:hover {
-            background-color: var(--mcd-dark-red);
-            border-color: var(--mcd-dark-red);
-            color: white;
+            background-color: #b71c11;
+            border-color: #b71c11;
+            color: var(--mcd-white);
         }
 
         .mcd-btn-secondary {
             background-color: var(--mcd-yellow);
             border-color: var(--mcd-yellow);
-            color: #000;
+            color: var(--mcd-black);
             font-weight: 600;
         }
-
         .mcd-btn-secondary:hover {
             background-color: #e6b400;
             border-color: #e6b400;
-            color: #000;
+            color: var(--mcd-black);
         }
 
-        .section-card {
-            border-left: 4px solid #007bff;
-            margin-bottom: 20px;
-        }
-        .critical-question {
-            border-left: 4px solid #dc3545;
-            background-color: #fff5f5;
-        }
-        .progress-section {
-            position: sticky;
-            top: 20px;
-        }
-        .question-card {
-            transition: all 0.3s ease;
-        }
-        .question-card:hover {
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-        .score-badge {
-            font-size: 0.9em;
-        }
+        /* Navbar */
         .navbar-brand {
             font-weight: bold;
+            font-size: 1.1rem;
         }
+        .nav-link {
+            color: var(--mcd-white) !important;
+            transition: 0.2s ease;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: var(--mcd-yellow) !important;
+        }
+
+        /* Card Headers */
         .card-header {
             font-weight: 600;
+            background-color: #f8f9fa;
         }
 
-        .min-vh-100 {
-            min-height: 100vh;
-        }
-
-        input[type="text"], input[type="email"], input[type="password"], input[type="tel"] {
+        /* Inputs */
+        input, select, textarea {
             border: 2px solid #e9ecef;
             border-radius: 8px;
-            padding: 12px;
             transition: all 0.3s ease;
         }
-
-        input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focus, input[type="tel"]:focus {
+        input:focus, select:focus, textarea:focus {
             border-color: var(--mcd-red);
-            box-shadow: 0 0 0 0.2rem rgba(255, 0, 0, 0.25);
+            box-shadow: 0 0 0 0.2rem rgba(218, 41, 28, 0.25);
         }
 
-        .input-group-text {
-            border-radius: 8px 0 0 8px !important;
-            border-right: none;
+        /* Footer */
+        footer {
+            background-color: var(--mcd-black);
+        }
+
+        /* Accessibility & UX */
+        a:focus, button:focus {
+            outline: 2px solid var(--mcd-yellow);
+            outline-offset: 2px;
+        }
+
+        /* Table Enhancements */
+        table th {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        /* Transition Hover Effects */
+        .card, .btn {
+            transition: all 0.2s ease-in-out;
+        }
+        .card:hover {
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
         }
     </style>
 </head>
-<body>
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark mcd-bg-red">
-        <div class="container">
-            <a class="navbar-brand" href="{% url 'core:dashboard' %}">
-                <i class="fas fa-hamburger"></i> McDonald's Pakistan - QA Audit
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto align-items-lg-center">
-                    <!-- Core Navigation -->
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'core:dashboard' %}">
-                            <i class="fas fa-home"></i> Dashboard
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'core:create_audit' %}">
-                            <i class="fas fa-plus-circle"></i> New Audit
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'core:audit_list' %}">
-                            <i class="fas fa-list"></i> All Audits
-                        </a>
-                    </li>
-                    <!-- Divider -->
-                    <li class="nav-item d-none d-lg-block">
-                        <span class="text-light mx-2">|</span>
-                    </li>
 
-                    <!-- User Account Section -->
+<body x-data="{ mobileMenu: false }">
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark mcd-bg-red sticky-top shadow-sm">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="{% url 'core:dashboard' %}">
+                <i class="fas fa-burger me-2"></i> McDonald's QA Audit
+            </a>
+
+            <button class="navbar-toggler border-0" type="button" @click="mobileMenu = !mobileMenu" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <i class="fas fa-bars text-white"></i>
+            </button>
+
+            <div class="collapse navbar-collapse" :class="{'show': mobileMenu}" id="navbarNav">
+                <ul class="navbar-nav ms-auto align-items-lg-center">
+                    <li class="nav-item"><a class="nav-link" href="{% url 'core:dashboard' %}"><i class="fas fa-home me-1"></i> Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'core:create_audit' %}"><i class="fas fa-plus-circle me-1"></i> New Audit</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'core:audit_list' %}"><i class="fas fa-list me-1"></i> All Audits</a></li>
+
                     {% if user.is_authenticated %}
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="userMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="fas fa-user-circle"></i> {{ user.get_full_name|default:user.username }}
+                            <a class="nav-link dropdown-toggle" href="#" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-user-circle me-1"></i> {{ user.get_full_name|default:user.username }}
                             </a>
-                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
-                                <li><a class="dropdown-item" href="{% url 'accounts:profile' %}"><i class="fas fa-id-badge"></i> Profile</a></li>
-                                <li><a class="dropdown-item" href="{% url 'accounts:password_change' %}"><i class="fas fa-key"></i> Change Password</a></li>
+                            <ul class="dropdown-menu dropdown-menu-end shadow">
+                                <li><a class="dropdown-item" href="{% url 'accounts:profile' %}"><i class="fas fa-id-badge me-2"></i> Profile</a></li>
+                                <li><a class="dropdown-item" href="{% url 'accounts:password_change' %}"><i class="fas fa-key me-2"></i> Change Password</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
-                                    <!-- Logout as POST form -->
-                                    <form id="logout-form" action="{% url 'accounts:logout' %}" method="post" class="d-inline">
+                                    <form action="{% url 'accounts:logout' %}" method="post" class="d-inline">
                                         {% csrf_token %}
                                         <button type="submit" class="dropdown-item text-danger">
-                                            <i class="fas fa-sign-out-alt"></i> Logout
+                                            <i class="fas fa-sign-out-alt me-2"></i> Logout
                                         </button>
                                     </form>
                                 </li>
                             </ul>
                         </li>
                     {% else %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'accounts:login' %}">
-                                <i class="fas fa-sign-in-alt"></i> Login
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'accounts:register' %}">
-                                <i class="fas fa-user-plus"></i> Register
-                            </a>
-                        </li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'accounts:login' %}"><i class="fas fa-sign-in-alt me-1"></i> Login</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'accounts:register' %}"><i class="fas fa-user-plus me-1"></i> Register</a></li>
                     {% endif %}
                 </ul>
             </div>
         </div>
     </nav>
 
-    <!-- Flash messages -->
+    <!-- Flash Messages -->
     <div class="container mt-3">
         {% if messages %}
             {% for message in messages %}
                 <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                    {{ message }}
+                    <i class="fas fa-info-circle me-2"></i>{{ message }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             {% endfor %}
@@ -196,22 +189,20 @@
     </div>
 
     <!-- Main Content -->
-    <div class="container-fluid mt-4">
+    <main class="container-fluid mt-4" role="main">
         {% block content %}
         {% endblock %}
-    </div>
+    </main>
 
     <!-- Footer -->
-    <footer class="bg-dark text-light mt-5 py-3">
+    <footer class="text-light py-3 mt-5">
         <div class="container text-center">
-            <small>&copy; 2025 McDonald's Pakistan - Quality Assurance Audit System</small>
+            <small>&copy; 2025 McDonald's Pakistan — Quality Assurance Audit System</small>
         </div>
     </footer>
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Bootstrap Bundle JS (with Popper) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
     {% block scripts %}
     {% endblock %}
