@@ -250,7 +250,7 @@ def save_response(request):
                 'total_score': float(audit.total_scored),
                 'total_percentage': float(audit.total_percentage),
                 'grade': audit.grade,
-                'is_completed': audit.is_completed,
+                'is_submitted': audit.is_submitted,
                 'audit_status': audit.status,
                 'progress_percentage': audit.get_progress_percentage()  # Add progress percentage
             })
