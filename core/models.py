@@ -42,21 +42,22 @@ class Audit(models.Model):
     total_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0, verbose_name="Total Percentage")
     grade = models.CharField(max_length=1, choices=GRADE_CHOICES, blank=True, verbose_name="Grade")
 
+    # Critical failure flag
+    has_critical_failure = models.BooleanField(default=False, verbose_name="Has Critical Failure?")
+
     # Previous audit info
     previous_audit_date = models.DateField(null=True, blank=True, verbose_name="Previous Audit Date")
     previous_audit_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True,
                                                verbose_name="Previous Audit Score")
     previous_auditor = models.CharField(max_length=255, blank=True, verbose_name="Previous Auditor Name")
 
-    # Status fields
-    is_completed = models.BooleanField(default=False, verbose_name="Audit Completed")
+    # Status field - only is_submitted
     is_submitted = models.BooleanField(default=False, verbose_name="Audit Submitted")
 
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     submitted_at = models.DateTimeField(null=True, blank=True, verbose_name="Submitted At")
-    completed_at = models.DateTimeField(null=True, blank=True, verbose_name="Completed At")
 
     class Meta:
         verbose_name = "Audit"
@@ -66,7 +67,8 @@ class Audit(models.Model):
             models.Index(fields=['restaurant', 'audit_date']),
             models.Index(fields=['auditor_name', 'audit_date']),
             models.Index(fields=['grade']),
-            models.Index(fields=['is_completed']),
+            models.Index(fields=['is_submitted']),
+            models.Index(fields=['has_critical_failure']),
         ]
 
     def __str__(self):
@@ -78,45 +80,40 @@ class Audit(models.Model):
         if self.is_submitted and not self.submitted_at:
             self.submitted_at = timezone.now()
 
-        # Set completed_at when audit is first completed
-        if self.is_completed and not self.completed_at:
-            self.completed_at = timezone.now()
-
         super().save(*args, **kwargs)
 
     def calculate_totals(self):
-        """کل اسکور کا حساب لگاتا ہے"""
+        """کل اسکور کا حساب لگاتا ہے - critical failures کو consider کرتے ہوئے"""
         try:
             sections = self.auditsection_set.all()
 
-            total_scored = sum(float(section.scored_points) for section in sections)
-            total_possible = sum(float(section.possible_points) for section in sections)
+            total_scored = Sum(float(section.scored_points) for section in sections)
+            total_possible = Sum(float(section.possible_points) for section in sections)
 
             self.total_scored = total_scored
             self.total_possible = total_possible
 
-            # فیصد کیلکولیشن
+            # Critical failures check - پوری audit میں
+            self.has_critical_failure = any(
+                section.has_critical_failure for section in sections
+            )
+
+            # ACTUAL PERCENTAGE CALCULATE KAREIN - hamesha
             if total_possible > 0:
                 percentage = (total_scored / total_possible) * 100
                 self.total_percentage = round(percentage, 2)
             else:
                 self.total_percentage = 0
 
-            # گریڈ کیلکولیشن
-            self.grade = self.calculate_grade(self.total_percentage)
-
-            # If all sections are completed, mark audit as completed
-            total_sections = sections.count()
-            completed_sections = sections.filter(is_completed=True).count()
-
-            if total_sections > 0 and completed_sections == total_sections:
-                self.is_completed = True
+            # GRADE - critical failure hai to 'F', warna normal grading
+            if self.has_critical_failure:
+                self.grade = 'F'
             else:
-                self.is_completed = False
+                self.grade = self.calculate_normal_grade(self.total_percentage)
 
             self.save(update_fields=[
                 'total_scored', 'total_possible', 'total_percentage',
-                'grade', 'is_completed', 'updated_at'
+                'grade', 'has_critical_failure', 'updated_at'
             ])
 
             return True
@@ -125,8 +122,8 @@ class Audit(models.Model):
             print(f"Error calculating audit totals: {e}")
             return False
 
-    def calculate_grade(self, percentage):
-        """گریڈ کا حساب لگاتا ہے"""
+    def calculate_normal_grade(self, percentage):
+        """Normal grading without critical failure consideration"""
         if percentage >= 96:
             return 'A'
         elif percentage >= 90:
@@ -142,7 +139,7 @@ class Audit(models.Model):
             return Audit.objects.filter(
                 restaurant=self.restaurant,
                 audit_date__lt=self.audit_date,
-                is_completed=True
+                is_submitted=True
             ).order_by('-audit_date').first()
         except Exception as e:
             print(f"Error getting previous audit: {e}")
@@ -167,13 +164,11 @@ class Audit(models.Model):
             answered_questions = 0
 
             for section in self.auditsection_set.all():
-                section_questions = section.auditquestionresponse_set.count()
-                answered_section_questions = section.auditquestionresponse_set.exclude(
-                    scored_points=0
-                ).count()
-
-                total_questions += section_questions
-                answered_questions += answered_section_questions
+                for response in section.auditquestionresponse_set.all():
+                    total_questions += 1
+                    # Simple check: agar koi data hai to answered
+                    if response.comments.strip() or float(response.scored_points) > 0:
+                        answered_questions += 1
 
             if total_questions > 0:
                 return (answered_questions / total_questions) * 100
@@ -195,7 +190,7 @@ class Audit(models.Model):
                     'total': audit_section.auditquestionresponse_set.count(),
                     'section_score': float(audit_section.scored_points),
                     'section_percentage': float(audit_section.section_percentage),
-                    'is_completed': audit_section.is_completed
+                    'has_critical_failure': audit_section.has_critical_failure,
                 }
                 stats.append(section_data)
 
@@ -213,15 +208,12 @@ class Audit(models.Model):
             # Update previous audit info
             self.update_previous_audit_info()
 
-            # Mark as submitted and completed
+            # Mark as submitted
             self.is_submitted = True
-            self.is_completed = True
             self.submitted_at = timezone.now()
-            self.completed_at = timezone.now()
 
             self.save(update_fields=[
-                'is_submitted', 'is_completed', 'submitted_at',
-                'completed_at', 'updated_at'
+                'is_submitted', 'submitted_at', 'updated_at'
             ])
 
             return True
@@ -232,10 +224,11 @@ class Audit(models.Model):
     @property
     def status(self):
         """آڈٹ کی حالت حاصل کرتا ہے"""
-        if self.is_completed and self.is_submitted:
-            return "Completed"
-        elif self.is_completed:
-            return "Ready for Submission"
+        if self.is_submitted:
+            if self.has_critical_failure:
+                return "Submitted - FAILED (Critical Issues)"
+            else:
+                return f"Submitted - {self.grade}"
         elif self.get_progress_percentage() > 0:
             return "In Progress"
         else:
@@ -244,13 +237,13 @@ class Audit(models.Model):
     @property
     def can_be_submitted(self):
         """چیک کرتا ہے کہ آیا آڈٹ جمع کیا جا سکتا ہے"""
-        return self.is_completed and not self.is_submitted
+        return not self.is_submitted and self.get_progress_percentage() > 0
 
     @property
     def duration(self):
         """آڈٹ کی مدت حاصل کرتی ہے"""
-        if self.created_at and self.completed_at:
-            return self.completed_at - self.created_at
+        if self.created_at and self.submitted_at:
+            return self.submitted_at - self.created_at
         elif self.created_at:
             return timezone.now() - self.created_at
         return None
@@ -260,36 +253,36 @@ class Audit(models.Model):
         from django.urls import reverse
         return reverse('core:audit_results', kwargs={'pk': self.pk})
 
-    def check_completion_status(self):
-        """Check karta hai ke audit complete hua hai ya nahi"""
-        try:
-            # Agar koi section nahi hai to incomplete
-            sections = self.auditsection_set.all()
-            if not sections.exists():
-                self.is_completed = False
-                return
+    @property
+    def grade_with_reason(self):
+        """Grade aur reason return karta hai"""
+        if self.has_critical_failure:
+            return {
+                'grade': 'F',
+                'reason': 'Critical failure detected',
+                'percentage': self.total_percentage,
+                'is_critical_failure': True
+            }
+        else:
+            return {
+                'grade': self.grade,
+                'reason': 'Based on percentage score',
+                'percentage': self.total_percentage,
+                'is_critical_failure': False
+            }
 
-            # Har section ke liye check karein
-            all_sections_completed = all(section.is_completed for section in sections)
-
-            # All questions answered check (optional - agar aap chahein)
-            total_questions = AuditQuestionResponse.objects.filter(
-                audit_section__audit=self
-            ).count()
-
-            answered_questions = AuditQuestionResponse.objects.filter(
-                audit_section__audit=self
-            ).exclude(scored_points=0).count()
-
-            # Agar saare sections complete hain aur koi question unanswered nahi hai
-            if all_sections_completed and total_questions > 0 and answered_questions == total_questions:
-                self.is_completed = True
+    @property
+    def status_description(self):
+        """Detailed status description"""
+        if self.is_submitted:
+            if self.has_critical_failure:
+                return f"Submitted - FAILED (Critical Issues) - Score: {self.total_percentage}%"
             else:
-                self.is_completed = False
-
-        except Exception as e:
-            print(f"Error checking completion status: {e}")
-            self.is_completed = False
+                return f"Submitted - {self.grade} - Score: {self.total_percentage}%"
+        elif self.get_progress_percentage() > 0:
+            return f"In Progress - {self.get_progress_percentage():.1f}% complete"
+        else:
+            return "Not Started"
 
 
 class Section(models.Model):
@@ -331,7 +324,6 @@ class AuditSection(models.Model):
     section_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0,
                                              verbose_name="Section Percentage")
     has_critical_failure = models.BooleanField(default=False, verbose_name="Critical Failure?")
-    is_completed = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = "Audit Section"
@@ -347,31 +339,17 @@ class AuditSection(models.Model):
         try:
             responses = self.auditquestionresponse_set.all()
 
-            # ممکنہ پوائنٹس کا مجموعہ
-            total_possible = responses.aggregate(
-                total=Sum('question__possible_points')
-            )['total'] or 0
+            total_possible = 0
+            total_scored = 0
 
-            # حاصل شدہ پوائنٹس کا مجموعہ
-            total_scored = responses.aggregate(
-                total=Sum('scored_points')
-            )['total'] or 0
+            for response in responses:
+                total_possible += float(response.question.possible_points)
+                total_scored += float(response.scored_points)
 
             self.possible_points = total_possible
             self.scored_points = total_scored
 
-            if total_possible > 0:
-                percentage = (total_scored / total_possible) * 100
-                self.section_percentage = round(percentage, 2)
-            else:
-                self.section_percentage = 0
-
-            # Completion status check
-            total_questions = responses.count()
-            answered_questions = responses.exclude(scored_points=0).count()
-            self.is_completed = (total_questions > 0 and answered_questions == total_questions)
-
-            # کریٹیکل فیلئرز چیک کریں
+            # Critical failures check
             critical_failures = responses.filter(
                 question__is_critical=True,
                 scored_points=0
@@ -379,16 +357,37 @@ class AuditSection(models.Model):
 
             self.has_critical_failure = critical_failures
 
-            # اگر کریٹیکل فیل ہے تو فیصد 0
-            if self.has_critical_failure:
-                self.section_percentage = 0
+            # ACTUAL SECTION PERCENTAGE - hamesha calculate karein
+            if total_possible > 0:
+                percentage = (total_scored / total_possible) * 100
+                self.section_percentage = round(percentage, 2)
             else:
-                self.section_percentage = (total_scored / total_possible * 100) if total_possible > 0 else 0
+                self.section_percentage = 0
 
             self.save()
 
+            # Audit ke totals update karein
+            self.audit.calculate_totals()
+
         except Exception as e:
             print(f"Error calculating section score: {e}")
+
+    @property
+    def progress_percentage(self):
+        """سیکشن کی ترقی کا فیصد"""
+        try:
+            responses = self.auditquestionresponse_set.all()
+            if not responses.exists():
+                return 0
+
+            total_questions = responses.count()
+            answered_questions = sum(1 for response in responses
+                                     if response.comments.strip() or float(response.scored_points) > 0)
+
+            return (answered_questions / total_questions) * 100
+        except Exception as e:
+            print(f"Error calculating section progress: {e}")
+            return 0
 
 
 class AuditQuestionResponse(models.Model):
@@ -419,11 +418,18 @@ class AuditQuestionResponse(models.Model):
 
         super().save(*args, **kwargs)
 
-        # Update section score
+        # Section ko update karein
         self.audit_section.calculate_section_score()
 
-        # Update audit totals
-        self.audit_section.audit.calculate_totals()
+    @property
+    def is_answered(self):
+        """Check karta hai ke question answered hai ya nahi"""
+        return bool(self.comments.strip()) or float(self.scored_points) > 0
+
+    @property
+    def is_critical_failure(self):
+        """Check karta hai ke ye critical failure hai ya nahi"""
+        return self.question.is_critical and float(self.scored_points) == 0
 
 
 class CorrectiveAction(models.Model):
@@ -454,6 +460,12 @@ class CorrectiveAction(models.Model):
 
     def __str__(self):
         return f"{self.audit} - {self.get_risk_level_display()}"
+
+    def save(self, *args, **kwargs):
+        # Agar completed mark kia hai aur completion_date nahi hai, to set karein
+        if self.completed and not self.completion_date:
+            self.completion_date = timezone.now().date()
+        super().save(*args, **kwargs)
 
 
 class AuditTemplate(models.Model):
