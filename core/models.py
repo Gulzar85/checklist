@@ -1,10 +1,17 @@
+from __future__ import annotations
+
+import logging
+from decimal import Decimal, InvalidOperation
+from typing import Optional
+
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
-from django.db import models
-from django.db.models import Sum
+from django.db import models, transaction
+from django.db.models import Q
 from django.utils import timezone
 
 User = get_user_model()
+logger = logging.getLogger(__name__)
 
 
 class Restaurant(models.Model):
@@ -18,7 +25,7 @@ class Restaurant(models.Model):
         verbose_name = "Restaurant"
         verbose_name_plural = "Restaurants"
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.name} ({self.code})"
 
 
@@ -37,9 +44,9 @@ class Audit(models.Model):
     auditee_signature = models.TextField(blank=True, verbose_name="Auditee Signature")
 
     # Calculated scores
-    total_scored = models.DecimalField(max_digits=8, decimal_places=2, default=0, verbose_name="Total Score")
-    total_possible = models.DecimalField(max_digits=8, decimal_places=2, default=0, verbose_name="Total Possible Score")
-    total_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0, verbose_name="Total Percentage")
+    total_scored = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal('0.00'), verbose_name="Total Score")
+    total_possible = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal('0.00'), verbose_name="Total Possible Score")
+    total_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('0.00'), verbose_name="Total Percentage")
     grade = models.CharField(max_length=1, choices=GRADE_CHOICES, blank=True, verbose_name="Grade")
 
     # Critical failure flag
@@ -47,8 +54,7 @@ class Audit(models.Model):
 
     # Previous audit info
     previous_audit_date = models.DateField(null=True, blank=True, verbose_name="Previous Audit Date")
-    previous_audit_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True,
-                                               verbose_name="Previous Audit Score")
+    previous_audit_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, verbose_name="Previous Audit Score")
     previous_auditor = models.CharField(max_length=255, blank=True, verbose_name="Previous Auditor Name")
 
     # Status field - only is_submitted
@@ -70,160 +76,269 @@ class Audit(models.Model):
             models.Index(fields=['is_submitted']),
             models.Index(fields=['has_critical_failure']),
         ]
+        constraints = [
+            models.CheckConstraint(check=Q(total_scored__gte=0), name='audit_total_scored_non_negative'),
+            models.CheckConstraint(check=Q(total_possible__gte=0), name='audit_total_possible_non_negative'),
+            models.CheckConstraint(check=Q(total_percentage__gte=0), name='audit_total_percentage_non_negative'),
+        ]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.restaurant.name} - {self.audit_date} - {self.grade}"
 
-    def save(self, *args, **kwargs):
-        """Save method with automatic timestamp updates"""
-        # Set submitted_at when audit is first submitted
+    def save(self, *args, **kwargs) -> None:
+        """Save method with automatic timestamp updates. Keep lightweight."""
         if self.is_submitted and not self.submitted_at:
             self.submitted_at = timezone.now()
 
         super().save(*args, **kwargs)
 
-    def calculate_totals(self):
-        """کل اسکور کا حساب لگاتا ہے - critical failures کو consider کرتے ہوئے"""
+    def calculate_totals(self) -> bool:
+        """
+        Calculate totals for the audit using Decimal to avoid float precision issues.
+        Also sets has_critical_failure and grade accordingly.
+
+        Returns True on success, False on failure.
+        """
         try:
-            sections = self.auditsection_set.all()
+            # Prefetch audit sections and their responses to reduce queries
+            sections = self.auditsection_set.select_related('section').prefetch_related(
+                'auditquestionresponse_set__question'
+            ).all()
 
-            total_scored = Sum(float(section.scored_points) for section in sections)
-            total_possible = Sum(float(section.possible_points) for section in sections)
+            total_scored = Decimal('0.00')
+            total_possible = Decimal('0.00')
 
+            for section in sections:
+                # scored_points and possible_points are DecimalFields already; ensure Decimal
+                try:
+                    section_scored = Decimal(section.scored_points or Decimal('0.00'))
+                except (InvalidOperation, TypeError):
+                    logger.warning("Invalid scored_points on AuditSection id=%s. Coercing to 0.", section.pk)
+                    section_scored = Decimal('0.00')
+
+                try:
+                    section_possible = Decimal(section.possible_points or Decimal('0.00'))
+                except (InvalidOperation, TypeError):
+                    logger.warning("Invalid possible_points on AuditSection id=%s. Coercing to 0.", section.pk)
+                    section_possible = Decimal('0.00')
+
+                total_scored += section_scored
+                total_possible += section_possible
+
+            # Avoid assigning floats; use Decimal
             self.total_scored = total_scored
             self.total_possible = total_possible
 
-            # Critical failures check - پوری audit میں
-            self.has_critical_failure = any(
-                section.has_critical_failure for section in sections
-            )
+            # Critical failures check - any section flagged
+            self.has_critical_failure = any(bool(section.has_critical_failure) for section in sections)
 
-            # ACTUAL PERCENTAGE CALCULATE KAREIN - hamesha
-            if total_possible > 0:
-                percentage = (total_scored / total_possible) * 100
-                self.total_percentage = round(percentage, 2)
+            # Percentage calculation
+            if total_possible > Decimal('0.00'):
+                percentage = (total_scored / total_possible) * Decimal('100')
+                # Normalize to 2 decimal places
+                # Decimal.quantize could be used but keep simple conversion -- DB field will round.
+                self.total_percentage = percentage.quantize(Decimal('0.01'))
             else:
-                self.total_percentage = 0
+                self.total_percentage = Decimal('0.00')
 
-            # GRADE - critical failure hai to 'F', warna normal grading
+            # Grade
             if self.has_critical_failure:
                 self.grade = 'F'
             else:
-                self.grade = self.calculate_normal_grade(self.total_percentage)
+                self.grade = self.calculate_normal_grade(float(self.total_percentage))
 
-            self.save(update_fields=[
-                'total_scored', 'total_possible', 'total_percentage',
-                'grade', 'has_critical_failure', 'updated_at'
-            ])
+            # Save only relevant fields
+            try:
+                self.save(update_fields=[
+                    'total_scored', 'total_possible', 'total_percentage',
+                    'grade', 'has_critical_failure', 'updated_at'
+                ])
+            except Exception:
+                # In rare cases update_fields might fail (e.g., during initial object creation),
+                # fall back to normal save.
+                logger.exception("update_fields save failed when saving totals for Audit id=%s; falling back to full save.", self.pk)
+                super().save()
 
             return True
 
-        except Exception as e:
-            print(f"Error calculating audit totals: {e}")
+        except Exception:
+            logger.exception("Error calculating audit totals for Audit id=%s", self.pk)
             return False
 
-    def calculate_normal_grade(self, percentage):
-        """Normal grading without critical failure consideration"""
-        if percentage >= 96:
-            return 'A'
-        elif percentage >= 90:
-            return 'B'
-        elif percentage >= 80:
-            return 'C'
-        else:
+    def calculate_normal_grade(self, percentage: float) -> str:
+        """Normal grading without critical failure consideration."""
+        try:
+            if percentage >= 96:
+                return 'A'
+            elif percentage >= 90:
+                return 'B'
+            elif percentage >= 80:
+                return 'C'
+            else:
+                return 'F'
+        except Exception:
+            logger.exception("Error while calculating normal grade for Audit id=%s with percentage=%s", self.pk, percentage)
             return 'F'
 
-    def get_previous_audit(self):
-        """پچھلا آڈٹ حاصل کرتا ہے"""
+    def get_previous_audit(self) -> Optional['Audit']:
+        """Return the last submitted audit for this restaurant before current audit_date."""
         try:
             return Audit.objects.filter(
                 restaurant=self.restaurant,
                 audit_date__lt=self.audit_date,
                 is_submitted=True
             ).order_by('-audit_date').first()
-        except Exception as e:
-            print(f"Error getting previous audit: {e}")
+        except Exception:
+            logger.exception("Error getting previous audit for Audit id=%s", self.pk)
             return None
 
-    def update_previous_audit_info(self):
-        """پچھلے آڈٹ کی معلومات اپڈیٹ کرتا ہے"""
-        previous_audit = self.get_previous_audit()
-        if previous_audit:
-            self.previous_audit_date = previous_audit.audit_date
-            self.previous_audit_score = previous_audit.total_percentage
-            self.previous_auditor = previous_audit.auditor_name.get_full_name() or previous_audit.auditor_name.username
-            self.save(update_fields=[
-                'previous_audit_date', 'previous_audit_score',
-                'previous_auditor', 'updated_at'
-            ])
+    def update_previous_audit_info(self) -> None:
+        """Update previous audit metadata on this audit."""
+        try:
+            previous_audit = self.get_previous_audit()
+            if previous_audit:
+                prev_auditor_obj = previous_audit.auditor_name
+                # Safe retrieval of name
+                prev_auditor_name = ""
+                try:
+                    get_full_name = getattr(prev_auditor_obj, "get_full_name", None)
+                    if callable(get_full_name):
+                        prev_auditor_name = get_full_name() or getattr(prev_auditor_obj, "username", "")
+                    else:
+                        prev_auditor_name = getattr(prev_auditor_obj, "username", "") or str(prev_auditor_obj)
+                except Exception:
+                    logger.exception("Error getting previous auditor name for previous audit id=%s", previous_audit.pk)
+                    prev_auditor_name = getattr(prev_auditor_obj, "username", "") or ""
 
-    def get_progress_percentage(self):
-        """آڈٹ کی ترقی کا فیصد حاصل کرتا ہے"""
+                self.previous_audit_date = previous_audit.audit_date
+                self.previous_audit_score = previous_audit.total_percentage
+                self.previous_auditor = prev_auditor_name
+
+                try:
+                    self.save(update_fields=[
+                        'previous_audit_date', 'previous_audit_score',
+                        'previous_auditor', 'updated_at'
+                    ])
+                except Exception:
+                    logger.exception("Failed updating previous audit info for Audit id=%s", self.pk)
+
+        except Exception:
+            logger.exception("Error updating previous audit info for Audit id=%s", self.pk)
+
+    def get_progress_percentage(self) -> float:
+        """Return overall audit completion percentage.
+
+        A question is considered answered if:
+        - there's a response with scored_points > 0 OR non-empty comments.
+        """
         try:
             total_questions = 0
             answered_questions = 0
 
-            for section in self.auditsection_set.all():
-                for response in section.auditquestionresponse_set.all():
-                    total_questions += 1
-                    # Simple check: agar koi data hai to answered
-                    if response.comments.strip() or float(response.scored_points) > 0:
-                        answered_questions += 1
+            # Fetch sections and prefetch questions + responses to reduce queries
+            sections = self.auditsection_set.select_related('section').all()
+
+            # Build mapping to avoid repeated DB hits
+            for audit_section in sections:
+                # All questions in this section
+                questions = list(Question.objects.filter(section=audit_section.section).only('id', 'possible_points'))
+                q_ids = [q.id for q in questions]
+                section_total = len(questions)
+                total_questions += section_total
+                if section_total == 0:
+                    continue
+
+                # Responses in this audit_section
+                responses = AuditQuestionResponse.objects.filter(
+                    audit_section=audit_section,
+                    question__in=q_ids
+                ).select_related('question')
+
+                # Map question id -> response for quick lookup
+                responded_q_ids = set()
+                for response in responses:
+                    # Safe checks: comments may be None
+                    comments = (response.comments or "").strip()
+                    try:
+                        scored = Decimal(response.scored_points or Decimal('0.00'))
+                    except (InvalidOperation, TypeError):
+                        scored = Decimal('0.00')
+                        logger.warning("Invalid scored_points on AuditQuestionResponse id=%s; coerced to 0.", response.pk)
+
+                    if scored > Decimal('0.00') or comments:
+                        responded_q_ids.add(response.question_id)
+
+                # answered_questions increases by number of responded question ids
+                answered_questions += len(responded_q_ids)
 
             if total_questions > 0:
-                return (answered_questions / total_questions) * 100
-            return 0
-        except Exception as e:
-            print(f"Error calculating progress: {e}")
-            return 0
+                percentage = (Decimal(answered_questions) / Decimal(total_questions)) * Decimal('100')
+                # Convert to float for compatibility with existing code paths
+                percent_float = float(percentage.quantize(Decimal('0.01')))
+                logger.debug("Audit %s progress: %d/%d = %.2f%%", self.pk, answered_questions, total_questions, percent_float)
+                return percent_float
+
+            return 0.0
+
+        except Exception:
+            logger.exception("Error calculating progress for Audit id=%s", self.pk)
+            return 0.0
 
     def get_section_stats(self):
-        """سیکشن کی تفصیلی معلومات حاصل کرتا ہے"""
+        """Return detailed section stats for the audit."""
         try:
-            sections = self.auditsection_set.select_related('section').all()
+            # Prefetch responses and related questions for efficiency
+            sections = self.auditsection_set.select_related('section').prefetch_related(
+                'auditquestionresponse_set__question'
+            ).all()
             stats = []
 
             for audit_section in sections:
+                responses = list(audit_section.auditquestionresponse_set.all())
+                answered = sum(1 for r in responses if (r.scored_points and Decimal(r.scored_points) > Decimal('0.00')) or (r.comments or "").strip())
+                total = len(responses)
                 section_data = {
                     'section_name': audit_section.section.name,
-                    'answered': audit_section.auditquestionresponse_set.exclude(scored_points=0).count(),
-                    'total': audit_section.auditquestionresponse_set.count(),
-                    'section_score': float(audit_section.scored_points),
-                    'section_percentage': float(audit_section.section_percentage),
+                    'answered': answered,
+                    'total': total,
+                    'section_score': float(audit_section.scored_points or Decimal('0.00')),
+                    'section_percentage': float(audit_section.section_percentage or Decimal('0.00')),
                     'has_critical_failure': audit_section.has_critical_failure,
                 }
                 stats.append(section_data)
 
             return stats
-        except Exception as e:
-            print(f"Error getting section stats: {e}")
+        except Exception:
+            logger.exception("Error getting section stats for Audit id=%s", self.pk)
             return []
 
-    def submit_audit(self):
-        """آڈٹ جمع کرتا ہے"""
+    @transaction.atomic
+    def submit_audit(self) -> bool:
+        """Calculate totals, update previous audit info and mark as submitted."""
         try:
-            # Calculate final totals
-            self.calculate_totals()
+            # Calculate final totals; if it fails, abort submission
+            if not self.calculate_totals():
+                logger.error("calculate_totals failed during submit for Audit id=%s", self.pk)
+                return False
 
             # Update previous audit info
-            self.update_previous_audit_info()
+            try:
+                self.update_previous_audit_info()
+            except Exception:
+                logger.exception("update_previous_audit_info failed during submit for Audit id=%s", self.pk)
 
             # Mark as submitted
             self.is_submitted = True
             self.submitted_at = timezone.now()
-
-            self.save(update_fields=[
-                'is_submitted', 'submitted_at', 'updated_at'
-            ])
-
+            self.save(update_fields=['is_submitted', 'submitted_at', 'updated_at'])
             return True
-        except Exception as e:
-            print(f"Error submitting audit: {e}")
+        except Exception:
+            logger.exception("Error submitting audit id=%s", self.pk)
             return False
 
     @property
-    def status(self):
-        """آڈٹ کی حالت حاصل کرتا ہے"""
+    def status(self) -> str:
+        """Human readable status."""
         if self.is_submitted:
             if self.has_critical_failure:
                 return "Submitted - FAILED (Critical Issues)"
@@ -235,45 +350,49 @@ class Audit(models.Model):
             return "Not Started"
 
     @property
-    def can_be_submitted(self):
-        """چیک کرتا ہے کہ آیا آڈٹ جمع کیا جا سکتا ہے"""
-        return not self.is_submitted and self.get_progress_percentage() > 0
+    def can_be_submitted(self) -> bool:
+        """Whether audit can be submitted. Keep simple: not already submitted and some progress exists."""
+        if self.is_submitted:
+            return False
+        progress = self.get_progress_percentage()
+        # Allow submission if at least some questions are answered (adapt threshold as needed)
+        return progress > 0.0
 
     @property
     def duration(self):
-        """آڈٹ کی مدت حاصل کرتی ہے"""
+        """Return timedelta for audit duration; None if not started."""
         if self.created_at and self.submitted_at:
             return self.submitted_at - self.created_at
         elif self.created_at:
             return timezone.now() - self.created_at
         return None
 
-    def get_absolute_url(self):
-        """آڈٹ کا URL حاصل کرتا ہے"""
+    def get_absolute_url(self) -> str:
+        """Return the audit results URL."""
         from django.urls import reverse
         return reverse('core:audit_results', kwargs={'pk': self.pk})
 
     @property
     def grade_with_reason(self):
-        """Grade aur reason return karta hai"""
+        """Return grade with reason and metadata."""
         if self.has_critical_failure:
             return {
                 'grade': 'F',
                 'reason': 'Critical failure detected',
-                'percentage': self.total_percentage,
+                'percentage': float(self.total_percentage or Decimal('0.00')),
                 'is_critical_failure': True
             }
         else:
             return {
                 'grade': self.grade,
                 'reason': 'Based on percentage score',
-                'percentage': self.total_percentage,
+                'percentage': float(self.total_percentage or Decimal('0.00')),
                 'is_critical_failure': False
             }
 
     @property
-    def status_description(self):
-        """Detailed status description"""
+    def status_description(self) -> str:
+        """Detailed status description for UI."""
         if self.is_submitted:
             if self.has_critical_failure:
                 return f"Submitted - FAILED (Critical Issues) - Score: {self.total_percentage}%"
@@ -295,14 +414,17 @@ class Section(models.Model):
         verbose_name_plural = "Sections"
         ordering = ['order']
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.name}"
 
 
 class Question(models.Model):
     section = models.ForeignKey(Section, on_delete=models.CASCADE, verbose_name="Section")
     question_text = models.TextField(verbose_name="Question")
-    possible_points = models.DecimalField(max_digits=6, decimal_places=2, verbose_name="Possible Points")
+    possible_points = models.DecimalField(
+        max_digits=6, decimal_places=2, verbose_name="Possible Points",
+        validators=[MinValueValidator(0)]
+    )
     is_critical = models.BooleanField(default=False, verbose_name="Critical?")
     critical_failure_condition = models.TextField(blank=True, verbose_name="Critical Failure Condition")
     order = models.IntegerField(default=0, verbose_name="Order")
@@ -311,17 +433,24 @@ class Question(models.Model):
         verbose_name = "Question"
         verbose_name_plural = "Questions"
         ordering = ['section', 'order']
+        constraints = [
+            models.CheckConstraint(check=Q(possible_points__gte=0), name='question_possible_points_non_negative'),
+        ]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.section.name} - {self.question_text[:50]}..."
 
 
 class AuditSection(models.Model):
     audit = models.ForeignKey(Audit, on_delete=models.CASCADE, verbose_name="Audit")
     section = models.ForeignKey(Section, on_delete=models.CASCADE, verbose_name="Section")
-    scored_points = models.DecimalField(max_digits=6, decimal_places=2, default=0, verbose_name="Scored Points")
-    possible_points = models.DecimalField(max_digits=6, decimal_places=2, default=0, verbose_name="Possible Points")
-    section_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0,
+    scored_points = models.DecimalField(
+        max_digits=6, decimal_places=2, default=Decimal('0.00'), verbose_name="Scored Points"
+    )
+    possible_points = models.DecimalField(
+        max_digits=6, decimal_places=2, default=Decimal('0.00'), verbose_name="Possible Points"
+    )
+    section_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('0.00'),
                                              verbose_name="Section Percentage")
     has_critical_failure = models.BooleanField(default=False, verbose_name="Critical Failure?")
 
@@ -330,64 +459,101 @@ class AuditSection(models.Model):
         verbose_name_plural = "Audit Sections"
         unique_together = ['audit', 'section']
         ordering = ['audit', 'section']
+        constraints = [
+            models.CheckConstraint(check=Q(scored_points__gte=0), name='auditsection_scored_non_negative'),
+            models.CheckConstraint(check=Q(possible_points__gte=0), name='auditsection_possible_non_negative'),
+        ]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.audit} - {self.section.name}"
 
-    def calculate_section_score(self):
-        """سیکشن کا اسکور کیلکولیٹ کرتا ہے"""
+    def calculate_section_score(self) -> None:
+        """Calculate section-level scores and update audit totals."""
         try:
-            responses = self.auditquestionresponse_set.all()
+            # Prefetch responses with related question
+            responses = list(self.auditquestionresponse_set.select_related('question').all())
 
-            total_possible = 0
-            total_scored = 0
+            total_possible = Decimal('0.00')
+            total_scored = Decimal('0.00')
 
             for response in responses:
-                total_possible += float(response.question.possible_points)
-                total_scored += float(response.scored_points)
+                try:
+                    q_possible = Decimal(response.question.possible_points or Decimal('0.00'))
+                except (InvalidOperation, TypeError):
+                    logger.warning("Invalid possible_points on Question id=%s. Coercing to 0.", getattr(response.question, 'id', None))
+                    q_possible = Decimal('0.00')
+                try:
+                    scored = Decimal(response.scored_points or Decimal('0.00'))
+                except (InvalidOperation, TypeError):
+                    logger.warning("Invalid scored_points on Response id=%s. Coercing to 0.", getattr(response, 'id', None))
+                    scored = Decimal('0.00')
+
+                total_possible += q_possible
+                total_scored += scored
 
             self.possible_points = total_possible
             self.scored_points = total_scored
 
-            # Critical failures check
-            critical_failures = responses.filter(
-                question__is_critical=True,
-                scored_points=0
-            ).exists()
+            # Critical failures check: any critical question with scored_points == 0
+            critical_failures = any(
+                (getattr(r, 'question', None) and getattr(r.question, 'is_critical', False) and (Decimal(r.scored_points or Decimal('0.00')) == Decimal('0.00')))
+                for r in responses
+            )
+            self.has_critical_failure = bool(critical_failures)
 
-            self.has_critical_failure = critical_failures
-
-            # ACTUAL SECTION PERCENTAGE - hamesha calculate karein
-            if total_possible > 0:
-                percentage = (total_scored / total_possible) * 100
-                self.section_percentage = round(percentage, 2)
+            if total_possible > Decimal('0.00'):
+                percentage = (total_scored / total_possible) * Decimal('100')
+                self.section_percentage = percentage.quantize(Decimal('0.01'))
             else:
-                self.section_percentage = 0
+                self.section_percentage = Decimal('0.00')
 
-            self.save()
+            # Save minimal fields
+            try:
+                self.save(update_fields=['possible_points', 'scored_points', 'section_percentage', 'has_critical_failure'])
+            except Exception:
+                logger.exception("update_fields save failed for AuditSection id=%s; falling back to full save.", self.pk)
+                super().save()
 
-            # Audit ke totals update karein
-            self.audit.calculate_totals()
+            # Update audit totals once per section update
+            try:
+                # calculate_totals already calls save(update_fields=...), so it should be efficient
+                self.audit.calculate_totals()
+            except Exception:
+                logger.exception("Failed to update audit totals from AuditSection id=%s", self.pk)
 
-        except Exception as e:
-            print(f"Error calculating section score: {e}")
+        except Exception:
+            logger.exception("Error calculating section score for AuditSection id=%s", self.pk)
 
     @property
-    def progress_percentage(self):
-        """سیکشن کی ترقی کا فیصد"""
+    def progress_percentage(self) -> float:
+        """Section progress: fraction of questions answered for the section."""
         try:
-            responses = self.auditquestionresponse_set.all()
-            if not responses.exists():
-                return 0
+            total_questions = Question.objects.filter(section=self.section).count()
+            if total_questions == 0:
+                return 0.0
 
-            total_questions = responses.count()
-            answered_questions = sum(1 for response in responses
-                                     if response.comments.strip() or float(response.scored_points) > 0)
+            answered_questions = 0
+            responses = AuditQuestionResponse.objects.filter(audit_section=self).select_related('question')
 
-            return (answered_questions / total_questions) * 100
-        except Exception as e:
-            print(f"Error calculating section progress: {e}")
-            return 0
+            for response in responses:
+                comments = (response.comments or "").strip()
+                try:
+                    scored = Decimal(response.scored_points or Decimal('0.00'))
+                except (InvalidOperation, TypeError):
+                    logger.warning("Invalid scored_points on AuditQuestionResponse id=%s; coerced to 0.", response.pk)
+                    scored = Decimal('0.00')
+
+                if scored > Decimal('0.00') or comments:
+                    answered_questions += 1
+
+            percentage = (Decimal(answered_questions) / Decimal(total_questions)) * Decimal('100')
+            percent_float = float(percentage.quantize(Decimal('0.01')))
+            logger.debug("Section %s progress: %d/%d = %.2f%%", self.section.name, answered_questions, total_questions, percent_float)
+            return percent_float
+
+        except Exception:
+            logger.exception("Error calculating section progress for AuditSection id=%s", self.pk)
+            return 0.0
 
 
 class AuditQuestionResponse(models.Model):
@@ -396,7 +562,7 @@ class AuditQuestionResponse(models.Model):
     scored_points = models.DecimalField(
         max_digits=6,
         decimal_places=2,
-        default=0,
+        default=Decimal('0.00'),
         validators=[MinValueValidator(0)],
         verbose_name="Scored Points"
     )
@@ -408,28 +574,58 @@ class AuditQuestionResponse(models.Model):
         verbose_name_plural = "Question Responses"
         unique_together = ['audit_section', 'question']
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.audit_section} - {self.question.question_text[:30]}"
 
-    def save(self, *args, **kwargs):
-        # Ensure scored points don't exceed possible points
-        if self.scored_points > self.question.possible_points:
-            self.scored_points = self.question.possible_points
+    def save(self, *args, **kwargs) -> None:
+        # Ensure scored points don't exceed possible points and log issues
+        try:
+            if self.question and self.scored_points is not None and self.question.possible_points is not None:
+                try:
+                    # Coerce to Decimal and compare
+                    if Decimal(self.scored_points) > Decimal(self.question.possible_points):
+                        logger.debug(
+                            "Scored points (%s) exceed possible points (%s) for question id=%s. Clamping.",
+                            self.scored_points, self.question.possible_points, getattr(self.question, 'id', None)
+                        )
+                        self.scored_points = Decimal(self.question.possible_points)
+                except (InvalidOperation, TypeError):
+                    logger.warning("Invalid numeric values when validating scored_points for AuditQuestionResponse id=%s", getattr(self, 'id', None))
 
-        super().save(*args, **kwargs)
+            super().save(*args, **kwargs)
 
-        # Section ko update karein
-        self.audit_section.calculate_section_score()
+            # Update section scores (this will trigger audit totals update)
+            try:
+                self.audit_section.calculate_section_score()
+            except Exception:
+                logger.exception("Failed to calculate_section_score after saving AuditQuestionResponse id=%s", getattr(self, 'id', None))
+
+        except Exception:
+            logger.exception(
+                "Error saving AuditQuestionResponse (AuditSection id: %s, Question id: %s)",
+                getattr(self.audit_section, 'id', None),
+                getattr(self.question, 'id', None)
+            )
+            # Re-raise so calling code is aware if needed
+            raise
 
     @property
-    def is_answered(self):
-        """Check karta hai ke question answered hai ya nahi"""
-        return bool(self.comments.strip()) or float(self.scored_points) > 0
+    def is_answered(self) -> bool:
+        """Return whether the question is 'answered'."""
+        try:
+            return bool((self.comments or "").strip()) or (Decimal(self.scored_points or Decimal('0.00')) > Decimal('0.00'))
+        except Exception:
+            logger.exception("Error checking is_answered for AuditQuestionResponse id=%s", self.pk)
+            return False
 
     @property
-    def is_critical_failure(self):
-        """Check karta hai ke ye critical failure hai ya nahi"""
-        return self.question.is_critical and float(self.scored_points) == 0
+    def is_critical_failure(self) -> bool:
+        """Return True when this is a critical question and scored_points == 0."""
+        try:
+            return bool(self.question.is_critical and Decimal(self.scored_points or Decimal('0.00')) == Decimal('0.00'))
+        except Exception:
+            logger.exception("Error checking is_critical_failure for AuditQuestionResponse id=%s", self.pk)
+            return False
 
 
 class CorrectiveAction(models.Model):
@@ -441,8 +637,7 @@ class CorrectiveAction(models.Model):
     ]
 
     audit = models.ForeignKey(Audit, on_delete=models.CASCADE, verbose_name="Audit")
-    question_response = models.ForeignKey(AuditQuestionResponse, on_delete=models.CASCADE,
-                                          verbose_name="Question Response")
+    question_response = models.ForeignKey(AuditQuestionResponse, on_delete=models.CASCADE, verbose_name="Question Response")
     description = models.TextField(verbose_name="Description")
     risk_level = models.CharField(max_length=10, choices=RISK_LEVELS, verbose_name="Risk Level")
     assigned_to = models.CharField(max_length=255, verbose_name="Assigned To")
@@ -458,14 +653,18 @@ class CorrectiveAction(models.Model):
         verbose_name = "Corrective Action"
         verbose_name_plural = "Corrective Actions"
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.audit} - {self.get_risk_level_display()}"
 
-    def save(self, *args, **kwargs):
-        # Agar completed mark kia hai aur completion_date nahi hai, to set karein
-        if self.completed and not self.completion_date:
-            self.completion_date = timezone.now().date()
-        super().save(*args, **kwargs)
+    def save(self, *args, **kwargs) -> None:
+        try:
+            # If completed but no completion_date, set it
+            if self.completed and not self.completion_date:
+                self.completion_date = timezone.now().date()
+            super().save(*args, **kwargs)
+        except Exception:
+            logger.exception("Error saving CorrectiveAction id=%s", getattr(self, 'id', None))
+            raise
 
 
 class AuditTemplate(models.Model):
@@ -478,7 +677,7 @@ class AuditTemplate(models.Model):
         verbose_name = "Audit Template"
         verbose_name_plural = "Audit Templates"
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.name} v{self.version}"
 
 

@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}{% if audit.is_completed %}View Audit -{% else %}Audit Form -{% endif %} {{ audit.restaurant.name }}{% endblock %}
+{% block title %}{% if audit.is_submitted %}View Audit -{% else %}Audit Form -{% endif %} {{ audit.restaurant.name }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -8,34 +8,26 @@
         <!-- Progress Sidebar -->
         <div class="col-md-3">
             <div class="card border-0 shadow-sm progress-section sticky-top" style="top: 20px;">
-                <div class="card-header {% if audit.is_completed %}bg-secondary{% else %}mcd-bg-red{% endif %} text-white">
+                <div class="card-header {% if audit.is_submitted %}bg-secondary{% else %}mcd-bg-red{% endif %} text-white">
                     <h6 class="mb-0">
                         <i class="fas fa-chart-line"></i>
-                        {% if audit.is_completed %}Audit Results{% else %}Audit Progress{% endif %}
+                        {% if audit.is_submitted %}Audit Results{% else %}Audit Progress{% endif %}
                     </h6>
                 </div>
                 <div class="card-body">
-                    <div class="mb-3">
+                    <div class="mb-3 small">
                         <strong>Restaurant:</strong> {{ audit.restaurant.name }}<br>
                         <strong>Date:</strong> {{ audit.audit_date|date:"M d, Y" }}<br>
                         <strong>Auditor:</strong> {{ audit.auditor_name.get_full_name|default:audit.auditor_name.username }}
-                        {% if audit.is_completed %}
-                        <br><strong>Completed:</strong> {{ audit.updated_at|date:"M d, Y H:i" }}
+                        {% if audit.is_submitted %}
+                        <br><strong>Submitted:</strong> {{ audit.submitted_at|date:"M d, Y H:i" }}
                         {% endif %}
                     </div>
 
                     <!-- Quick Navigation -->
                     <div class="mb-3">
                         <label class="form-label fw-bold text-danger">Jump to Section:</label>
-                        <select class="form-select" id="sectionJump" onchange="jumpToSection(this.value)">
-                            <option value="">Select Section...</option>
-                            {% for data in section_data %}
-                            <option value="section-{{ data.section.id }}">
-                                {{ data.section.name }}
-                                <span id="section-badge-{{ data.section.id }}">(0/{{ data.questions|length }})</span>
-                            </option>
-                            {% endfor %}
-                        </select>
+                        <select class="form-select" id="sectionJump" aria-label="Jump to section"></select>
                     </div>
 
                     <div id="progress-container">
@@ -46,12 +38,27 @@
                         </div>
                     </div>
 
+                    <!-- Critical Failure Warning -->
+                    {% if audit.has_critical_failure %}
+                    <div class="alert alert-danger text-center">
+                        <i class="fas fa-exclamation-triangle"></i><br>
+                        <strong>CRITICAL FAILURE DETECTED</strong><br>
+                        <small>One or more critical questions failed</small>
+                    </div>
+                    {% endif %}
+
                     <!-- Submission Status Badge -->
-                    {% if audit.is_completed %}
+                    {% if audit.is_submitted %}
                     <div class="alert alert-success text-center">
                         <i class="fas fa-check-circle"></i><br>
-                        <strong>COMPLETED</strong><br>
+                        <strong>SUBMITTED</strong><br>
                         <small>This audit is finalized and read-only</small>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning text-center">
+                        <i class="fas fa-edit"></i><br>
+                        <strong>IN PROGRESS</strong><br>
+                        <small id="overall-progress-text">{{ progress_percentage|floatformat:1 }}% complete</small>
                     </div>
                     {% endif %}
 
@@ -65,20 +72,21 @@
 
                     <!-- Navigation Buttons -->
                     <div class="btn-group w-100 mb-2" role="group">
-                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="navigateSection('prev')">
+                        <button type="button" class="btn btn-outline-primary btn-sm" id="navPrev">
                             <i class="fas fa-chevron-left"></i> Previous
                         </button>
-                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="navigateSection('next')">
+                        <button type="button" class="btn btn-outline-primary btn-sm" id="navNext">
                             Next <i class="fas fa-chevron-right"></i>
                         </button>
                     </div>
 
-                    <!-- Submit Button (Only show if not completed) -->
-                    {% if not audit.is_completed %}
-                    <div class="mt-2">
-                        <button class="btn btn-success w-100" onclick="submitAudit()">
-                            <i class="fas fa-paper-plane"></i> Finalize Audit
+                    <!-- Submit Button (Only show if not submitted) -->
+                    {% if not audit.is_submitted %}
+                    <div class="mt-2" id="submit-button-container">
+                        <button class="btn btn-success w-100" id="submit-audit-btn" disabled>
+                            <i class="fas fa-paper-plane"></i> Submit Audit
                         </button>
+                        <small class="submit-help-text text-muted d-block text-center mt-1">Complete more questions to submit</small>
                     </div>
                     {% endif %}
 
@@ -90,9 +98,12 @@
                         <a href="{% url 'core:audit_list' %}" class="btn btn-outline-secondary btn-sm w-100">
                             <i class="fas fa-list"></i> All Audits
                         </a>
-                        {% if audit.is_completed %}
+                        {% if audit.is_submitted %}
                         <a href="{% url 'core:audit_results' audit.id %}" class="btn mcd-btn-primary btn-sm w-100 mt-1">
                             <i class="fas fa-chart-bar"></i> View Results
+                        </a>
+                        <a href="{% url 'core:audit_detail' audit.id %}" class="btn btn-outline-info btn-sm w-100 mt-1">
+                            <i class="fas fa-info-circle"></i> View Details
                         </a>
                         {% endif %}
                     </div>
@@ -106,14 +117,19 @@
                 <div class="card-header bg-light d-flex justify-content-between align-items-center">
                     <h4 class="mb-0">
                         <i class="fas fa-clipboard-check"></i>
-                        {% if audit.is_completed %}View Audit -{% else %}Audit Form -{% endif %} {{ audit.restaurant.name }}
+                        {% if audit.is_submitted %}View Audit -{% else %}Audit Form -{% endif %} {{ audit.restaurant.name }}
                         <small class="text-muted ms-2" id="current-section-info"></small>
                     </h4>
                     <div id="global-save-status" class="text-muted small">
-                        {% if audit.is_completed %}
+                        {% if audit.is_submitted %}
                         <i class="fas fa-lock"></i> Read Only
                         {% else %}
                         <i class="fas fa-save"></i> Auto-save enabled
+                        {% endif %}
+                        {% if audit.has_critical_failure %}
+                        <span class="badge bg-danger ms-2">
+                            <i class="fas fa-exclamation-triangle"></i> Critical Failure
+                        </span>
                         {% endif %}
                     </div>
                 </div>
@@ -123,29 +139,35 @@
                         {% for data in section_data %}
                         <div class="section-container" id="section-{{ data.section.id }}">
                             <div class="card border-0 shadow-sm mb-4 section-card">
-                                <div class="card-header d-flex justify-content-between align-items-center {% if audit.is_completed %}bg-light{% else %}mcd-bg-red text-white{% endif %}">
+                                <div class="card-header d-flex justify-content-between align-items-center {% if audit.is_submitted %}bg-light{% else %}mcd-bg-red text-white{% endif %}">
                                     <div>
-                                        <h5 class="mb-0">
+                                        <h5 class="mb-0 section-title">
                                             <i class="fas fa-folder"></i>
                                             Section {{ forloop.counter }}: {{ data.section.name }}
                                         </h5>
                                         {% if data.section.description %}
-                                        <p class="mb-0 {% if audit.is_completed %}text-muted{% else %}text-light{% endif %} small">
+                                        <p class="mb-0 {% if audit.is_submitted %}text-muted{% else %}text-light{% endif %} small">
                                             {{ data.section.description }}
                                         </p>
                                         {% endif %}
                                     </div>
                                     <div class="text-end">
-                                        <span class="badge bg-light text-dark">
+                                        <span class="badge bg-light text-dark me-2">
                                             {{ forloop.counter }}/{{ section_data|length }}
+                                        </span>
+                                        <span class="badge {% if data.has_critical_failure %}bg-danger{% else %}bg-success{% endif %} section-score-badge" data-section-id="{{ data.section.id }}" id="section-score-{{ data.section.id }}">
+                                            {% if data.has_critical_failure %}
+                                            <i class="fas fa-exclamation-triangle"></i> Critical
+                                            {% else %}
+                                            {{ data.section_percentage|floatformat:1 }}%
+                                            {% endif %}
                                         </span>
                                     </div>
                                 </div>
                                 <div class="card-body">
                                     {% for question in data.questions %}
-                                    <div class="card border question-card mb-3 {% if question.is_critical %}border-danger critical-question{% endif %} {% if audit.is_completed %}border-light{% endif %}"
-                                         id="question-{{ data.section.id }}-{{ question.id }}">
-                                        <div class="card-body {% if audit.is_completed %}bg-light{% endif %}">
+                                    <div class="card border question-card mb-3 {% if question.is_critical %}border-danger critical-question{% endif %} {% if audit.is_submitted %}border-light{% endif %}" id="question-{{ data.section.id }}-{{ question.id }}">
+                                        <div class="card-body {% if audit.is_submitted %}bg-light{% endif %}">
                                             <div class="row">
                                                 <div class="col-md-8">
                                                     <h6 class="card-title">
@@ -156,13 +178,16 @@
                                                     </h6>
                                                     <p class="text-muted small mb-2">
                                                         Possible Points: <strong>{{ question.possible_points }}</strong>
+                                                        {% if question.is_critical %}
+                                                        <br><small class="text-danger"><i class="fas fa-exclamation-triangle"></i> Critical question - zero score fails entire audit</small>
+                                                        {% endif %}
                                                     </p>
                                                 </div>
                                                 <div class="col-md-4">
                                                     <!-- Score Input -->
                                                     <div class="mb-2">
                                                         <label class="form-label fw-bold text-danger">Score:</label>
-                                                        {% if audit.is_completed %}
+                                                        {% if audit.is_submitted %}
                                                         <div class="form-control bg-light">
                                                             <strong>{{ question.scored_points }}</strong>
                                                             <small class="text-muted float-end">/ {{ question.possible_points }}</small>
@@ -176,14 +201,14 @@
                                                                max="{{ question.possible_points }}"
                                                                step="0.01"
                                                                value="{{ question.scored_points }}"
-                                                               oninput="scheduleSave(this)">
+                                                               aria-label="Score for question {{ question.id }}">
                                                         {% endif %}
                                                     </div>
 
                                                     <!-- Comments -->
                                                     <div class="mb-2">
                                                         <label class="form-label fw-bold text-danger">Comments:</label>
-                                                        {% if audit.is_completed %}
+                                                        {% if audit.is_submitted %}
                                                         <div class="form-control bg-light" style="min-height: 80px;">
                                                             {% if question.comments %}
                                                             {{ question.comments }}
@@ -192,19 +217,13 @@
                                                             {% endif %}
                                                         </div>
                                                         {% else %}
-                                                        <textarea class="form-control comments-input"
-                                                                  data-section="{{ data.section.id }}"
-                                                                  data-question="{{ question.id }}"
-                                                                  rows="3"
-                                                                  placeholder="Add comments or observations..."
-                                                                  oninput="scheduleSave(this)">{{ question.comments }}</textarea>
+                                                        <textarea class="form-control comments-input" data-section="{{ data.section.id }}" data-question="{{ question.id }}" rows="3" placeholder="Add comments or observations...">{{ question.comments }}</textarea>
                                                         {% endif %}
                                                     </div>
 
                                                     <!-- Question Save Status -->
-                                                    {% if not audit.is_completed %}
-                                                    <div id="question-{{ data.section.id }}-{{ question.id }}-status"
-                                                         class="save-status-indicator mt-1" style="display: none;">
+                                                    {% if not audit.is_submitted %}
+                                                    <div id="question-{{ data.section.id }}-{{ question.id }}-status" class="save-status-indicator mt-1" style="display: none;">
                                                         <small class="text-success"><i class="fas fa-check"></i> Saved</small>
                                                     </div>
                                                     {% endif %}
@@ -235,12 +254,12 @@
                     </form>
 
                     <!-- Navigation Buttons at Bottom -->
-                    {% if not audit.is_completed %}
+                    {% if not audit.is_submitted %}
                     <div class="d-flex justify-content-between mt-4">
-                        <button type="button" class="btn btn-outline-primary" onclick="navigateSection('prev')">
+                        <button type="button" class="btn btn-outline-primary" id="navPrevBottom">
                             <i class="fas fa-chevron-left"></i> Previous Section
                         </button>
-                        <button type="button" class="btn btn-outline-primary" onclick="navigateSection('next')">
+                        <button type="button" class="btn btn-outline-primary" id="navNextBottom">
                             Next Section <i class="fas fa-chevron-right"></i>
                         </button>
                     </div>
@@ -251,7 +270,7 @@
     </div>
 </div>
 
-<!-- Success Modal -->
+<!-- Modals -->
 <div class="modal fade" id="successModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -271,7 +290,6 @@
     </div>
 </div>
 
-<!-- Error Modal -->
 <div class="modal fade" id="errorModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -290,384 +308,540 @@
         </div>
     </div>
 </div>
+
+<!-- Confirmation Modal -->
+<div class="modal fade" id="confirmSubmitModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle"></i> Confirm Submission
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to submit this audit?</p>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>This action cannot be undone.</strong> Once submitted, the audit will be finalized and no further changes can be made.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="confirmSubmitBtn">
+                    <i class="fas fa-paper-plane"></i> Yes, Submit Audit
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    // Global variables
-    let saveTimeouts = {};
-    let isSaving = false;
-    const SAVE_DELAY = 1500;
-    let currentSectionIndex = 0;
-    const sections = [
-        {% for data in section_data %}
-        "section-{{ data.section.id }}"{% if not forloop.last %},{% endif %}
-        {% endfor %}
-    ];
-    const isCompleted = {% if audit.is_completed %}true{% else %}false{% endif %};
+(function($){
+    'use strict';
+
+    // --- Config / State ---
     const auditId = {{ audit.id }};
+    const isSubmitted = {% if audit.is_submitted %}true{% else %}false{% endif %};
+    let hasCriticalFailure = {% if audit.has_critical_failure %}true{% else %}false{% endif %};
+    const SAVE_DELAY = 1000;
+    const PROGRESS_INTERVAL = 10000;
+    const sectionIds = [{% for data in section_data %}'section-{{ data.section.id }}'{% if not forloop.last %}, {% endif %}{% endfor %}];
+    let currentSectionIndex = 0;
 
-    // CSRF token
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
+    // State management
+    const saveTimers = new Map();
+    let isSaving = false;
+    let progressTimer = null;
+    let pendingSaves = new Set();
+    let isSubmitting = false;
+
+    // URLs
+    const URL_SAVE_RESPONSE = "{% url 'core:save_response' %}";
+    const URL_AUDIT_PROGRESS = "{% url 'core:audit_progress' audit.id %}";
+    const URL_SUBMIT_AUDIT = "{% url 'core:submit_audit' audit.id %}";
+    const URL_AUDIT_RESULTS = "{% url 'core:audit_results' audit.id %}";
+
+    // Cache DOM elements
+    let $progressContainer, $submitBtn, $sectionJump, $currentSectionInfo;
+    let $confirmSubmitModal, $confirmSubmitBtn;
+
+    // --- Utilities ---
+    function csrftoken() {
+        return document.querySelector('[name=csrfmiddlewaretoken]')?.value ||
+               document.cookie.match(/csrftoken=([^;]+)/)?.[1];
     }
-    const csrftoken = getCookie('csrftoken');
 
-    // Initialize on page load
-    $(document).ready(function() {
-        showSection(currentSectionIndex);
-        loadProgress();
-        updateSectionBadges();
-
-        if (!isCompleted) {
-            setInterval(loadProgress, 30000);
+    function showModal(id, content){
+        if (id === 'success') {
+            $('#successMessage').html(content);
+            $('#successModal').modal('show');
+        } else if (id === 'error') {
+            $('#errorMessage').text(content);
+            $('#errorModal').modal('show');
         }
+    }
 
-        // Keyboard navigation
-        $(document).keydown(function(e) {
-            if (isCompleted) return;
+    // --- Navigation ---
+    function showSection(index, scroll=true){
+        index = Math.max(0, Math.min(index, sectionIds.length - 1));
+        currentSectionIndex = index;
 
-            if (e.key === 'ArrowLeft' && (e.ctrlKey || e.altKey)) {
-                e.preventDefault();
-                navigateSection('prev');
-            } else if (e.key === 'ArrowRight' && (e.ctrlKey || e.altKey)) {
-                e.preventDefault();
-                navigateSection('next');
-            }
-        });
-    });
-
-    // Navigation functions
-    function showSection(index) {
-        // Hide all sections
         $('.section-container').hide();
+        const id = sectionIds[index];
+        $(`#${id}`).show();
 
-        // Show current section
-        $(`#${sections[index]}`).show();
+        const title = $(`#${id} .section-title`).text() || '';
+        $currentSectionInfo.text(title ? ('- ' + title.split(': ').slice(1).join(': ')) : '');
+        $sectionJump.val(id);
 
-        // Update current section info
-        const sectionName = $(`#${sections[index]} .card-header h5`).text();
-        $('#current-section-info').text(`- ${sectionName.split(': ')[1]}`);
-
-        // Update URL hash
-        window.location.hash = sections[index];
-
-        // Scroll to top of section
-        $('html, body').animate({
-            scrollTop: $(`#${sections[index]}`).offset().top - 100
-        }, 500);
+        if (scroll) {
+            $('html, body').animate({ scrollTop: $(`#${id}`).offset().top - 100 }, 300);
+        }
     }
 
-    function navigateSection(direction) {
-        if (direction === 'next' && currentSectionIndex < sections.length - 1) {
-            currentSectionIndex++;
-        } else if (direction === 'prev' && currentSectionIndex > 0) {
-            currentSectionIndex--;
-        }
-
+    function navigate(direction){
+        if (direction === 'next' && currentSectionIndex < sectionIds.length - 1) currentSectionIndex++;
+        if (direction === 'prev' && currentSectionIndex > 0) currentSectionIndex--;
         showSection(currentSectionIndex);
-        updateNavigationButtons();
     }
 
-    function jumpToSection(sectionId) {
-        if (!sectionId) return;
+    // --- Auto-save ---
+    function scheduleSave($el){
+        if (isSubmitted || isSubmitting) return;
 
-        const index = sections.indexOf(sectionId);
-        if (index !== -1) {
-            currentSectionIndex = index;
-            showSection(currentSectionIndex);
-            updateNavigationButtons();
-        }
-    }
-
-    function updateNavigationButtons() {
-        // Update dropdown selection
-        $('#sectionJump').val(sections[currentSectionIndex]);
-
-        // You can also update button states here if needed
-    }
-
-    // Auto-save functionality (same as before with minor adjustments)
-    function scheduleSave(element) {
-        if (isCompleted) return;
-
-        const $input = $(element);
-        const sectionId = $input.data('section');
-        const questionId = $input.data('question');
+        const sectionId = $el.data('section');
+        const questionId = $el.data('question');
         const key = `${sectionId}_${questionId}`;
 
-        if (saveTimeouts[key]) {
-            clearTimeout(saveTimeouts[key]);
+        if (saveTimers.has(key)) {
+            clearTimeout(saveTimers.get(key));
         }
 
-        showSavingIndicator(sectionId, questionId);
+        const $indicator = $(`#question-${sectionId}-${questionId}-status`);
+        $indicator.html('<small class="text-warning"><i class="fas fa-spinner fa-spin"></i> Saving...</small>').fadeIn(150);
 
-        saveTimeouts[key] = setTimeout(() => {
+        pendingSaves.add(key);
+
+        const timer = setTimeout(() => {
             saveResponse(sectionId, questionId);
+            saveTimers.delete(key);
+            pendingSaves.delete(key);
         }, SAVE_DELAY);
+
+        saveTimers.set(key, timer);
     }
 
-    function showSavingIndicator(sectionId, questionId) {
-        if (isCompleted) return;
-        const $indicator = $(`#question-${sectionId}-${questionId}-status`);
-        $indicator.html('<small class="text-warning"><i class="fas fa-spinner fa-spin"></i> Saving...</small>');
-        $indicator.fadeIn(200);
-    }
-
-    function showSavedIndicator(sectionId, questionId) {
-        if (isCompleted) return;
-        const $indicator = $(`#question-${sectionId}-${questionId}-status`);
-        $indicator.html('<small class="text-success"><i class="fas fa-check"></i> Saved</small>');
-
-        setTimeout(() => {
-            $indicator.fadeOut(1000);
-        }, 2000);
-    }
-
-    function saveResponse(sectionId, questionId) {
-        if (isCompleted) {
-            showError('This audit has been completed and cannot be modified.');
+    function saveResponse(sectionId, questionId){
+        if (isSubmitted || isSubmitting) {
             return;
         }
 
         if (isSaving) {
-            setTimeout(() => saveResponse(sectionId, questionId), 500);
+            setTimeout(() => saveResponse(sectionId, questionId), 300);
             return;
         }
 
         isSaving = true;
 
-        const scoredPoints = $(`.score-input[data-section="${sectionId}"][data-question="${questionId}"]`).val();
-        const comments = $(`.comments-input[data-section="${sectionId}"][data-question="${questionId}"]`).val();
+        const $scoreInput = $(`.score-input[data-section="${sectionId}"][data-question="${questionId}"]`);
+        const $commentsInput = $(`.comments-input[data-section="${sectionId}"][data-question="${questionId}"]`);
+
+        const scoredPoints = $scoreInput.val() || 0;
+        const comments = $commentsInput.val() || '';
 
         $.ajax({
-            url: "{% url 'core:save_response' %}",
-            type: "POST",
-            headers: {'X-CSRFToken': csrftoken},
+            url: URL_SAVE_RESPONSE,
+            type: 'POST',
+            headers: {'X-CSRFToken': csrftoken()},
             data: {
-                'audit_id': auditId,
-                'section_id': sectionId,
-                'question_id': questionId,
-                'scored_points': scoredPoints || 0,
-                'comments': comments || ''
+                audit_id: auditId,
+                section_id: sectionId,
+                question_id: questionId,
+                scored_points: scoredPoints,
+                comments: comments
             },
-            success: function(response) {
+            timeout: 10000,
+            success(resp){
                 isSaving = false;
+                if (resp.success){
+                    const $indicator = $(`#question-${sectionId}-${questionId}-status`);
+                    $indicator.html('<small class="text-success"><i class="fas fa-check"></i> Saved</small>');
+                    setTimeout(() => $indicator.fadeOut(800), 1200);
 
-                if (response.success) {
-                    showSavedIndicator(sectionId, questionId);
-                    loadProgress();
-                    updateSectionBadges();
+                    updateSectionScoreDisplay(sectionId, resp.section_score, resp.section_percentage, resp.section_has_critical_failure);
 
-                    const $questionCard = $(`#question-${sectionId}-${questionId}`);
-                    if (parseFloat(scoredPoints) === 0 && $questionCard.hasClass('critical-question')) {
-                        $questionCard.addClass('border-warning');
+                    setTimeout(() => loadProgress(true), 500);
+
+                    const $qcard = $(`#question-${sectionId}-${questionId}`);
+                    if (parseFloat(scoredPoints) === 0 && $qcard.hasClass('critical-question')) {
+                        $qcard.addClass('border-warning');
                     } else {
-                        $questionCard.removeClass('border-warning');
+                        $qcard.removeClass('border-warning');
                     }
-                } else {
-                    showError('Failed to save: ' + response.message);
+
+                    if (resp.has_critical_failure && !hasCriticalFailure){
+                        hasCriticalFailure = true;
+                        setTimeout(() => location.reload(), 1000);
+                    }
                 }
             },
-            error: function(xhr, status, error) {
+            error(xhr, status, err){
                 isSaving = false;
-                console.error('Error saving response:', error);
-                showError('Error saving response. Please check your connection.');
-
                 const $indicator = $(`#question-${sectionId}-${questionId}-status`);
-                $indicator.html('<small class="text-danger"><i class="fas fa-exclamation-triangle"></i> Save failed</small>');
-                $indicator.fadeIn(200);
+                $indicator.html('<small class="text-danger"><i class="fas fa-exclamation-triangle"></i> Save failed</small>').fadeIn(150);
             }
         });
     }
 
-    function updateSectionBadges() {
-        if (isCompleted) return;
-
-        {% for data in section_data %}
-        const section{{ data.section.id }}Answered = $(`.score-input[data-section="{{ data.section.id }}"]`).filter(function() {
-            return $(this).val() !== '' && $(this).val() !== '0';
-        }).length;
-        $(`#section-badge-{{ data.section.id }}`).text(`(${section{{ data.section.id }}Answered}/{{ data.questions|length }})`);
-        {% endfor %}
+    function updateSectionScoreDisplay(sectionId, score, percentage, critical){
+        const $badge = $(`#section-score-${sectionId}`);
+        if (critical){
+            $badge.removeClass('bg-success').addClass('bg-danger').html('<i class="fas fa-exclamation-triangle"></i> Critical');
+        } else {
+            $badge.removeClass('bg-danger').addClass('bg-success').text(`${parseFloat(percentage).toFixed(1)}%`);
+        }
+        $badge.addClass('section-score-update');
+        setTimeout(() => $badge.removeClass('section-score-update'), 500);
     }
 
-    // Progress and submission functions (same as before)
-    function loadProgress() {
+    // --- Progress Management ---
+    function renderProgress(resp){
+        if (!resp) return;
+
+        let html = '';
+        if (resp.progress && resp.progress.length){
+            resp.progress.forEach(s => {
+                const p = Math.round(s.percentage);
+                html += `
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small><strong>${s.section_name}</strong></small>
+                            <small class="badge bg-light text-dark">${s.answered || 0}/${s.total || 0}</small>
+                        </div>
+                        <div class="progress mb-1" style="height: 6px;">
+                            <div class="progress-bar ${p === 100 ? 'bg-success' : 'bg-primary'}" style="width: ${p}%" title="${p}%"></div>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <small class="text-muted">${(s.section_score||0).toFixed(1)} pts</small>
+                            <small class="text-muted">${(s.section_percentage||0).toFixed(1)}%</small>
+                        </div>
+                        ${s.has_critical_failure ? '<small class="text-danger"><i class=\"fas fa-exclamation-triangle\"></i> Critical failure</small>' : ''}
+                    </div>
+                `;
+            });
+
+            const overall = resp.overall_progress || 0;
+            const canSubmit = resp.can_be_submitted || false;
+            const answered = resp.answered_questions || 0;
+            const total = resp.total_questions || 0;
+
+            html += `
+                <div class="border-top pt-3 mt-2">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <small><strong>Overall Progress</strong></small>
+                        <small class="badge ${canSubmit ? 'bg-success' : 'bg-warning text-dark'}">${answered}/${total}</small>
+                    </div>
+                    <div class="progress mb-2" style="height: 8px;">
+                        <div class="progress-bar ${canSubmit ? 'bg-success' : 'bg-primary'}" style="width: ${overall}%" title="${overall}%"></div>
+                    </div>
+                    <div class="row small text-muted">
+                        <div class="col-6"><i class="fas fa-chart-line"></i> ${resp.total_percentage ? resp.total_percentage.toFixed(1) : 0}%</div>
+                        <div class="col-6 text-end"><i class="fas fa-graduation-cap"></i> ${resp.grade || 'N/A'}</div>
+                    </div>
+                    ${resp.has_critical_failure ? '<div class="mt-1"><small class="text-danger"><i class=\"fas fa-exclamation-triangle\"></i> Critical failure detected</small></div>' : ''}
+                    <div class="mt-1 text-center"><small class="${canSubmit ? 'text-success' : 'text-warning'}"><i class="fas ${canSubmit ? 'fa-check-circle' : 'fa-info-circle'}"></i> ${canSubmit ? 'Ready to submit' : `${answered}/${total} questions answered`}</small></div>
+                </div>
+            `;
+        } else if (resp.error){
+            html = `<div class="alert alert-danger"><small><i class="fas fa-exclamation-triangle"></i> Error: ${resp.error}</small></div>`;
+        } else {
+            html = '<div class="alert alert-info">No progress data available</div>';
+        }
+
+        $progressContainer.html(html);
+        $('#overall-progress-text').text(`${Math.round(resp.overall_progress || 0)}% complete`);
+        updateSubmitButton(resp.can_be_submitted, `${resp.answered_questions||0}/${resp.total_questions||0} questions answered`);
+        populateSectionJump(resp);
+    }
+
+    function populateSectionJump(resp){
+        $sectionJump.empty().append('<option value="">Select Section...</option>');
+
+        if (resp && resp.progress && resp.progress.length){
+            resp.progress.forEach(s => {
+                const id = `section-${s.section_id}`;
+                $sectionJump.append(`<option value="${id}">${s.section_name} (${Math.round(s.percentage)}%)</option>`);
+            });
+        } else {
+            $('.section-container').each(function(){
+                const id = $(this).attr('id');
+                const name = $(this).find('.section-title').text().split(': ').slice(1).join(': ');
+                $sectionJump.append(`<option value="${id}">${name}</option>`);
+            });
+        }
+        $sectionJump.val(sectionIds[currentSectionIndex] || '');
+    }
+
+    function loadProgress(force=false){
+        if (isSubmitting) return; // Don't load progress during submission
+
+        if (force) {
+            $progressContainer.html(`<div class="text-center py-2"><div class="spinner-border spinner-border-sm text-primary" role="status"><span class="visually-hidden">Loading...</span></div><small class="text-muted d-block mt-1">Updating progress...</small></div>`);
+        }
+
         $.ajax({
-            url: "{% url 'core:audit_progress' audit.id %}",
-            type: "GET",
-            success: function(response) {
-                let progressHtml = '';
-
-                if (response.progress && response.progress.length > 0) {
-                    response.progress.forEach(function(section) {
-                        const progressPercent = Math.round(section.percentage);
-                        const sectionScore = section.section_score || 0;
-                        const sectionPercentage = section.section_percentage || 0;
-
-                        progressHtml += `
-                            <div class="mb-3">
-                                <div class="d-flex justify-content-between">
-                                    <small><strong>${section.section_name}</strong></small>
-                                    <small>${section.answered || 0}/${section.total || 0}</small>
-                                </div>
-                                <div class="progress mb-1" style="height: 8px;">
-                                    <div class="progress-bar {% if progressPercent == 100 %}bg-success{% else %}bg-primary{% endif %}" role="progressbar"
-                                         style="width: ${progressPercent}%"
-                                         aria-valuenow="${progressPercent}"
-                                         aria-valuemin="0"
-                                         aria-valuemax="100">
-                                    </div>
-                                </div>
-                                <div class="d-flex justify-content-between">
-                                    <small class="text-muted">Score: ${sectionScore.toFixed(2)}</small>
-                                    <small class="text-muted">${sectionPercentage.toFixed(1)}%</small>
-                                </div>
-                            </div>
-                        `;
-                    });
-                } else {
-                    progressHtml = '<div class="alert alert-info">No progress data available</div>';
+            url: URL_AUDIT_PROGRESS,
+            type: 'GET',
+            cache: false,
+            timeout: 8000,
+            success: renderProgress,
+            error(xhr, status, err){
+                if (status !== 'abort') {
+                    $progressContainer.html(`<div class="alert alert-warning py-2"><small><i class="fas fa-exclamation-triangle"></i> Error loading progress data</small><br><small>Please refresh the page</small></div>`);
                 }
-
-                $('#progress-container').html(progressHtml);
-            },
-            error: function(xhr, status, error) {
-                console.error('Error loading progress:', error);
-                $('#progress-container').html('<div class="alert alert-danger">Error loading progress data</div>');
             }
         });
     }
 
-    function submitAudit() {
-        if (isCompleted) {
-            showError('This audit has already been completed.');
+    function updateSubmitButton(canSubmit, helpText){
+        if (!$submitBtn.length) return;
+
+        const $help = $('.submit-help-text');
+        if (canSubmit){
+            $submitBtn.removeClass('btn-outline-secondary').addClass('btn-success').prop('disabled', false);
+            $help.text('Ready to submit').removeClass('text-muted').addClass('text-success');
+        } else {
+            $submitBtn.removeClass('btn-success').addClass('btn-outline-secondary').prop('disabled', true);
+            $help.text(helpText || 'Complete more questions to submit').removeClass('text-success').addClass('text-muted');
+        }
+    }
+
+    // --- Submission with Modal Confirmation ---
+    function showSubmitConfirmation(){
+        if (isSubmitted){
+            showModal('error','This audit has been submitted.');
             return;
         }
 
-        if (confirm('Are you sure you want to finalize this audit? This action cannot be undone.')) {
-            const $submitBtn = $('button[onclick="submitAudit()"]');
-            const originalText = $submitBtn.html();
-            $submitBtn.html('<i class="fas fa-spinner fa-spin"></i> Finalizing...');
-            $submitBtn.prop('disabled', true);
-
-            const pendingSaves = Object.keys(saveTimeouts);
-            if (pendingSaves.length > 0) {
-                pendingSaves.forEach(key => {
-                    const [sectionId, questionId] = key.split('_');
-                    clearTimeout(saveTimeouts[key]);
-                    saveResponse(sectionId, questionId);
-                });
-            }
-
-            setTimeout(() => {
-                $.ajax({
-                    url: "{% url 'core:submit_audit' audit.id %}",
-                    type: "POST",
-                    headers: {'X-CSRFToken': csrftoken},
-                    success: function(response) {
-                        if (response.success) {
-                            showSuccess(`
-                                <div class="text-center">
-                                    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
-                                    <h5>Audit Finalized Successfully!</h5>
-                                    <div class="mt-3">
-                                        <strong>Total Score:</strong> ${response.total_score.toFixed(2)}<br>
-                                        <strong>Percentage:</strong> ${response.total_percentage.toFixed(1)}%<br>
-                                        <strong>Grade:</strong> <span class="badge bg-success">${response.grade}</span>
-                                    </div>
-                                    <p class="mt-3 text-muted">Redirecting to results page...</p>
-                                </div>
-                            `);
-
-                            disableForm();
-                            setTimeout(function() {
-                                window.location.href = "{% url 'core:audit_results' audit.id %}";
-                            }, 3000);
-                        } else {
-                            showError(response.message);
-                            $submitBtn.html(originalText);
-                            $submitBtn.prop('disabled', false);
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('Error submitting audit:', error);
-                        showError('Error finalizing audit. Please try again.');
-                        $submitBtn.html(originalText);
-                        $submitBtn.prop('disabled', false);
-                    }
-                });
-            }, 1000);
+        if ($submitBtn.prop('disabled')){
+            showModal('error','Please complete all questions before submitting.');
+            return;
         }
+
+        $confirmSubmitModal.modal('show');
     }
 
-    function disableForm() {
+    function performSubmission() {
+        if (isSubmitting) return;
+
+        isSubmitting = true;
+
+        // Update UI immediately
+        updateUIForSubmission();
+
+        // Close confirmation modal
+        $confirmSubmitModal.modal('hide');
+
+        // Wait for pending saves to complete
+        const checkPendingSaves = () => {
+            if (pendingSaves.size > 0) {
+                setTimeout(checkPendingSaves, 100);
+            } else {
+                submitAuditRequest();
+            }
+        };
+
+        checkPendingSaves();
+    }
+
+    function updateUIForSubmission() {
+        // Update main submit button
+        $submitBtn.html('<i class="fas fa-spinner fa-spin"></i> Submitting...').prop('disabled', true);
+
+        // Update confirmation modal button
+        $confirmSubmitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Submitting...');
+
+        // Disable all form inputs immediately
         $('.score-input, .comments-input').prop('readonly', true).addClass('bg-light');
-        $('button[onclick="submitAudit()"]').prop('disabled', true).html('<i class="fas fa-check"></i> Completed');
+
+        // Stop progress polling
+        if (progressTimer) {
+            clearInterval(progressTimer);
+            progressTimer = null;
+        }
+
+        // Clear all save timers
+        saveTimers.forEach(timer => clearTimeout(timer));
+        saveTimers.clear();
+
+        // Show global saving state
+        $('#global-save-status').html('<i class="fas fa-spinner fa-spin"></i> Submitting audit...');
     }
 
-    function showSuccess(message) {
-        $('#successMessage').html(message);
-        $('#successModal').modal('show');
+    function submitAuditRequest() {
+        $.ajax({
+            url: URL_SUBMIT_AUDIT,
+            type: 'POST',
+            headers: {'X-CSRFToken': csrftoken()},
+            timeout: 15000,
+            success(resp){
+                isSubmitting = false;
+                if (resp.success){
+                    handleSuccessfulSubmission(resp);
+                } else {
+                    handleSubmissionError(resp.message || 'Failed to submit audit. Please try again.');
+                }
+            },
+            error(xhr, status, err){
+                isSubmitting = false;
+                let errorMsg = 'Error submitting audit. ';
+
+                if (status === 'timeout') {
+                    errorMsg += 'The request took too long. Please check your connection and try again.';
+                } else if (status === 'error') {
+                    errorMsg += 'Network error occurred. Please check your internet connection.';
+                } else {
+                    errorMsg += 'Please try again.';
+                }
+
+                handleSubmissionError(errorMsg);
+            }
+        });
     }
 
-    function showError(message) {
-        $('#errorMessage').text(message);
-        $('#errorModal').modal('show');
+    function handleSuccessfulSubmission(resp) {
+        // Update UI to show successful submission
+        $submitBtn.html('<i class="fas fa-check"></i> Submitted').removeClass('btn-success').addClass('btn-secondary');
+        $('.submit-help-text').text('Audit submitted successfully').removeClass('text-muted').addClass('text-success');
+        $('#global-save-status').html('<i class="fas fa-check-circle text-success"></i> Audit Submitted');
+
+        // Update progress section to show submitted state
+        $('.alert-warning').removeClass('alert-warning').addClass('alert-success')
+            .html('<i class="fas fa-check-circle"></i><br><strong>SUBMITTED</strong><br><small>This audit is finalized and read-only</small>');
+
+        const msg = `
+            <div class="text-center">
+                <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                <h5>Audit Submitted Successfully!</h5>
+                <div class="mt-3">
+                    <strong>Total Score:</strong> ${resp.total_score.toFixed(2)}<br>
+                    <strong>Percentage:</strong> ${resp.total_percentage.toFixed(1)}%<br>
+                    <strong>Grade:</strong> <span class="badge ${resp.has_critical_failure ? 'bg-danger' : 'bg-success'}">${resp.grade}</span>
+                    ${resp.has_critical_failure ? '<br><strong class="text-danger"><i class="fas fa-exclamation-triangle"></i> Critical Failure Detected</strong>' : ''}
+                </div>
+                <p class="mt-3 text-muted">Redirecting to results page...</p>
+            </div>
+        `;
+
+        showModal('success', msg);
+
+        // Force redirect after delay
+        setTimeout(() => {
+            window.location.href = URL_AUDIT_RESULTS;
+        }, 2500);
     }
+
+    function handleSubmissionError(errorMsg) {
+        // Re-enable UI
+        $('.score-input, .comments-input').prop('readonly', false).removeClass('bg-light');
+        $submitBtn.html('<i class="fas fa-paper-plane"></i> Submit Audit').prop('disabled', false);
+        $confirmSubmitBtn.prop('disabled', false).html('<i class="fas fa-paper-plane"></i> Yes, Submit Audit');
+        $('#global-save-status').html('<i class="fas fa-save"></i> Auto-save enabled');
+
+        // Restart progress polling
+        if (!isSubmitted) {
+            progressTimer = setInterval(() => loadProgress(), PROGRESS_INTERVAL);
+        }
+
+        showModal('error', errorMsg);
+    }
+
+    // --- Initialization ---
+    $(function(){
+        // Cache DOM elements
+        $progressContainer = $('#progress-container');
+        $submitBtn = $('#submit-audit-btn');
+        $sectionJump = $('#sectionJump');
+        $currentSectionInfo = $('#current-section-info');
+        $confirmSubmitModal = $('#confirmSubmitModal');
+        $confirmSubmitBtn = $('#confirmSubmitBtn');
+
+        // Initial setup
+        loadProgress(true);
+        populateSectionJump({});
+        showSection(currentSectionIndex, false);
+
+        // Event bindings
+        $('#navPrev, #navPrevBottom').on('click', () => navigate('prev'));
+        $('#navNext, #navNextBottom').on('click', () => navigate('next'));
+        $sectionJump.on('change', function(){
+            const idx = sectionIds.indexOf($(this).val());
+            if (idx !== -1) showSection(idx);
+        });
+
+        // Use modal confirmation instead of alert
+        $submitBtn.on('click', showSubmitConfirmation);
+        $confirmSubmitBtn.on('click', performSubmission);
+
+        // Keyboard navigation
+        $(document).keydown(function(e){
+            if (isSubmitted) return;
+            if ((e.ctrlKey || e.altKey) && e.key === 'ArrowLeft') {
+                e.preventDefault(); navigate('prev');
+            }
+            if ((e.ctrlKey || e.altKey) && e.key === 'ArrowRight') {
+                e.preventDefault(); navigate('next');
+            }
+        });
+
+        // Input handling
+        $('#audit-form').on('input change', '.score-input, .comments-input', function(){
+            scheduleSave($(this));
+        });
+
+        // Performance optimizations
+        document.addEventListener('visibilitychange', function(){
+            if (!document.hidden && !isSubmitted && !isSubmitting) {
+                setTimeout(() => loadProgress(true), 500);
+            }
+        });
+
+        // Progress polling
+        if (!isSubmitted) {
+            progressTimer = setInterval(() => loadProgress(), PROGRESS_INTERVAL);
+        }
+    });
+
+    // Cleanup on page unload
+    $(window).on('beforeunload', function(){
+        if (progressTimer) clearInterval(progressTimer);
+        saveTimers.forEach(timer => clearTimeout(timer));
+    });
+
+})(jQuery);
 </script>
 
 <style>
-    .section-container {
-        display: none;
+    .section-container{ display:none; }
+    .section-container:first-child{ display:block; }
+    .sticky-top{ position:sticky; z-index:100; }
+    .save-status-indicator{ transition: all .25s ease; }
+    .question-card{ transition: all .25s ease; }
+    .question-card.border-warning{ border-left: 4px solid #ffc107 !important; }
+    .critical-question{ border-left: 4px solid #dc3545 !important; background-color:#fff5f5; }
+    .form-control[readonly]{ background-color:#f8f9fa !important; border-color:#dee2e6; }
+    .section-score-update{ animation: pulse .5s ease-in-out; }
+    @keyframes pulse{
+        0%{ transform:scale(1); }
+        50%{ transform:scale(1.05); }
+        100%{ transform:scale(1); }
     }
 
-    .section-container:first-child {
-        display: block;
-    }
-
-    .sticky-top {
-        position: sticky;
-        z-index: 100;
-    }
-
-    .save-status-indicator {
-        transition: all 0.3s ease;
-    }
-
-    .question-card {
-        transition: all 0.3s ease;
-    }
-
-    .question-card.border-warning {
-        border-left: 4px solid #ffc107 !important;
-    }
-
-    .critical-question {
-        border-left: 4px solid #dc3545 !important;
-        background-color: #fff5f5;
-    }
-
-    .form-control[readonly] {
-        background-color: #f8f9fa !important;
-        border-color: #dee2e6;
-    }
-
-    /* Smooth scrolling */
-    html {
-        scroll-behavior: smooth;
-    }
+    /* Performance optimizations */
+    .question-card { will-change: transform; }
+    .progress-bar { transition: width 0.3s ease; }
 </style>
 {% endblock %}

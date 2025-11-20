@@ -26,3 +26,13 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 # EMAIL_HOST_USER = config('EMAIL_HOST_USER')
 # EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 # EMAIL_USE_TLS = True
+
+LOGGING['loggers']['core']['level'] = 'INFO'
+LOGGING['root']['level'] = 'WARNING'
+
+# Optional: send errors to file + email
+LOGGING['handlers']['mail_admins'] = {
+    'level': 'ERROR',
+    'class': 'django.utils.log.AdminEmailHandler'
+}
+LOGGING['root']['handlers'].append('mail_admins')

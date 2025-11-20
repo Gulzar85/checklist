@@ -29,6 +29,7 @@
                         <th scope="col" @click="sort('score')">Score <i class="fa fa-sort text-muted"></i></th>
                         <th scope="col">Grade</th>
                         <th scope="col">Status</th>
+                        <th scope="col">Critical</th>
                         <th scope="col" class="text-center">Actions</th>
                     </tr>
                 </thead>
@@ -40,9 +41,9 @@
                             <strong>{{ audit.restaurant.name }}</strong><br>
                             <small class="text-muted">{{ audit.restaurant.code }}</small>
                         </td>
-                        <td>{{ audit.audit_date }}</td>
+                        <td>{{ audit.audit_date|date:"M d, Y" }}</td>
                         <td>{{ audit.manager_on_duty }}</td>
-                        <td>{{ audit.auditor_name }}</td>
+                        <td>{{ audit.auditor_name.get_full_name|default:audit.auditor_name.username }}</td>
                         <td>
                             <span class="badge rounded-pill
                                 {% if audit.total_percentage >= 90 %}bg-success
@@ -63,22 +64,48 @@
                                 {% else %}bg-danger{% endif %}">
                                 {{ audit.grade }}
                             </span>
+                            {% if audit.has_critical_failure %}
+                            <br><small class="text-danger">Critical Failure</small>
+                            {% endif %}
                         </td>
                         <td>
-                            {% if audit.is_completed %}
-                            <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i> Completed</span>
+                            {% if audit.is_submitted %}
+                            <span class="badge bg-success">
+                                <i class="fas fa-check-circle me-1"></i> Submitted
+                            </span>
+                            {% if audit.submitted_at %}
+                            <br><small class="text-muted">{{ audit.submitted_at|date:"M d, Y" }}</small>
+                            {% endif %}
                             {% else %}
-                            <span class="badge bg-secondary"><i class="fas fa-pencil-alt me-1"></i> Draft</span>
+                            <span class="badge bg-warning text-dark">
+                                <i class="fas fa-pencil-alt me-1"></i> In Progress
+                            </span>
+                            <br><small class="text-muted">{{ audit.get_progress_percentage|floatformat:1 }}% complete</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if audit.has_critical_failure %}
+                            <span class="badge bg-danger" title="Critical Failure Detected">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </span>
+                            {% else %}
+                            <span class="badge bg-success" title="No Critical Issues">
+                                <i class="fas fa-check"></i>
+                            </span>
                             {% endif %}
                         </td>
                         <td class="text-center">
                             <div class="btn-group btn-group-sm" role="group" aria-label="Audit actions">
                                 <a href="{% url 'core:audit_results' audit.id %}" class="btn btn-outline-primary" title="View Results">
-                                    <i class="fas fa-eye"></i>
+                                    <i class="fas fa-chart-bar"></i>
                                 </a>
-                                {% if not audit.is_completed %}
-                                <a href="{% url 'core:audit_form' audit.id %}" class="btn btn-outline-success" title="Edit Audit">
+                                {% if not audit.is_submitted %}
+                                <a href="{% url 'core:audit_form' audit.id %}" class="btn btn-outline-success" title="Continue Audit">
                                     <i class="fas fa-edit"></i>
+                                </a>
+                                {% else %}
+                                <a href="{% url 'core:audit_detail' audit.id %}" class="btn btn-outline-info" title="View Details">
+                                    <i class="fas fa-info-circle"></i>
                                 </a>
                                 {% endif %}
                             </div>
@@ -105,7 +132,7 @@
         <div class="text-center py-5">
             <i class="fas fa-clipboard-list fa-4x text-muted mb-3"></i>
             <h4 class="fw-semibold text-secondary">No Audits Found</h4>
-            <p class="text-muted">You haven’t conducted any audits yet.</p>
+            <p class="text-muted">You haven't conducted any audits yet.</p>
             <a href="{% url 'core:create_audit' %}" class="btn mcd-btn-primary btn-lg">
                 <i class="fas fa-plus-circle me-2"></i> Create Your First Audit
             </a>
@@ -113,6 +140,70 @@
         {% endif %}
     </div>
 </section>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body bg-primary text-white">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h3 class="card-title">{{ audits.count }}</h3>
+                        <p class="card-text mb-0">Total Audits</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-clipboard-list fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body bg-success text-white">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h3 class="card-title">{{ submitted_count }}</h3>
+                        <p class="card-text mb-0">Submitted</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-check-circle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body bg-warning text-dark">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h3 class="card-title">{{ in_progress_count }}</h3>
+                        <p class="card-text mb-0">In Progress</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-pencil-alt fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body bg-danger text-white">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h3 class="card-title">{{ critical_failure_count }}</h3>
+                        <p class="card-text mb-0">Critical Failures</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-exclamation-triangle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -125,22 +216,71 @@
             this.asc = !this.asc;
             if (!this.asc) rows.reverse();
             for (let row of rows) table.children('tbody').append(row);
-            $('th i').removeClass('fa-sort-up fa-sort-down').addClass('fa-sort');
-            $(this).find('i').removeClass('fa-sort').addClass(this.asc ? 'fa-sort-up' : 'fa-sort-down');
+            $('th i').removeClass('fa-sort-up fa-sort-down').addClass('fa-sort text-muted');
+            $(this).find('i').removeClass('fa-sort text-muted').addClass(this.asc ? 'fa-sort-up' : 'fa-sort-down');
         });
 
         function comparer(index) {
             return (a, b) => {
-                const valA = getCellValue(a, index);
-                const valB = getCellValue(b, index);
+                let valA = getCellValue(a, index);
+                let valB = getCellValue(b, index);
+
+                // Handle percentage values for score column
+                if (valA.includes('%') && valB.includes('%')) {
+                    valA = parseFloat(valA);
+                    valB = parseFloat(valB);
+                }
+
                 return $.isNumeric(valA) && $.isNumeric(valB)
                     ? valA - valB
-                    : valA.localeCompare(valB);
+                    : valA.toString().localeCompare(valB);
             };
         }
+
         function getCellValue(row, index) {
             return $(row).children('td').eq(index).text().trim();
         }
     });
 </script>
+
+<style>
+    .card {
+        transition: transform 0.2s ease-in-out;
+    }
+
+    .card:hover {
+        transform: translateY(-2px);
+    }
+
+    .table th {
+        cursor: pointer;
+        user-select: none;
+        border-top: none;
+        font-weight: 600;
+        color: var(--mcd-red);
+    }
+
+    .table th:hover {
+        background-color: #f8f9fa;
+    }
+
+    .btn-group-sm > .btn {
+        padding: 0.25rem 0.5rem;
+    }
+
+    .badge {
+        font-size: 0.75em;
+    }
+
+    .pagination .page-link {
+        border: none;
+        margin: 0 2px;
+        border-radius: 4px;
+    }
+
+    .pagination .page-item.active .page-link {
+        background-color: var(--mcd-red);
+        border-color: var(--mcd-red);
+    }
+</style>
 {% endblock %}

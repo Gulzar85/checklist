@@ -15,15 +15,6 @@ ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 # Show emails in console during development
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
-# Optional: log SQL queries for debugging
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'console': {'class': 'logging.StreamHandler'},
-    },
-    'root': {
-        'handlers': ['console'],
-        'level': 'DEBUG',
-    },
-}
+LOGGING['loggers']['core']['level'] = 'DEBUG'
+LOGGING['handlers']['console']['class'] = 'logging.StreamHandler'
+LOGGING['root']['level'] = 'DEBUG'

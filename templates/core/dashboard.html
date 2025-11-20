@@ -143,6 +143,7 @@
                                 <th>Score</th>
                                 <th>Grade</th>
                                 <th>Status</th>
+                                <th>Critical</th>
                                 <th>Actions</th>
                             </tr>
                             </thead>
@@ -168,10 +169,21 @@
                                     </span>
                                 </td>
                                 <td>
-                                    {% if audit.is_completed %}
-                                    <span class="badge bg-success">Completed</span>
+                                    {% if audit.is_submitted %}
+                                    <span class="badge bg-success">Submitted</span>
                                     {% else %}
-                                    <span class="badge bg-warning text-dark">Draft</span>
+                                    <span class="badge bg-warning text-dark">In Progress</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if audit.has_critical_failure %}
+                                    <span class="badge bg-danger" title="Critical Failure">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-success" title="No Critical Issues">
+                                        <i class="fas fa-check"></i>
+                                    </span>
                                     {% endif %}
                                 </td>
                                 <td>
@@ -179,11 +191,14 @@
                                         <a href="{% url 'core:audit_results' audit.id %}" class="btn btn-outline-primary" title="View Results">
                                             <i class="fas fa-eye"></i>
                                         </a>
-                                        {% if not audit.is_completed %}
+                                        {% if not audit.is_submitted %}
                                         <a href="{% url 'core:audit_form' audit.id %}" class="btn btn-outline-success" title="Continue Audit">
                                             <i class="fas fa-edit"></i>
                                         </a>
                                         {% endif %}
+                                        <a href="{% url 'core:audit_detail' audit.id %}" class="btn btn-outline-info" title="View Details">
+                                            <i class="fas fa-info-circle"></i>
+                                        </a>
                                     </div>
                                 </td>
                             </tr>
@@ -233,7 +248,7 @@
                                         </a>
                                     </h6>
                                     <small class="text-muted d-block">{{ restaurant.code }}</small>
-                                    <small class="text-muted">{{ restaurant.location }}</small>
+                                    <small class="text-muted">{{ restaurant.city }}</small>
                                     <div class="mt-2">
                                         <a href="{% url 'core:restaurant_audits' restaurant.id %}" class="btn btn-sm btn-outline-danger">
                                             <i class="fas fa-clipboard-list"></i> View Audits
@@ -306,6 +321,10 @@
 
     .btn-group-sm > .btn {
         padding: 0.25rem 0.5rem;
+    }
+
+    .badge {
+        font-size: 0.75em;
     }
 </style>
 {% endblock %}

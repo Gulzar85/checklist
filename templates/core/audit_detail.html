@@ -1,0 +1,310 @@
+{% extends 'base.html' %}
+
+{% block title %}Audit Details - {{ audit.restaurant.name }} - {{ audit.audit_date }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="{% url 'core:dashboard' %}">Dashboard</a></li>
+                            <li class="breadcrumb-item"><a href="{% url 'core:audit_list' %}">Audits</a></li>
+                            <li class="breadcrumb-item active">Audit Details</li>
+                        </ol>
+                    </nav>
+                    <h1 class="h3 mcd-text-red mb-0">
+                        <i class="fas fa-clipboard-list"></i>
+                        Audit Details
+                    </h1>
+                </div>
+                <div class="btn-group">
+                    <a href="{% url 'core:audit_results' audit.id %}" class="btn btn-outline-primary">
+                        <i class="fas fa-chart-bar"></i> Results
+                    </a>
+                    <a href="{% url 'core:audit_form' audit.id %}" class="btn btn-outline-success">
+                        <i class="fas fa-edit"></i> Edit
+                    </a>
+                    <a href="{% url 'core:restaurant_audits' audit.restaurant.id %}" class="btn btn-outline-info">
+                        <i class="fas fa-utensils"></i> Restaurant Audits
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audit Summary Card -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header mcd-bg-red text-white">
+                    <h5 class="mb-0"><i class="fas fa-info-circle"></i> Audit Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>Restaurant:</strong>
+                            <p class="mb-1">{{ audit.restaurant.name }}</p>
+                            <small class="text-muted">{{ audit.restaurant.code }}</small>
+                        </div>
+                        <div class="col-md-2">
+                            <strong>Audit Date:</strong>
+                            <p>{{ audit.audit_date|date:"M d, Y" }}</p>
+                        </div>
+                        <div class="col-md-2">
+                            <strong>Manager:</strong>
+                            <p>{{ audit.manager_on_duty }}</p>
+                        </div>
+                        <div class="col-md-2">
+                            <strong>Auditor:</strong>
+                            <p>{{ audit.auditor_name.get_full_name|default:audit.auditor_name.username }}</p>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Status:</strong>
+                            <p>
+                                <span class="badge {% if audit.is_submitted %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                                    {{ audit.status }}
+                                </span>
+                                {% if audit.has_critical_failure %}
+                                <span class="badge bg-danger ms-1">
+                                    <i class="fas fa-exclamation-triangle"></i> Critical Failure
+                                </span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Score Summary -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm text-center">
+                <div class="card-body bg-primary text-white">
+                    <h3 class="card-title">{{ audit.total_percentage|floatformat:1 }}%</h3>
+                    <p class="card-text mb-0">Overall Score</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm text-center">
+                <div class="card-body {% if audit.grade == 'A' %}bg-success{% elif audit.grade == 'B' %}bg-info{% elif audit.grade == 'C' %}bg-warning text-dark{% else %}bg-danger{% endif %} text-white">
+                    <h3 class="card-title">{{ audit.grade }}</h3>
+                    <p class="card-text mb-0">Grade</p>
+                    {% if audit.has_critical_failure %}
+                    <small class="opacity-75">(Critical Failure)</small>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm text-center">
+                <div class="card-body bg-secondary text-white">
+                    <h3 class="card-title">{{ audit.total_scored|floatformat:0 }}</h3>
+                    <p class="card-text mb-0">Points Scored</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm text-center">
+                <div class="card-body bg-dark text-white">
+                    <h3 class="card-title">{{ audit.total_possible|floatformat:0 }}</h3>
+                    <p class="card-text mb-0">Possible Points</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sections and Questions -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header mcd-bg-red text-white">
+                    <h5 class="mb-0"><i class="fas fa-list-alt"></i> Section Details</h5>
+                </div>
+                <div class="card-body p-0">
+                    {% for section in sections %}
+                    <div class="section-card border-bottom">
+                        <div class="section-header bg-light p-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1 text-danger">{{ section.section.name }}</h6>
+                                    <small class="text-muted">{{ section.section.description }}</small>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge {% if section.has_critical_failure %}bg-danger{% else %}bg-success{% endif %} me-2">
+                                        {% if section.has_critical_failure %}
+                                        <i class="fas fa-exclamation-triangle"></i> Critical Failure
+                                        {% else %}
+                                        <i class="fas fa-check"></i> No Critical Issues
+                                        {% endif %}
+                                    </span>
+                                    <span class="badge bg-primary">
+                                        {{ section.scored_points|floatformat:0 }}/{{ section.possible_points|floatformat:0 }} 
+                                        ({{ section.section_percentage|floatformat:1 }}%)
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="section-questions">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th width="5%">#</th>
+                                        <th width="45%">Question</th>
+                                        <th width="10%">Possible</th>
+                                        <th width="10%">Scored</th>
+                                        <th width="10%">Critical</th>
+                                        <th width="20%">Comments</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for response in responses %}
+                                    {% if response.audit_section.section.id == section.section.id %}
+                                    <tr class="{% if response.question.is_critical and response.scored_points == 0 %}table-danger{% elif response.question.is_critical %}table-warning{% endif %}">
+                                        <td>{{ forloop.counter }}</td>
+                                        <td>
+                                            {{ response.question.question_text }}
+                                            {% if response.question.is_critical %}
+                                            <span class="badge bg-danger ms-1">Critical</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ response.question.possible_points }}</td>
+                                        <td>
+                                            <span class="badge {% if response.scored_points == response.question.possible_points %}bg-success{% elif response.scored_points > 0 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                                                {{ response.scored_points }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if response.question.is_critical %}
+                                                {% if response.scored_points == 0 %}
+                                                <span class="badge bg-danger">Failed</span>
+                                                {% else %}
+                                                <span class="badge bg-success">Passed</span>
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="badge bg-secondary">N/A</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if response.comments %}
+                                            <small class="text-muted">{{ response.comments|truncatewords:10 }}</small>
+                                            {% else %}
+                                            <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Previous Audit Info -->
+    {% if audit.previous_audit_date %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-history"></i> Previous Audit Comparison</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <strong>Previous Audit Date:</strong>
+                            <p>{{ audit.previous_audit_date|date:"M d, Y" }}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Previous Score:</strong>
+                            <p>{{ audit.previous_audit_score|floatformat:1 }}%</p>
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Previous Auditor:</strong>
+                            <p>{{ audit.previous_auditor }}</p>
+                        </div>
+                    </div>
+                    {% if audit.previous_audit_score %}
+                    <div class="progress mt-2" style="height: 25px;">
+                        <div class="progress-bar bg-success" style="width: {{ audit.previous_audit_score }}%">
+                            Previous: {{ audit.previous_audit_score|floatformat:1 }}%
+                        </div>
+                        <div class="progress-bar bg-primary" style="width: {{ audit.total_percentage }}%">
+                            Current: {{ audit.total_percentage|floatformat:1 }}%
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Timestamps -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="fas fa-clock"></i> Audit Timeline</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <strong>Created:</strong>
+                            <p class="mb-0">{{ audit.created_at|date:"M d, Y H:i" }}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Last Updated:</strong>
+                            <p class="mb-0">{{ audit.updated_at|date:"M d, Y H:i" }}</p>
+                        </div>
+                        {% if audit.submitted_at %}
+                        <div class="col-md-4">
+                            <strong>Submitted:</strong>
+                            <p class="mb-0">{{ audit.submitted_at|date:"M d, Y H:i" }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .section-card:last-child {
+        border-bottom: none !important;
+    }
+    
+    .section-questions table {
+        margin-bottom: 0 !important;
+    }
+    
+    .section-questions .table td, 
+    .section-questions .table th {
+        padding: 0.75rem;
+        vertical-align: middle;
+    }
+    
+    .progress-bar {
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    
+    .breadcrumb {
+        background: transparent;
+        padding: 0;
+        margin-bottom: 0.5rem;
+    }
+</style>
+{% endblock %}
