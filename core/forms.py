@@ -1,52 +1,104 @@
 from django import forms
+from django.core.exceptions import ValidationError
+from django.utils import timezone
+from .models import Audit, CorrectiveAction, Restaurant
 
 
 class McDonaldDateInput(forms.DateInput):
-    """Custom date input with McDonald's styling"""
     input_type = 'date'
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.attrs.update({
             'class': 'form-control',
-            'style': 'border-color: #FF0000;'
+            'style': 'border-color: #DA291C;'
         })
 
 
 class McDonaldSelect(forms.Select):
-    """Custom select with McDonald's styling"""
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.attrs.update({
             'class': 'form-select',
-            'style': 'border-color: #FF0000;'
+            'style': 'border-color: #DA291C;'
         })
 
 
-class RatingWidget(forms.NumberInput):
-    """Custom widget for rating inputs"""
-    input_type = 'number'
+class CreateAuditForm(forms.ModelForm):
+    class Meta:
+        model = Audit
+        fields = ['restaurant', 'audit_date', 'manager_on_duty']
+        widgets = {
+            'restaurant': McDonaldSelect(),
+            'audit_date': McDonaldDateInput(),
+            'manager_on_duty': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter manager name',
+                'style': 'border-color: #DA291C;'
+            }),
+        }
+
+    def clean_audit_date(self):
+        audit_date = self.cleaned_data['audit_date']
+        if audit_date > timezone.now().date():
+            raise ValidationError("Audit date cannot be in the future.")
+        return audit_date
+
+    def clean(self):
+        cleaned_data = super().clean()
+        restaurant = cleaned_data.get('restaurant')
+        audit_date = cleaned_data.get('audit_date')
+
+        if restaurant and audit_date:
+            # Check for existing audit on same date for same restaurant
+            existing = Audit.objects.filter(
+                restaurant=restaurant,
+                audit_date=audit_date
+            ).exists()
+
+            if existing:
+                raise ValidationError(
+                    f"An audit for {restaurant.name} on {audit_date} already exists."
+                )
+        return cleaned_data
+
+
+class CorrectiveActionForm(forms.ModelForm):
+    class Meta:
+        model = CorrectiveAction
+        fields = ['description', 'risk_level', 'assigned_to', 'deadline', 'completed', 'comments']
+        widgets = {
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'style': 'border-color: #DA291C;'
+            }),
+            'risk_level': McDonaldSelect(),
+            'assigned_to': forms.TextInput(attrs={
+                'class': 'form-control',
+                'style': 'border-color: #DA291C;'
+            }),
+            'deadline': McDonaldDateInput(),
+            'comments': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 2,
+                'style': 'border-color: #DA291C;'
+            }),
+        }
+
+    def clean_deadline(self):
+        deadline = self.cleaned_data['deadline']
+        if deadline < timezone.now().date():
+            raise ValidationError("Deadline cannot be in the past.")
+        return deadline
+
+
+class RestaurantFilterForm(forms.Form):
+    city = forms.ChoiceField(required=False, widget=McDonaldSelect())
+    is_active = forms.BooleanField(required=False, initial=True)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.attrs.update({
-            'class': 'form-control',
-            'min': '0',
-            'max': '5',
-            'step': '0.5',
-            'style': 'border-color: #FFCC00;'
-        })
-
-
-class CommentWidget(forms.Textarea):
-    """Custom widget for comments with McDonald's styling"""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.attrs.update({
-            'class': 'form-control',
-            'rows': 3,
-            'placeholder': 'Enter your comments...',
-            'style': 'border-color: #FF0000;'
-        })
+        # Dynamically set city choices
+        cities = Restaurant.objects.values_list('city', flat=True).distinct()
+        self.fields['city'].choices = [('', 'All Cities')] + [(city, city) for city in cities]

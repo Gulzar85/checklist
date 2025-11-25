@@ -1,0 +1,360 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Corrective Action #{{ action.id }} - McDonald's QA Audit System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+        <div>
+            <h1 class="h2 mcd-text-red mb-1">
+                <i class="fas fa-exclamation-triangle me-2"></i> Corrective Action #{{ action.id }}
+            </h1>
+            <p class="text-muted mb-0">Detailed view of corrective action</p>
+        </div>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{% url 'core:action_list' %}" class="btn mcd-btn-outline me-2">
+                <i class="fas fa-arrow-left me-2"></i> Back to List
+            </a>
+            <a href="{% url 'core:corrective_action_update' action.id %}"  class="btn mcd-btn-primary me-2">
+                <i class="fas fa-edit me-2"></i> Edit Action
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Left Column - Action Details -->
+        <div class="col-md-8">
+            <!-- Basic Information -->
+            <div class="mcd-card mb-4">
+                <div class="mcd-card-header">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i> Action Details</h5>
+                </div>
+                <div class="mcd-card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong class="text-danger">Description:</strong>
+                            <p class="mt-2">{{ action.description }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <strong class="text-danger">Risk Level:</strong>
+                            <p class="mt-2">
+                                <span class="mcd-badge
+                                    {% if action.risk_level == 'CRITICAL' %}mcd-badge-danger
+                                    {% elif action.risk_level == 'HIGH' %}mcd-badge-danger
+                                    {% elif action.risk_level == 'MEDIUM' %}mcd-badge-warning
+                                    {% else %}mcd-badge-info{% endif %}">
+                                    {{ action.get_risk_level_display }}
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <strong class="text-danger">Assigned To:</strong>
+                            <p class="mt-2">{{ action.assigned_to }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <strong class="text-danger">Deadline:</strong>
+                            <p class="mt-2 {% if action.deadline < today and not action.completed %}text-danger fw-bold{% endif %}">
+                                {{ action.deadline|date:"M d, Y" }}
+                                {% if action.deadline < today and not action.completed %}
+                                    <span class="mcd-badge mcd-badge-danger ms-2">Overdue</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+
+                    {% if action.comments %}
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <strong class="text-danger">Comments:</strong>
+                            <p class="mt-2">{{ action.comments|linebreaks }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Related Audit Information -->
+            <div class="mcd-card">
+                <div class="mcd-card-header">
+                    <h5 class="mb-0"><i class="fas fa-clipboard-check me-2"></i> Related Audit</h5>
+                </div>
+                <div class="mcd-card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong class="text-danger">Restaurant:</strong>
+                            <p class="mt-2">{{ action.audit.restaurant.name }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <strong class="text-danger">Audit Date:</strong>
+                            <p class="mt-2">{{ action.audit.audit_date|date:"M d, Y" }}</p>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <strong class="text-danger">Auditor:</strong>
+                            <p class="mt-2">{{ action.audit.auditor_name.get_full_name|default:action.audit.auditor_name.username }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <strong class="text-danger">Manager on Duty:</strong>
+                            <p class="mt-2">{{ action.audit.manager_on_duty }}</p>
+                        </div>
+                    </div>
+
+                    {% if action.question_response %}
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <strong class="text-danger">Related Question:</strong>
+                            <p class="mt-2">{{ action.question_response.question.question_text }}</p>
+
+                            {% if action.question_response.comments %}
+                            <strong class="text-danger mt-2 d-block">Question Comments:</strong>
+                            <p class="mt-1">{{ action.question_response.comments|linebreaks }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column - Status & Actions -->
+        <div class="col-md-4">
+            <!-- Status Card -->
+            <div class="mcd-card mb-4">
+                <div class="mcd-card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i> Status</h5>
+                </div>
+                <div class="mcd-card-body text-center">
+                    {% if action.completed %}
+                        <div class="text-success mb-3">
+                            <i class="fas fa-check-circle fa-3x"></i>
+                        </div>
+                        <h5 class="text-success">Completed</h5>
+                        <p class="text-muted">Completed on: {{ action.completion_date|date:"M d, Y" }}</p>
+                    {% else %}
+                        <div class="text-warning mb-3">
+                            <i class="fas fa-clock fa-3x"></i>
+                        </div>
+                        <h5 class="text-warning">Pending</h5>
+                        {% if action.deadline < today %}
+                            <p class="text-danger fw-bold">
+                                <i class="fas fa-exclamation-triangle me-1"></i>
+                                Overdue by {{ today|timeuntil:action.deadline }}
+                            </p>
+                        {% else %}
+                            <p class="text-muted">
+                                Due in {{ action.deadline|timeuntil:today }}
+                            </p>
+                        {% endif %}
+                    {% endif %}
+
+                    <div class="mt-4">
+                        {% if not action.completed %}
+                            <button onclick="markAsCompleted({{ action.id }})"
+                                    class="btn mcd-btn-success w-100 mb-2">
+                                <i class="fas fa-check me-2"></i> Mark Completed
+                            </button>
+                        {% endif %}
+
+                       <a href="{% url 'core:corrective_action_update' action.id %}"
+                           class="btn mcd-btn-primary w-100 mb-2">
+                            <i class="fas fa-edit me-2"></i> Edit Action
+                        </a>
+
+                        {% if user_is_admin %}
+                        <a href="{% url 'core:corrective_action_delete' action.id %}"
+                           class="btn mcd-btn-danger w-100">
+                            <i class="fas fa-trash me-2"></i> Delete Action
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Timeline -->
+            <div class="mcd-card">
+                <div class="mcd-card-header">
+                    <h5 class="mb-0"><i class="fas fa-history me-2"></i> Timeline</h5>
+                </div>
+                <div class="mcd-card-body">
+                    <div class="timeline">
+                        <div class="timeline-item mb-3">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <small class="text-muted">Created</small>
+                                    <p class="mb-0 fw-semibold">{{ action.created_at|date:"M d, Y" }}</p>
+                                    <small class="text-muted">{{ action.created_at|date:"g:i A" }}</small>
+                                </div>
+                                <i class="fas fa-plus-circle text-primary"></i>
+                            </div>
+                        </div>
+
+                        <div class="timeline-item mb-3">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <small class="text-muted">Deadline</small>
+                                    <p class="mb-0 fw-semibold {% if action.deadline < today and not action.completed %}text-danger{% endif %}">
+                                        {{ action.deadline|date:"M d, Y" }}
+                                    </p>
+                                </div>
+                                <i class="fas fa-calendar-alt text-warning"></i>
+                            </div>
+                        </div>
+
+                        {% if action.completed %}
+                        <div class="timeline-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <small class="text-muted">Completed</small>
+                                    <p class="mb-0 fw-semibold">{{ action.completion_date|date:"M d, Y" }}</p>
+                                </div>
+                                <i class="fas fa-check-circle text-success"></i>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function markAsCompleted(actionId) {
+        if (confirm('Are you sure you want to mark this corrective action as completed?')) {
+            // Show loading state
+            const btn = event.target;
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Processing...';
+            btn.disabled = true;
+
+            // Make AJAX call to mark as completed
+            fetch(`/corrective-actions/${actionId}/complete/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('Success', 'Corrective action marked as completed!', 'success');
+                    // Reload the page after a short delay
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    showToast('Error', data.message || 'Failed to update action', 'error');
+                    btn.innerHTML = originalHTML;
+                    btn.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('Error', 'An error occurred while updating the action', 'error');
+                btn.innerHTML = originalHTML;
+                btn.disabled = false;
+            });
+        }
+    }
+
+    // Utility function to get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // Toast notification function
+    function showToast(title, message, type = 'info') {
+        // Create toast element
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-white bg-${type === 'error' ? 'danger' : type} border-0`;
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <strong>${title}</strong><br>${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+
+        // Add to toast container
+        let toastContainer = document.getElementById('toastContainer');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.id = 'toastContainer';
+            toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+            toastContainer.style.zIndex = '9999';
+            document.body.appendChild(toastContainer);
+        }
+
+        toastContainer.appendChild(toast);
+
+        // Initialize and show toast
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+
+        // Remove toast after it's hidden
+        toast.addEventListener('hidden.bs.toast', () => {
+            toast.remove();
+        });
+    }
+</script>
+
+<style>
+    .mcd-badge {
+        padding: 0.35em 0.65em;
+        font-size: 0.75em;
+        font-weight: 600;
+        border-radius: 0.25rem;
+    }
+
+    .mcd-badge-danger {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .mcd-badge-warning {
+        background-color: #ffc107;
+        color: black;
+    }
+
+    .mcd-badge-success {
+        background-color: #198754;
+        color: white;
+    }
+
+    .mcd-badge-info {
+        background-color: #0dcaf0;
+        color: black;
+    }
+
+    .timeline-item {
+        position: relative;
+        padding-left: 2rem;
+    }
+
+    .timeline-item i {
+        position: absolute;
+        left: 0;
+        top: 0.25rem;
+        font-size: 1.1rem;
+    }
+</style>
+{% endblock %}

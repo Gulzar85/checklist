@@ -1,10 +1,235 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_filters %}
 
-</body>
-</html>
+{% block title %}Reports Overview - McDonald's QA Audit System{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mcd-text-red mb-1">
+                <i class="fas fa-chart-bar"></i> Reports & Analytics
+            </h1>
+            <p class="text-muted mb-0">Comprehensive audit performance insights</p>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h3 class="card-title text-primary">{{ total_audits }}</h3>
+                            <p class="card-text mb-0">Total Audits</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-clipboard-list fa-2x text-primary"></i>
+                        </div>
+                    </div>
+                    <small class="text-muted">Last 30 days: {{ recent_audits_count }}</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h3 class="card-title text-success">{{ avg_score }}%</h3>
+                            <p class="card-text mb-0">Average Score</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-chart-line fa-2x text-success"></i>
+                        </div>
+                    </div>
+                    <small class="text-muted">Overall performance</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h3 class="card-title text-danger">{{ critical_failures }}</h3>
+                            <p class="card-text mb-0">Critical Failures</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-exclamation-triangle fa-2x text-danger"></i>
+                        </div>
+                    </div>
+                    <small class="text-muted">Requiring immediate action</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h3 class="card-title text-warning">{{ pending_actions }}</h3>
+                            <p class="card-text mb-0">Pending Actions</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-tasks fa-2x text-warning"></i>
+                        </div>
+                    </div>
+                    <small class="text-muted">{{ overdue_actions }} overdue</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grade Distribution -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header mcd-bg-red text-white">
+                    <h5 class="mb-0"><i class="fas fa-chart-pie"></i> Grade Distribution</h5>
+                </div>
+                <div class="card-body">
+                    {% if grade_distribution %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                            <tr>
+                                <th>Grade</th>
+                                <th>Count</th>
+                                <th>Percentage</th>
+                                <th>Avg Score</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for grade in grade_distribution %}
+                            <tr>
+                                <td>
+                                        <span class="badge
+                                            {% if grade.grade == 'A' %}bg-success
+                                            {% elif grade.grade == 'B' %}bg-primary
+                                            {% elif grade.grade == 'C' %}bg-warning text-dark
+                                            {% else %}bg-danger{% endif %}">
+                                            {{ grade.grade }}
+                                        </span>
+                                </td>
+                                <td>{{ grade.count }}</td>
+                                <td>{{ grade.percentage|floatformat:1 }}%</td>
+                                <td>
+                                    <span class="fw-bold {% if grade.avg_score == 0 %}text-muted{% endif %}">
+                                        {{ grade.avg_score|floatformat:1 }}%
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center py-4">No grade data available</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Restaurants -->
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-trophy"></i> Top Performing Restaurants</h5>
+                </div>
+                <div class="card-body">
+                    {% if top_restaurants %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                            <tr>
+                                <th>Restaurant</th>
+                                <th>Avg Score</th>
+                                <th>Audits</th>
+                                <th>Last Audit</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for restaurant in top_restaurants %}
+                            <tr>
+                                <td>
+                                    <strong>{{ restaurant.name }}</strong>
+                                    <br><small class="text-muted">{{ restaurant.code }}</small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-success">{{ restaurant.avg_score|floatformat:1 }}%</span>
+                                </td>
+                                <td>{{ restaurant.audit_count }}</td>
+                                <td>{{ restaurant.last_audit_date|date:"M d, Y" }}</td>
+                            </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center py-4">No restaurant data available</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Links -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-link"></i> Quick Report Links</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3 mb-3">
+                            <a href="{% url 'core:restaurant_performance_report' %}"
+                               class="btn btn-outline-primary w-100">
+                                <i class="fas fa-store fa-2x mb-2"></i><br>
+                                Restaurant Performance
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{% url 'core:audit_list' %}" class="btn btn-outline-success w-100">
+                                <i class="fas fa-clipboard-list fa-2x mb-2"></i><br>
+                                Audit History
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{% url 'core:action_list' %}" class="btn btn-outline-warning w-100">
+                                <i class="fas fa-exclamation-triangle fa-2x mb-2"></i><br>
+                                Corrective Actions
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="/admin/" class="btn btn-outline-danger w-100">
+                                <i class="fas fa-shield-alt fa-2x mb-2"></i><br>
+                                Admin Panel
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        transition: transform 0.2s ease-in-out;
+    }
+    .card:hover {
+        transform: translateY(-2px);
+    }
+    .btn {
+        padding: 15px 10px;
+    }
+</style>
+{% endblock %}

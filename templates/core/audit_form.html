@@ -65,7 +65,8 @@
                     <!-- Auto-save Status -->
                     <div id="save-status" class="mt-2" style="display: none;">
                         <div class="alert alert-success alert-dismissible fade show py-2" role="alert">
-                            <small><i class="fas fa-check-circle"></i> <span id="save-message">Changes saved</span></small>
+                            <small><i class="fas fa-check-circle"></i> <span
+                                    id="save-message">Changes saved</span></small>
                             <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button>
                         </div>
                     </div>
@@ -86,7 +87,8 @@
                         <button class="btn btn-success w-100" id="submit-audit-btn" disabled>
                             <i class="fas fa-paper-plane"></i> Submit Audit
                         </button>
-                        <small class="submit-help-text text-muted d-block text-center mt-1">Complete more questions to submit</small>
+                        <small class="submit-help-text text-muted d-block text-center mt-1">Complete more questions to
+                            submit</small>
                     </div>
                     {% endif %}
 
@@ -155,7 +157,9 @@
                                         <span class="badge bg-light text-dark me-2">
                                             {{ forloop.counter }}/{{ section_data|length }}
                                         </span>
-                                        <span class="badge {% if data.has_critical_failure %}bg-danger{% else %}bg-success{% endif %} section-score-badge" data-section-id="{{ data.section.id }}" id="section-score-{{ data.section.id }}">
+                                        <span class="badge {% if data.has_critical_failure %}bg-danger{% else %}bg-success{% endif %} section-score-badge"
+                                              data-section-id="{{ data.section.id }}"
+                                              id="section-score-{{ data.section.id }}">
                                             {% if data.has_critical_failure %}
                                             <i class="fas fa-exclamation-triangle"></i> Critical
                                             {% else %}
@@ -166,7 +170,8 @@
                                 </div>
                                 <div class="card-body">
                                     {% for question in data.questions %}
-                                    <div class="card border question-card mb-3 {% if question.is_critical %}border-danger critical-question{% endif %} {% if audit.is_submitted %}border-light{% endif %}" id="question-{{ data.section.id }}-{{ question.id }}">
+                                    <div class="card border question-card mb-3 {% if question.is_critical %}border-danger critical-question{% endif %} {% if audit.is_submitted %}border-light{% endif %}"
+                                         id="question-{{ data.section.id }}-{{ question.id }}">
                                         <div class="card-body {% if audit.is_submitted %}bg-light{% endif %}">
                                             <div class="row">
                                                 <div class="col-md-8">
@@ -179,7 +184,9 @@
                                                     <p class="text-muted small mb-2">
                                                         Possible Points: <strong>{{ question.possible_points }}</strong>
                                                         {% if question.is_critical %}
-                                                        <br><small class="text-danger"><i class="fas fa-exclamation-triangle"></i> Critical question - zero score fails entire audit</small>
+                                                        <br><small class="text-danger"><i
+                                                            class="fas fa-exclamation-triangle"></i> Critical question -
+                                                        zero score fails entire audit</small>
                                                         {% endif %}
                                                     </p>
                                                 </div>
@@ -190,7 +197,8 @@
                                                         {% if audit.is_submitted %}
                                                         <div class="form-control bg-light">
                                                             <strong>{{ question.scored_points }}</strong>
-                                                            <small class="text-muted float-end">/ {{ question.possible_points }}</small>
+                                                            <small class="text-muted float-end">/ {{
+                                                                question.possible_points }}</small>
                                                         </div>
                                                         {% else %}
                                                         <input type="number"
@@ -217,14 +225,19 @@
                                                             {% endif %}
                                                         </div>
                                                         {% else %}
-                                                        <textarea class="form-control comments-input" data-section="{{ data.section.id }}" data-question="{{ question.id }}" rows="3" placeholder="Add comments or observations...">{{ question.comments }}</textarea>
+                                                        <textarea class="form-control comments-input"
+                                                                  data-section="{{ data.section.id }}"
+                                                                  data-question="{{ question.id }}" rows="3"
+                                                                  placeholder="Add comments or observations...">{{ question.comments }}</textarea>
                                                         {% endif %}
                                                     </div>
 
                                                     <!-- Question Save Status -->
                                                     {% if not audit.is_submitted %}
-                                                    <div id="question-{{ data.section.id }}-{{ question.id }}-status" class="save-status-indicator mt-1" style="display: none;">
-                                                        <small class="text-success"><i class="fas fa-check"></i> Saved</small>
+                                                    <div id="question-{{ data.section.id }}-{{ question.id }}-status"
+                                                         class="save-status-indicator mt-1" style="display: none;">
+                                                        <small class="text-success"><i class="fas fa-check"></i>
+                                                            Saved</small>
                                                     </div>
                                                     {% endif %}
 
@@ -323,7 +336,8 @@
                 <p>Are you sure you want to submit this audit?</p>
                 <div class="alert alert-info">
                     <i class="fas fa-info-circle"></i>
-                    <strong>This action cannot be undone.</strong> Once submitted, the audit will be finalized and no further changes can be made.
+                    <strong>This action cannot be undone.</strong> Once submitted, the audit will be finalized and no
+                    further changes can be made.
                 </div>
             </div>
             <div class="modal-footer">
@@ -339,100 +353,100 @@
 
 {% block scripts %}
 <script>
-(function($){
-    'use strict';
+    (function($){
+        'use strict';
 
-    // --- Config / State ---
-    const auditId = {{ audit.id }};
-    const isSubmitted = {% if audit.is_submitted %}true{% else %}false{% endif %};
-    let hasCriticalFailure = {% if audit.has_critical_failure %}true{% else %}false{% endif %};
-    const SAVE_DELAY = 1000;
-    const PROGRESS_INTERVAL = 10000;
-    const sectionIds = [{% for data in section_data %}'section-{{ data.section.id }}'{% if not forloop.last %}, {% endif %}{% endfor %}];
-    let currentSectionIndex = 0;
+        // --- Config / State ---
+        const auditId = {{ audit.id }};
+        const isSubmitted = {% if audit.is_submitted %}true{% else %}false{% endif %};
+        let hasCriticalFailure = {% if audit.has_critical_failure %}true{% else %}false{% endif %};
+        const SAVE_DELAY = 1000;
+        const PROGRESS_INTERVAL = 10000;
+        const sectionIds = [{% for data in section_data %}'section-{{ data.section.id }}'{% if not forloop.last %}, {% endif %}{% endfor %}];
+        let currentSectionIndex = 0;
 
-    // State management
-    const saveTimers = new Map();
-    let isSaving = false;
-    let progressTimer = null;
-    let pendingSaves = new Set();
-    let isSubmitting = false;
+        // State management
+        const saveTimers = new Map();
+        let isSaving = false;
+        let progressTimer = null;
+        let pendingSaves = new Set();
+        let isSubmitting = false;
 
-    // URLs
-    const URL_SAVE_RESPONSE = "{% url 'core:save_response' %}";
-    const URL_AUDIT_PROGRESS = "{% url 'core:audit_progress' audit.id %}";
-    const URL_SUBMIT_AUDIT = "{% url 'core:submit_audit' audit.id %}";
-    const URL_AUDIT_RESULTS = "{% url 'core:audit_results' audit.id %}";
+        // URLs
+        const URL_SAVE_RESPONSE = "{% url 'core:save_response' %}";
+        const URL_AUDIT_PROGRESS = "{% url 'core:audit_progress' audit.id %}";
+        const URL_SUBMIT_AUDIT = "{% url 'core:submit_audit' audit.id %}";
+        const URL_AUDIT_RESULTS = "{% url 'core:audit_results' audit.id %}";
 
-    // Cache DOM elements
-    let $progressContainer, $submitBtn, $sectionJump, $currentSectionInfo;
-    let $confirmSubmitModal, $confirmSubmitBtn;
+        // Cache DOM elements
+        let $progressContainer, $submitBtn, $sectionJump, $currentSectionInfo;
+        let $confirmSubmitModal, $confirmSubmitBtn;
 
-    // --- Utilities ---
-    function csrftoken() {
-        return document.querySelector('[name=csrfmiddlewaretoken]')?.value ||
-               document.cookie.match(/csrftoken=([^;]+)/)?.[1];
-    }
-
-    function showModal(id, content){
-        if (id === 'success') {
-            $('#successMessage').html(content);
-            $('#successModal').modal('show');
-        } else if (id === 'error') {
-            $('#errorMessage').text(content);
-            $('#errorModal').modal('show');
-        }
-    }
-
-    // --- Navigation ---
-    function showSection(index, scroll=true){
-        index = Math.max(0, Math.min(index, sectionIds.length - 1));
-        currentSectionIndex = index;
-
-        $('.section-container').hide();
-        const id = sectionIds[index];
-        $(`#${id}`).show();
-
-        const title = $(`#${id} .section-title`).text() || '';
-        $currentSectionInfo.text(title ? ('- ' + title.split(': ').slice(1).join(': ')) : '');
-        $sectionJump.val(id);
-
-        if (scroll) {
-            $('html, body').animate({ scrollTop: $(`#${id}`).offset().top - 100 }, 300);
-        }
-    }
-
-    function navigate(direction){
-        if (direction === 'next' && currentSectionIndex < sectionIds.length - 1) currentSectionIndex++;
-        if (direction === 'prev' && currentSectionIndex > 0) currentSectionIndex--;
-        showSection(currentSectionIndex);
-    }
-
-    // --- Auto-save ---
-    function scheduleSave($el){
-        if (isSubmitted || isSubmitting) return;
-
-        const sectionId = $el.data('section');
-        const questionId = $el.data('question');
-        const key = `${sectionId}_${questionId}`;
-
-        if (saveTimers.has(key)) {
-            clearTimeout(saveTimers.get(key));
+        // --- Utilities ---
+        function csrftoken() {
+            return document.querySelector('[name=csrfmiddlewaretoken]')?.value ||
+                   document.cookie.match(/csrftoken=([^;]+)/)?.[1];
         }
 
-        const $indicator = $(`#question-${sectionId}-${questionId}-status`);
-        $indicator.html('<small class="text-warning"><i class="fas fa-spinner fa-spin"></i> Saving...</small>').fadeIn(150);
+        function showModal(id, content){
+            if (id === 'success') {
+                $('#successMessage').html(content);
+                $('#successModal').modal('show');
+            } else if (id === 'error') {
+                $('#errorMessage').text(content);
+                $('#errorModal').modal('show');
+            }
+        }
 
-        pendingSaves.add(key);
+        // --- Navigation ---
+        function showSection(index, scroll=true){
+            index = Math.max(0, Math.min(index, sectionIds.length - 1));
+            currentSectionIndex = index;
 
-        const timer = setTimeout(() => {
-            saveResponse(sectionId, questionId);
-            saveTimers.delete(key);
-            pendingSaves.delete(key);
-        }, SAVE_DELAY);
+            $('.section-container').hide();
+            const id = sectionIds[index];
+            $(`#${id}`).show();
 
-        saveTimers.set(key, timer);
-    }
+            const title = $(`#${id} .section-title`).text() || '';
+            $currentSectionInfo.text(title ? ('- ' + title.split(': ').slice(1).join(': ')) : '');
+            $sectionJump.val(id);
+
+            if (scroll) {
+                $('html, body').animate({ scrollTop: $(`#${id}`).offset().top - 100 }, 300);
+            }
+        }
+
+        function navigate(direction){
+            if (direction === 'next' && currentSectionIndex < sectionIds.length - 1) currentSectionIndex++;
+            if (direction === 'prev' && currentSectionIndex > 0) currentSectionIndex--;
+            showSection(currentSectionIndex);
+        }
+
+        // --- Auto-save ---
+        function scheduleSave($el){
+            if (isSubmitted || isSubmitting) return;
+
+            const sectionId = $el.data('section');
+            const questionId = $el.data('question');
+            const key = `${sectionId}_${questionId}`;
+
+            if (saveTimers.has(key)) {
+                clearTimeout(saveTimers.get(key));
+            }
+
+            const $indicator = $(`#question-${sectionId}-${questionId}-status`);
+            $indicator.html('<small class="text-warning"><i class="fas fa-spinner fa-spin"></i> Saving...</small>').fadeIn(150);
+
+            pendingSaves.add(key);
+
+            const timer = setTimeout(() => {
+                saveResponse(sectionId, questionId);
+                saveTimers.delete(key);
+                pendingSaves.delete(key);
+            }, SAVE_DELAY);
+
+            saveTimers.set(key, timer);
+        }
 
     function saveResponse(sectionId, questionId){
         if (isSubmitted || isSubmitting) {
@@ -482,9 +496,15 @@
                         $qcard.removeClass('border-warning');
                     }
 
+                    // FIXED: Handle critical failure status changes properly
                     if (resp.has_critical_failure && !hasCriticalFailure){
+                        // New critical failure detected
                         hasCriticalFailure = true;
-                        setTimeout(() => location.reload(), 1000);
+                        showCriticalFailureWarning(true);
+                    } else if (!resp.has_critical_failure && hasCriticalFailure) {
+                        // Critical failure resolved
+                        hasCriticalFailure = false;
+                        showCriticalFailureWarning(false);
                     }
                 }
             },
@@ -495,333 +515,332 @@
             }
         });
     }
-
-    function updateSectionScoreDisplay(sectionId, score, percentage, critical){
-        const $badge = $(`#section-score-${sectionId}`);
-        if (critical){
-            $badge.removeClass('bg-success').addClass('bg-danger').html('<i class="fas fa-exclamation-triangle"></i> Critical');
-        } else {
-            $badge.removeClass('bg-danger').addClass('bg-success').text(`${parseFloat(percentage).toFixed(1)}%`);
+        function updateSectionScoreDisplay(sectionId, score, percentage, critical){
+            const $badge = $(`#section-score-${sectionId}`);
+            if (critical){
+                $badge.removeClass('bg-success').addClass('bg-danger').html('<i class="fas fa-exclamation-triangle"></i> Critical');
+            } else {
+                $badge.removeClass('bg-danger').addClass('bg-success').text(`${parseFloat(percentage).toFixed(1)}%`);
+            }
+            $badge.addClass('section-score-update');
+            setTimeout(() => $badge.removeClass('section-score-update'), 500);
         }
-        $badge.addClass('section-score-update');
-        setTimeout(() => $badge.removeClass('section-score-update'), 500);
-    }
 
-    // --- Progress Management ---
-    function renderProgress(resp){
-        if (!resp) return;
+        // --- Progress Management ---
+        function renderProgress(resp){
+            if (!resp) return;
 
-        let html = '';
-        if (resp.progress && resp.progress.length){
-            resp.progress.forEach(s => {
-                const p = Math.round(s.percentage);
+            let html = '';
+            if (resp.progress && resp.progress.length){
+                resp.progress.forEach(s => {
+                    const p = Math.round(s.percentage);
+                    html += `
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small><strong>${s.section_name}</strong></small>
+                                <small class="badge bg-light text-dark">${s.answered || 0}/${s.total || 0}</small>
+                            </div>
+                            <div class="progress mb-1" style="height: 6px;">
+                                <div class="progress-bar ${p === 100 ? 'bg-success' : 'bg-primary'}" style="width: ${p}%" title="${p}%"></div>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <small class="text-muted">${(s.section_score||0).toFixed(1)} pts</small>
+                                <small class="text-muted">${(s.section_percentage||0).toFixed(1)}%</small>
+                            </div>
+                            ${s.has_critical_failure ? '<small class="text-danger"><i class=\"fas fa-exclamation-triangle\"></i> Critical failure</small>' : ''}
+                        </div>
+                    `;
+                });
+
+                const overall = resp.overall_progress || 0;
+                const canSubmit = resp.can_be_submitted || false;
+                const answered = resp.answered_questions || 0;
+                const total = resp.total_questions || 0;
+
                 html += `
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <small><strong>${s.section_name}</strong></small>
-                            <small class="badge bg-light text-dark">${s.answered || 0}/${s.total || 0}</small>
+                    <div class="border-top pt-3 mt-2">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <small><strong>Overall Progress</strong></small>
+                            <small class="badge ${canSubmit ? 'bg-success' : 'bg-warning text-dark'}">${answered}/${total}</small>
                         </div>
-                        <div class="progress mb-1" style="height: 6px;">
-                            <div class="progress-bar ${p === 100 ? 'bg-success' : 'bg-primary'}" style="width: ${p}%" title="${p}%"></div>
+                        <div class="progress mb-2" style="height: 8px;">
+                            <div class="progress-bar ${canSubmit ? 'bg-success' : 'bg-primary'}" style="width: ${overall}%" title="${overall}%"></div>
                         </div>
-                        <div class="d-flex justify-content-between">
-                            <small class="text-muted">${(s.section_score||0).toFixed(1)} pts</small>
-                            <small class="text-muted">${(s.section_percentage||0).toFixed(1)}%</small>
+                        <div class="row small text-muted">
+                            <div class="col-6"><i class="fas fa-chart-line"></i> ${resp.total_percentage ? resp.total_percentage.toFixed(1) : 0}%</div>
+                            <div class="col-6 text-end"><i class="fas fa-graduation-cap"></i> ${resp.grade || 'N/A'}</div>
                         </div>
-                        ${s.has_critical_failure ? '<small class="text-danger"><i class=\"fas fa-exclamation-triangle\"></i> Critical failure</small>' : ''}
+                        ${resp.has_critical_failure ? '<div class="mt-1"><small class="text-danger"><i class=\"fas fa-exclamation-triangle\"></i> Critical failure detected</small></div>' : ''}
+                        <div class="mt-1 text-center"><small class="${canSubmit ? 'text-success' : 'text-warning'}"><i class="fas ${canSubmit ? 'fa-check-circle' : 'fa-info-circle'}"></i> ${canSubmit ? 'Ready to submit' : `${answered}/${total} questions answered`}</small></div>
                     </div>
                 `;
+            } else if (resp.error){
+                html = `<div class="alert alert-danger"><small><i class="fas fa-exclamation-triangle"></i> Error: ${resp.error}</small></div>`;
+            } else {
+                html = '<div class="alert alert-info">No progress data available</div>';
+            }
+
+            $progressContainer.html(html);
+            $('#overall-progress-text').text(`${Math.round(resp.overall_progress || 0)}% complete`);
+            updateSubmitButton(resp.can_be_submitted, `${resp.answered_questions||0}/${resp.total_questions||0} questions answered`);
+            populateSectionJump(resp);
+        }
+
+        function populateSectionJump(resp){
+            $sectionJump.empty().append('<option value="">Select Section...</option>');
+
+            if (resp && resp.progress && resp.progress.length){
+                resp.progress.forEach(s => {
+                    const id = `section-${s.section_id}`;
+                    $sectionJump.append(`<option value="${id}">${s.section_name} (${Math.round(s.percentage)}%)</option>`);
+                });
+            } else {
+                $('.section-container').each(function(){
+                    const id = $(this).attr('id');
+                    const name = $(this).find('.section-title').text().split(': ').slice(1).join(': ');
+                    $sectionJump.append(`<option value="${id}">${name}</option>`);
+                });
+            }
+            $sectionJump.val(sectionIds[currentSectionIndex] || '');
+        }
+
+        function loadProgress(force=false){
+            if (isSubmitting) return; // Don't load progress during submission
+
+            if (force) {
+                $progressContainer.html(`<div class="text-center py-2"><div class="spinner-border spinner-border-sm text-primary" role="status"><span class="visually-hidden">Loading...</span></div><small class="text-muted d-block mt-1">Updating progress...</small></div>`);
+            }
+
+            $.ajax({
+                url: URL_AUDIT_PROGRESS,
+                type: 'GET',
+                cache: false,
+                timeout: 8000,
+                success: renderProgress,
+                error(xhr, status, err){
+                    if (status !== 'abort') {
+                        $progressContainer.html(`<div class="alert alert-warning py-2"><small><i class="fas fa-exclamation-triangle"></i> Error loading progress data</small><br><small>Please refresh the page</small></div>`);
+                    }
+                }
             });
+        }
 
-            const overall = resp.overall_progress || 0;
-            const canSubmit = resp.can_be_submitted || false;
-            const answered = resp.answered_questions || 0;
-            const total = resp.total_questions || 0;
+        function updateSubmitButton(canSubmit, helpText){
+            if (!$submitBtn.length) return;
 
-            html += `
-                <div class="border-top pt-3 mt-2">
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <small><strong>Overall Progress</strong></small>
-                        <small class="badge ${canSubmit ? 'bg-success' : 'bg-warning text-dark'}">${answered}/${total}</small>
+            const $help = $('.submit-help-text');
+            if (canSubmit){
+                $submitBtn.removeClass('btn-outline-secondary').addClass('btn-success').prop('disabled', false);
+                $help.text('Ready to submit').removeClass('text-muted').addClass('text-success');
+            } else {
+                $submitBtn.removeClass('btn-success').addClass('btn-outline-secondary').prop('disabled', true);
+                $help.text(helpText || 'Complete more questions to submit').removeClass('text-success').addClass('text-muted');
+            }
+        }
+
+        // --- Submission with Modal Confirmation ---
+        function showSubmitConfirmation(){
+            if (isSubmitted){
+                showModal('error','This audit has been submitted.');
+                return;
+            }
+
+            if ($submitBtn.prop('disabled')){
+                showModal('error','Please complete all questions before submitting.');
+                return;
+            }
+
+            $confirmSubmitModal.modal('show');
+        }
+
+        function performSubmission() {
+            if (isSubmitting) return;
+
+            isSubmitting = true;
+
+            // Update UI immediately
+            updateUIForSubmission();
+
+            // Close confirmation modal
+            $confirmSubmitModal.modal('hide');
+
+            // Wait for pending saves to complete
+            const checkPendingSaves = () => {
+                if (pendingSaves.size > 0) {
+                    setTimeout(checkPendingSaves, 100);
+                } else {
+                    submitAuditRequest();
+                }
+            };
+
+            checkPendingSaves();
+        }
+
+        function updateUIForSubmission() {
+            // Update main submit button
+            $submitBtn.html('<i class="fas fa-spinner fa-spin"></i> Submitting...').prop('disabled', true);
+
+            // Update confirmation modal button
+            $confirmSubmitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Submitting...');
+
+            // Disable all form inputs immediately
+            $('.score-input, .comments-input').prop('readonly', true).addClass('bg-light');
+
+            // Stop progress polling
+            if (progressTimer) {
+                clearInterval(progressTimer);
+                progressTimer = null;
+            }
+
+            // Clear all save timers
+            saveTimers.forEach(timer => clearTimeout(timer));
+            saveTimers.clear();
+
+            // Show global saving state
+            $('#global-save-status').html('<i class="fas fa-spinner fa-spin"></i> Submitting audit...');
+        }
+
+        function submitAuditRequest() {
+            $.ajax({
+                url: URL_SUBMIT_AUDIT,
+                type: 'POST',
+                headers: {'X-CSRFToken': csrftoken()},
+                timeout: 15000,
+                success(resp){
+                    isSubmitting = false;
+                    if (resp.success){
+                        handleSuccessfulSubmission(resp);
+                    } else {
+                        handleSubmissionError(resp.message || 'Failed to submit audit. Please try again.');
+                    }
+                },
+                error(xhr, status, err){
+                    isSubmitting = false;
+                    let errorMsg = 'Error submitting audit. ';
+
+                    if (status === 'timeout') {
+                        errorMsg += 'The request took too long. Please check your connection and try again.';
+                    } else if (status === 'error') {
+                        errorMsg += 'Network error occurred. Please check your internet connection.';
+                    } else {
+                        errorMsg += 'Please try again.';
+                    }
+
+                    handleSubmissionError(errorMsg);
+                }
+            });
+        }
+
+        function handleSuccessfulSubmission(resp) {
+            // Update UI to show successful submission
+            $submitBtn.html('<i class="fas fa-check"></i> Submitted').removeClass('btn-success').addClass('btn-secondary');
+            $('.submit-help-text').text('Audit submitted successfully').removeClass('text-muted').addClass('text-success');
+            $('#global-save-status').html('<i class="fas fa-check-circle text-success"></i> Audit Submitted');
+
+            // Update progress section to show submitted state
+            $('.alert-warning').removeClass('alert-warning').addClass('alert-success')
+                .html('<i class="fas fa-check-circle"></i><br><strong>SUBMITTED</strong><br><small>This audit is finalized and read-only</small>');
+
+            const msg = `
+                <div class="text-center">
+                    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                    <h5>Audit Submitted Successfully!</h5>
+                    <div class="mt-3">
+                        <strong>Total Score:</strong> ${resp.total_score.toFixed(2)}<br>
+                        <strong>Percentage:</strong> ${resp.total_percentage.toFixed(1)}%<br>
+                        <strong>Grade:</strong> <span class="badge ${resp.has_critical_failure ? 'bg-danger' : 'bg-success'}">${resp.grade}</span>
+                        ${resp.has_critical_failure ? '<br><strong class="text-danger"><i class="fas fa-exclamation-triangle"></i> Critical Failure Detected</strong>' : ''}
                     </div>
-                    <div class="progress mb-2" style="height: 8px;">
-                        <div class="progress-bar ${canSubmit ? 'bg-success' : 'bg-primary'}" style="width: ${overall}%" title="${overall}%"></div>
-                    </div>
-                    <div class="row small text-muted">
-                        <div class="col-6"><i class="fas fa-chart-line"></i> ${resp.total_percentage ? resp.total_percentage.toFixed(1) : 0}%</div>
-                        <div class="col-6 text-end"><i class="fas fa-graduation-cap"></i> ${resp.grade || 'N/A'}</div>
-                    </div>
-                    ${resp.has_critical_failure ? '<div class="mt-1"><small class="text-danger"><i class=\"fas fa-exclamation-triangle\"></i> Critical failure detected</small></div>' : ''}
-                    <div class="mt-1 text-center"><small class="${canSubmit ? 'text-success' : 'text-warning'}"><i class="fas ${canSubmit ? 'fa-check-circle' : 'fa-info-circle'}"></i> ${canSubmit ? 'Ready to submit' : `${answered}/${total} questions answered`}</small></div>
+                    <p class="mt-3 text-muted">Redirecting to results page...</p>
                 </div>
             `;
-        } else if (resp.error){
-            html = `<div class="alert alert-danger"><small><i class="fas fa-exclamation-triangle"></i> Error: ${resp.error}</small></div>`;
-        } else {
-            html = '<div class="alert alert-info">No progress data available</div>';
+
+            showModal('success', msg);
+
+            // Force redirect after delay
+            setTimeout(() => {
+                window.location.href = URL_AUDIT_RESULTS;
+            }, 2500);
         }
 
-        $progressContainer.html(html);
-        $('#overall-progress-text').text(`${Math.round(resp.overall_progress || 0)}% complete`);
-        updateSubmitButton(resp.can_be_submitted, `${resp.answered_questions||0}/${resp.total_questions||0} questions answered`);
-        populateSectionJump(resp);
-    }
+        function handleSubmissionError(errorMsg) {
+            // Re-enable UI
+            $('.score-input, .comments-input').prop('readonly', false).removeClass('bg-light');
+            $submitBtn.html('<i class="fas fa-paper-plane"></i> Submit Audit').prop('disabled', false);
+            $confirmSubmitBtn.prop('disabled', false).html('<i class="fas fa-paper-plane"></i> Yes, Submit Audit');
+            $('#global-save-status').html('<i class="fas fa-save"></i> Auto-save enabled');
 
-    function populateSectionJump(resp){
-        $sectionJump.empty().append('<option value="">Select Section...</option>');
+            // Restart progress polling
+            if (!isSubmitted) {
+                progressTimer = setInterval(() => loadProgress(), PROGRESS_INTERVAL);
+            }
 
-        if (resp && resp.progress && resp.progress.length){
-            resp.progress.forEach(s => {
-                const id = `section-${s.section_id}`;
-                $sectionJump.append(`<option value="${id}">${s.section_name} (${Math.round(s.percentage)}%)</option>`);
+            showModal('error', errorMsg);
+        }
+
+        // --- Initialization ---
+        $(function(){
+            // Cache DOM elements
+            $progressContainer = $('#progress-container');
+            $submitBtn = $('#submit-audit-btn');
+            $sectionJump = $('#sectionJump');
+            $currentSectionInfo = $('#current-section-info');
+            $confirmSubmitModal = $('#confirmSubmitModal');
+            $confirmSubmitBtn = $('#confirmSubmitBtn');
+
+            // Initial setup
+            loadProgress(true);
+            populateSectionJump({});
+            showSection(currentSectionIndex, false);
+
+            // Event bindings
+            $('#navPrev, #navPrevBottom').on('click', () => navigate('prev'));
+            $('#navNext, #navNextBottom').on('click', () => navigate('next'));
+            $sectionJump.on('change', function(){
+                const idx = sectionIds.indexOf($(this).val());
+                if (idx !== -1) showSection(idx);
             });
-        } else {
-            $('.section-container').each(function(){
-                const id = $(this).attr('id');
-                const name = $(this).find('.section-title').text().split(': ').slice(1).join(': ');
-                $sectionJump.append(`<option value="${id}">${name}</option>`);
+
+            // Use modal confirmation instead of alert
+            $submitBtn.on('click', showSubmitConfirmation);
+            $confirmSubmitBtn.on('click', performSubmission);
+
+            // Keyboard navigation
+            $(document).keydown(function(e){
+                if (isSubmitted) return;
+                if ((e.ctrlKey || e.altKey) && e.key === 'ArrowLeft') {
+                    e.preventDefault(); navigate('prev');
+                }
+                if ((e.ctrlKey || e.altKey) && e.key === 'ArrowRight') {
+                    e.preventDefault(); navigate('next');
+                }
             });
-        }
-        $sectionJump.val(sectionIds[currentSectionIndex] || '');
-    }
 
-    function loadProgress(force=false){
-        if (isSubmitting) return; // Don't load progress during submission
+            // Input handling
+            $('#audit-form').on('input change', '.score-input, .comments-input', function(){
+                scheduleSave($(this));
+            });
 
-        if (force) {
-            $progressContainer.html(`<div class="text-center py-2"><div class="spinner-border spinner-border-sm text-primary" role="status"><span class="visually-hidden">Loading...</span></div><small class="text-muted d-block mt-1">Updating progress...</small></div>`);
-        }
-
-        $.ajax({
-            url: URL_AUDIT_PROGRESS,
-            type: 'GET',
-            cache: false,
-            timeout: 8000,
-            success: renderProgress,
-            error(xhr, status, err){
-                if (status !== 'abort') {
-                    $progressContainer.html(`<div class="alert alert-warning py-2"><small><i class="fas fa-exclamation-triangle"></i> Error loading progress data</small><br><small>Please refresh the page</small></div>`);
+            // Performance optimizations
+            document.addEventListener('visibilitychange', function(){
+                if (!document.hidden && !isSubmitted && !isSubmitting) {
+                    setTimeout(() => loadProgress(true), 500);
                 }
-            }
-        });
-    }
+            });
 
-    function updateSubmitButton(canSubmit, helpText){
-        if (!$submitBtn.length) return;
-
-        const $help = $('.submit-help-text');
-        if (canSubmit){
-            $submitBtn.removeClass('btn-outline-secondary').addClass('btn-success').prop('disabled', false);
-            $help.text('Ready to submit').removeClass('text-muted').addClass('text-success');
-        } else {
-            $submitBtn.removeClass('btn-success').addClass('btn-outline-secondary').prop('disabled', true);
-            $help.text(helpText || 'Complete more questions to submit').removeClass('text-success').addClass('text-muted');
-        }
-    }
-
-    // --- Submission with Modal Confirmation ---
-    function showSubmitConfirmation(){
-        if (isSubmitted){
-            showModal('error','This audit has been submitted.');
-            return;
-        }
-
-        if ($submitBtn.prop('disabled')){
-            showModal('error','Please complete all questions before submitting.');
-            return;
-        }
-
-        $confirmSubmitModal.modal('show');
-    }
-
-    function performSubmission() {
-        if (isSubmitting) return;
-
-        isSubmitting = true;
-
-        // Update UI immediately
-        updateUIForSubmission();
-
-        // Close confirmation modal
-        $confirmSubmitModal.modal('hide');
-
-        // Wait for pending saves to complete
-        const checkPendingSaves = () => {
-            if (pendingSaves.size > 0) {
-                setTimeout(checkPendingSaves, 100);
-            } else {
-                submitAuditRequest();
-            }
-        };
-
-        checkPendingSaves();
-    }
-
-    function updateUIForSubmission() {
-        // Update main submit button
-        $submitBtn.html('<i class="fas fa-spinner fa-spin"></i> Submitting...').prop('disabled', true);
-
-        // Update confirmation modal button
-        $confirmSubmitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Submitting...');
-
-        // Disable all form inputs immediately
-        $('.score-input, .comments-input').prop('readonly', true).addClass('bg-light');
-
-        // Stop progress polling
-        if (progressTimer) {
-            clearInterval(progressTimer);
-            progressTimer = null;
-        }
-
-        // Clear all save timers
-        saveTimers.forEach(timer => clearTimeout(timer));
-        saveTimers.clear();
-
-        // Show global saving state
-        $('#global-save-status').html('<i class="fas fa-spinner fa-spin"></i> Submitting audit...');
-    }
-
-    function submitAuditRequest() {
-        $.ajax({
-            url: URL_SUBMIT_AUDIT,
-            type: 'POST',
-            headers: {'X-CSRFToken': csrftoken()},
-            timeout: 15000,
-            success(resp){
-                isSubmitting = false;
-                if (resp.success){
-                    handleSuccessfulSubmission(resp);
-                } else {
-                    handleSubmissionError(resp.message || 'Failed to submit audit. Please try again.');
-                }
-            },
-            error(xhr, status, err){
-                isSubmitting = false;
-                let errorMsg = 'Error submitting audit. ';
-
-                if (status === 'timeout') {
-                    errorMsg += 'The request took too long. Please check your connection and try again.';
-                } else if (status === 'error') {
-                    errorMsg += 'Network error occurred. Please check your internet connection.';
-                } else {
-                    errorMsg += 'Please try again.';
-                }
-
-                handleSubmissionError(errorMsg);
-            }
-        });
-    }
-
-    function handleSuccessfulSubmission(resp) {
-        // Update UI to show successful submission
-        $submitBtn.html('<i class="fas fa-check"></i> Submitted').removeClass('btn-success').addClass('btn-secondary');
-        $('.submit-help-text').text('Audit submitted successfully').removeClass('text-muted').addClass('text-success');
-        $('#global-save-status').html('<i class="fas fa-check-circle text-success"></i> Audit Submitted');
-
-        // Update progress section to show submitted state
-        $('.alert-warning').removeClass('alert-warning').addClass('alert-success')
-            .html('<i class="fas fa-check-circle"></i><br><strong>SUBMITTED</strong><br><small>This audit is finalized and read-only</small>');
-
-        const msg = `
-            <div class="text-center">
-                <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
-                <h5>Audit Submitted Successfully!</h5>
-                <div class="mt-3">
-                    <strong>Total Score:</strong> ${resp.total_score.toFixed(2)}<br>
-                    <strong>Percentage:</strong> ${resp.total_percentage.toFixed(1)}%<br>
-                    <strong>Grade:</strong> <span class="badge ${resp.has_critical_failure ? 'bg-danger' : 'bg-success'}">${resp.grade}</span>
-                    ${resp.has_critical_failure ? '<br><strong class="text-danger"><i class="fas fa-exclamation-triangle"></i> Critical Failure Detected</strong>' : ''}
-                </div>
-                <p class="mt-3 text-muted">Redirecting to results page...</p>
-            </div>
-        `;
-
-        showModal('success', msg);
-
-        // Force redirect after delay
-        setTimeout(() => {
-            window.location.href = URL_AUDIT_RESULTS;
-        }, 2500);
-    }
-
-    function handleSubmissionError(errorMsg) {
-        // Re-enable UI
-        $('.score-input, .comments-input').prop('readonly', false).removeClass('bg-light');
-        $submitBtn.html('<i class="fas fa-paper-plane"></i> Submit Audit').prop('disabled', false);
-        $confirmSubmitBtn.prop('disabled', false).html('<i class="fas fa-paper-plane"></i> Yes, Submit Audit');
-        $('#global-save-status').html('<i class="fas fa-save"></i> Auto-save enabled');
-
-        // Restart progress polling
-        if (!isSubmitted) {
-            progressTimer = setInterval(() => loadProgress(), PROGRESS_INTERVAL);
-        }
-
-        showModal('error', errorMsg);
-    }
-
-    // --- Initialization ---
-    $(function(){
-        // Cache DOM elements
-        $progressContainer = $('#progress-container');
-        $submitBtn = $('#submit-audit-btn');
-        $sectionJump = $('#sectionJump');
-        $currentSectionInfo = $('#current-section-info');
-        $confirmSubmitModal = $('#confirmSubmitModal');
-        $confirmSubmitBtn = $('#confirmSubmitBtn');
-
-        // Initial setup
-        loadProgress(true);
-        populateSectionJump({});
-        showSection(currentSectionIndex, false);
-
-        // Event bindings
-        $('#navPrev, #navPrevBottom').on('click', () => navigate('prev'));
-        $('#navNext, #navNextBottom').on('click', () => navigate('next'));
-        $sectionJump.on('change', function(){
-            const idx = sectionIds.indexOf($(this).val());
-            if (idx !== -1) showSection(idx);
-        });
-
-        // Use modal confirmation instead of alert
-        $submitBtn.on('click', showSubmitConfirmation);
-        $confirmSubmitBtn.on('click', performSubmission);
-
-        // Keyboard navigation
-        $(document).keydown(function(e){
-            if (isSubmitted) return;
-            if ((e.ctrlKey || e.altKey) && e.key === 'ArrowLeft') {
-                e.preventDefault(); navigate('prev');
-            }
-            if ((e.ctrlKey || e.altKey) && e.key === 'ArrowRight') {
-                e.preventDefault(); navigate('next');
+            // Progress polling
+            if (!isSubmitted) {
+                progressTimer = setInterval(() => loadProgress(), PROGRESS_INTERVAL);
             }
         });
 
-        // Input handling
-        $('#audit-form').on('input change', '.score-input, .comments-input', function(){
-            scheduleSave($(this));
+        // Cleanup on page unload
+        $(window).on('beforeunload', function(){
+            if (progressTimer) clearInterval(progressTimer);
+            saveTimers.forEach(timer => clearTimeout(timer));
         });
 
-        // Performance optimizations
-        document.addEventListener('visibilitychange', function(){
-            if (!document.hidden && !isSubmitted && !isSubmitting) {
-                setTimeout(() => loadProgress(true), 500);
-            }
-        });
-
-        // Progress polling
-        if (!isSubmitted) {
-            progressTimer = setInterval(() => loadProgress(), PROGRESS_INTERVAL);
-        }
-    });
-
-    // Cleanup on page unload
-    $(window).on('beforeunload', function(){
-        if (progressTimer) clearInterval(progressTimer);
-        saveTimers.forEach(timer => clearTimeout(timer));
-    });
-
-})(jQuery);
+    })(jQuery);
 </script>
 
 <style>

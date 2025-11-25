@@ -2,12 +2,14 @@ from django import template
 
 register = template.Library()
 
+
 @register.filter
 def get_item(dictionary, key):
     """Get item from dictionary using key"""
     if dictionary and isinstance(dictionary, dict):
         return dictionary.get(key, {})
     return {}
+
 
 @register.filter
 def get_attr(obj, attr_name):
@@ -18,6 +20,7 @@ def get_attr(obj, attr_name):
         return obj[attr_name]
     return None
 
+
 @register.filter
 def multiply(value, arg):
     """Multiply value by argument"""
@@ -25,6 +28,7 @@ def multiply(value, arg):
         return float(value) * float(arg)
     except (ValueError, TypeError):
         return 0
+
 
 @register.filter
 def divide(value, arg):
@@ -36,6 +40,7 @@ def divide(value, arg):
     except (ValueError, TypeError):
         return 0
 
+
 @register.filter
 def percentage(value, total):
     """Calculate percentage"""
@@ -45,6 +50,7 @@ def percentage(value, total):
         return 0
     except (ValueError, TypeError):
         return 0
+
 
 @register.filter
 def get_item_nested(dictionary, keys):
@@ -136,6 +142,7 @@ def score_badge_class(score):
         return "bg-warning text-dark"
     return "bg-danger"
 
+
 @register.filter
 def grade_badge_class(grade):
     """Return Bootstrap badge class based on grade"""
@@ -149,3 +156,37 @@ def grade_badge_class(grade):
     return "bg-danger"
 
 
+@register.filter
+def calculate_percentage(value, total):
+    try:
+        if total > 0:
+            return (value / total) * 100
+        return 0
+    except (TypeError, ZeroDivisionError):
+        return 0
+
+
+@register.filter
+def abs(value):
+    try:
+        return abs(value)
+    except Exception:
+        return value
+
+
+@register.filter
+def filter_critical_failures(responses):
+    """Filter responses to show only critical failures (critical questions with 0 points)"""
+    return [
+        response for response in responses
+        if response.question.is_critical and response.scored_points == 0
+    ]
+
+
+@register.filter
+def filter_needs_corrective_action(responses):
+    """Filter responses to show only those that need corrective action"""
+    return [
+        response for response in responses
+        if response.needs_corrective_action
+    ]

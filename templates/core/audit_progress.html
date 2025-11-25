@@ -1,29 +1,171 @@
 <!-- templates/core/audit_progress.html -->
 {% extends 'base.html' %}
+{% load humanize %}
 
 {% block title %}Audit Progress - {{ audit.restaurant.name }}{% endblock %}
 
+{% block extra_css %}
+<style>
+.progress-section {
+    padding: 20px;
+    border-radius: 12px;
+    background: #fff;
+    border: 1px solid #e9ecef;
+    transition: all 0.3s ease;
+    margin-bottom: 1.5rem;
+}
+
+.progress-section:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    border-color: var(--mcd-red);
+}
+
+.progress {
+    border-radius: 12px;
+    overflow: hidden;
+    height: 24px;
+    background: #f8f9fa;
+}
+
+.progress-bar {
+    font-weight: 600;
+    font-size: 0.8rem;
+    transition: width 0.8s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.section-details {
+    padding: 15px 0 5px 0;
+}
+
+.stats-card {
+    border: none;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    height: 100%;
+}
+
+.stats-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+}
+
+.stats-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.completion-excellent { background: linear-gradient(135deg, #28a745, #20c997); }
+.completion-good { background: linear-gradient(135deg, #17a2b8, #20c997); }
+.completion-fair { background: linear-gradient(135deg, #ffc107, #fd7e14); }
+.completion-poor { background: linear-gradient(135deg, #dc3545, #fd7e14); }
+
+.section-score-badge {
+    font-size: 0.75rem;
+    padding: 0.35rem 0.75rem;
+}
+
+.progress-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--mcd-dark-gray);
+}
+
+.quick-action-btn {
+    border-radius: 10px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.quick-action-btn:hover {
+    transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+    .stats-number {
+        font-size: 2rem;
+    }
+
+    .progress-section {
+        padding: 15px;
+        margin-bottom: 1rem;
+    }
+
+    .btn-group {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .btn-group .btn {
+        margin-left: 0 !important;
+    }
+}
+
+/* Animation for progress bars */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.progress-section {
+    animation: slideIn 0.5s ease-out;
+}
+
+/* Critical failure styling */
+.critical-section {
+    border-left: 4px solid var(--mcd-danger);
+    background: linear-gradient(135deg, #fff, #ffe6e6);
+}
+
+/* Completed section styling */
+.completed-section {
+    border-left: 4px solid var(--mcd-success);
+    background: linear-gradient(135deg, #fff, #f0fff0);
+}
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container-fluid">
-    <!-- Header -->
+<div class="container-fluid py-4">
+    <!-- Header Section -->
     <div class="row mb-4">
         <div class="col-12">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h4 class="mb-0">
-                            <i class="fas fa-chart-line"></i>
-                            Audit Progress - {{ audit.restaurant.name }}
-                        </h4>
-                        <div class="btn-group">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header mcd-bg-red text-white py-3">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap">
+                        <div>
+                            <h4 class="mb-1">
+                                <i class="fas fa-chart-line me-2"></i>
+                                Audit Progress - {{ audit.restaurant.name }}
+                            </h4>
+                            <p class="mb-0 opacity-75">
+                                <i class="fas fa-calendar me-1"></i>
+                                {{ audit.audit_date }} •
+                                <i class="fas fa-user me-1"></i>
+                                {{ audit.auditor_name.get_full_name|default:audit.auditor_name.username }}
+                            </p>
+                        </div>
+                        <div class="btn-group mt-2 mt-md-0">
                             <a href="{% url 'core:audit_form' audit.id %}" class="btn btn-light btn-sm">
-                                <i class="fas fa-edit"></i> Continue Audit
+                                <i class="fas fa-edit me-1"></i> Continue Audit
                             </a>
                             <a href="{% url 'core:audit_results' audit.id %}" class="btn btn-info btn-sm">
-                                <i class="fas fa-chart-bar"></i> View Results
+                                <i class="fas fa-chart-bar me-1"></i> View Results
                             </a>
-                            <a href="{% url 'core:audit_list' %}" class="btn btn-secondary btn-sm">
-                                <i class="fas fa-arrow-left"></i> Back to List
+                            <a href="{% url 'core:audit_list' %}" class="btn btn-outline-light btn-sm">
+                                <i class="fas fa-arrow-left me-1"></i> Back to List
                             </a>
                         </div>
                     </div>
@@ -31,46 +173,87 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <table class="table table-sm table-borderless">
-                                <tr>
-                                    <th width="40%">Restaurant:</th>
-                                    <td>{{ audit.restaurant.name }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Audit Date:</th>
-                                    <td>{{ audit.audit_date }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Manager:</th>
-                                    <td>{{ audit.manager_on_duty }}</td>
-                                </tr>
-                            </table>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-borderless">
+                                    <tr>
+                                        <th width="35%" class="text-muted">Restaurant:</th>
+                                        <td>
+                                            <strong>{{ audit.restaurant.name }}</strong>
+                                            <small class="text-muted d-block">{{ audit.restaurant.code }}</small>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th class="text-muted">Audit Date:</th>
+                                        <td>
+                                            <i class="fas fa-calendar text-primary me-1"></i>
+                                            {{ audit.audit_date }}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th class="text-muted">Manager:</th>
+                                        <td>
+                                            <i class="fas fa-user-tie text-info me-1"></i>
+                                            {{ audit.manager_on_duty }}
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
                         </div>
                         <div class="col-md-6">
-                            <table class="table table-sm table-borderless">
-                                <tr>
-                                    <th width="40%">Auditor:</th>
-                                    <td>{{ audit.auditor_name }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Current Score:</th>
-                                    <td>
-                                        <span class="badge bg-{% if audit.total_percentage >= 90 %}success{% elif audit.total_percentage >= 80 %}warning{% else %}danger{% endif %}">
-                                            {{ audit.total_percentage|default:0|floatformat:1 }}%
-                                        </span>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th>Status:</th>
-                                    <td>
-                                        {% if audit.is_submitted %}
-                                        <span class="badge bg-success">Submitted</span>
-                                        {% else %}
-                                        <span class="badge bg-warning">In Progress</span>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                            </table>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-borderless">
+                                    <tr>
+                                        <th width="35%" class="text-muted">Current Score:</th>
+                                        <td>
+                                            <span class="badge
+                                                {% if audit.total_percentage >= 96 %}completion-excellent
+                                                {% elif audit.total_percentage >= 90 %}completion-good
+                                                {% elif audit.total_percentage >= 80 %}completion-fair
+                                                {% else %}completion-poor{% endif %}
+                                                section-score-badge">
+                                                {{ audit.total_percentage|default:0|floatformat:1 }}%
+                                            </span>
+                                            <small class="text-muted d-block mt-1">
+                                                {{ audit.total_scored|default:0|floatformat:1 }}/{{ audit.total_possible|default:0|floatformat:1 }} points
+                                            </small>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th class="text-muted">Status:</th>
+                                        <td>
+                                            {% if audit.is_submitted %}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-check-circle me-1"></i>Submitted
+                                            </span>
+                                            <small class="text-muted d-block mt-1">
+                                                {{ audit.submitted_at|date:"M d, Y H:i" }}
+                                            </small>
+                                            {% else %}
+                                            <span class="badge bg-warning text-dark">
+                                                <i class="fas fa-clock me-1"></i>In Progress
+                                            </span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th class="text-muted">Grade:</th>
+                                        <td>
+                                            <span class="badge
+                                                {% if audit.grade == 'A' %}completion-excellent
+                                                {% elif audit.grade == 'B' %}completion-good
+                                                {% elif audit.grade == 'C' %}completion-fair
+                                                {% else %}completion-poor{% endif %}">
+                                                {{ audit.grade|default:"Not Graded" }}
+                                            </span>
+                                            {% if audit.has_critical_failure %}
+                                            <span class="badge bg-danger ms-1">
+                                                <i class="fas fa-exclamation-triangle me-1"></i>Critical Failure
+                                            </span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -78,37 +261,57 @@
         </div>
     </div>
 
-    <!-- Progress Overview -->
+    <!-- Progress Overview Cards -->
     <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h3 class="text-primary">{{ overall_completion }}%</h3>
-                    <p class="text-muted mb-0">Overall Completion</p>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card stats-card border-0 shadow-sm">
+                <div class="card-body text-center p-4">
+                    <div class="stats-number text-primary">
+                        {{ overall_completion }}%
+                    </div>
+                    <div class="progress-label">Overall Completion</div>
+                    <div class="progress mt-2" style="height: 8px;">
+                        <div class="progress-bar bg-primary" style="width: {{ overall_completion }}%"></div>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h3 class="text-success">{{ completed_sections }}</h3>
-                    <p class="text-muted mb-0">Completed Sections</p>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card stats-card border-0 shadow-sm">
+                <div class="card-body text-center p-4">
+                    <div class="stats-number text-success">
+                        {{ completed_sections }}
+                    </div>
+                    <div class="progress-label">Completed Sections</div>
+                    <small class="text-muted">
+                        of {{ progress_data|length }} total sections
+                    </small>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h3 class="text-warning">{{ in_progress_sections }}</h3>
-                    <p class="text-muted mb-0">In Progress</p>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card stats-card border-0 shadow-sm">
+                <div class="card-body text-center p-4">
+                    <div class="stats-number text-warning">
+                        {{ in_progress_sections }}
+                    </div>
+                    <div class="progress-label">In Progress</div>
+                    <small class="text-muted">
+                        sections being worked on
+                    </small>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h3 class="text-info">{{ total_questions_answered }}</h3>
-                    <p class="text-muted mb-0">Questions Answered</p>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card stats-card border-0 shadow-sm">
+                <div class="card-body text-center p-4">
+                    <div class="stats-number text-info">
+                        {{ total_questions_answered }}
+                    </div>
+                    <div class="progress-label">Questions Answered</div>
+                    <small class="text-muted">
+                        of {{ total_questions }} total
+                    </small>
                 </div>
             </div>
         </div>
@@ -117,99 +320,168 @@
     <!-- Section-wise Progress -->
     <div class="row">
         <div class="col-12">
-            <div class="card">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0">
-                        <i class="fas fa-tasks"></i> Section-wise Progress
-                    </h5>
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap">
+                        <h5 class="mb-0">
+                            <i class="fas fa-tasks me-2 text-primary"></i> Section Progress Details
+                        </h5>
+                        <div class="d-flex align-items-center">
+                            <span class="badge bg-success me-2">
+                                <i class="fas fa-check"></i> {{ completed_sections }} Complete
+                            </span>
+                            <span class="badge bg-warning text-dark me-2">
+                                <i class="fas fa-clock"></i> {{ in_progress_sections }} In Progress
+                            </span>
+                            <span class="badge bg-secondary">
+                                <i class="fas fa-hourglass-start"></i> {{ not_started_sections }} Not Started
+                            </span>
+                        </div>
+                    </div>
                 </div>
                 <div class="card-body">
                     {% for section in progress_data %}
-                    <div class="progress-section mb-4">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <h6 class="mb-0">
-                                {{ section.section.get_name_display }}
-                                {% if section.percentage == 100 %}
-                                <span class="badge bg-success ms-2">Completed</span>
-                                {% elif section.percentage > 0 %}
-                                <span class="badge bg-warning ms-2">In Progress</span>
-                                {% else %}
-                                <span class="badge bg-secondary ms-2">Not Started</span>
+                    <div class="progress-section {% if section.percentage == 100 %}completed-section{% elif section.has_critical_failure %}critical-section{% endif %}"
+                         data-section-id="{{ section.section.id }}"
+                         style="animation-delay: {{ forloop.counter0|divisibleby:2 }}.1s">
+                        <div class="d-flex justify-content-between align-items-start mb-3 flex-wrap">
+                            <div class="flex-grow-1 me-3">
+                                <h6 class="mb-2 d-flex align-items-center">
+                                    <span class="me-2">Section {{ forloop.counter }}: {{ section.section.name }}</span>
+                                    {% if section.percentage == 100 %}
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check-circle me-1"></i>Completed
+                                    </span>
+                                    {% elif section.percentage > 0 %}
+                                    <span class="badge bg-warning text-dark">
+                                        <i class="fas fa-clock me-1"></i>In Progress
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">
+                                        <i class="fas fa-hourglass-start me-1"></i>Not Started
+                                    </span>
+                                    {% endif %}
+                                </h6>
+                                {% if section.section.description %}
+                                <p class="text-muted small mb-2">{{ section.section.description }}</p>
                                 {% endif %}
-                            </h6>
+                            </div>
                             <div class="text-end">
+                                <div class="mb-2">
+                                    <span class="badge
+                                        {% if section.section_percentage >= 96 %}completion-excellent
+                                        {% elif section.section_percentage >= 90 %}completion-good
+                                        {% elif section.section_percentage >= 80 %}completion-fair
+                                        {% else %}completion-poor{% endif %}
+                                        section-score-badge">
+                                        Score: {{ section.section_percentage|floatformat:1 }}%
+                                    </span>
+                                </div>
                                 <small class="text-muted">
                                     {{ section.answered }}/{{ section.total }} questions
                                 </small>
-                                <br>
-                                <span class="badge bg-{% if section.section_percentage >= 90 %}success{% elif section.section_percentage >= 80 %}warning{% else %}danger{% endif %}">
-                                    Score: {{ section.section_percentage|floatformat:1 }}%
-                                </span>
                             </div>
                         </div>
 
                         <!-- Progress Bar -->
-                        <div class="progress mb-2" style="height: 20px;">
-                            <div class="progress-bar
-                                {% if section.percentage == 100 %}bg-success
-                                {% elif section.percentage > 0 %}bg-warning
-                                {% else %}bg-secondary{% endif %}"
-                                role="progressbar"
-                                style="width: {{ section.percentage }}%"
-                                aria-valuenow="{{ section.percentage }}"
-                                aria-valuemin="0"
-                                aria-valuemax="100">
-                                {{ section.percentage|floatformat:0 }}%
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="progress-label">Completion Progress</span>
+                                <span class="text-muted small">{{ section.percentage|floatformat:1 }}%</span>
+                            </div>
+                            <div class="progress" style="height: 20px;">
+                                <div class="progress-bar
+                                    {% if section.percentage == 100 %}bg-success
+                                    {% elif section.percentage > 0 %}bg-warning
+                                    {% else %}bg-secondary{% endif %}"
+                                    role="progressbar"
+                                    style="width: {{ section.percentage }}%"
+                                    aria-valuenow="{{ section.percentage }}"
+                                    aria-valuemin="0"
+                                    aria-valuemax="100">
+                                    <span class="fw-bold">{{ section.percentage|floatformat:0 }}% Complete</span>
+                                </div>
                             </div>
                         </div>
 
                         <!-- Section Details -->
                         <div class="section-details">
-                            <div class="row">
+                            <div class="row align-items-center">
                                 <div class="col-md-6">
-                                    <small class="text-muted">
-                                        <strong>Completion:</strong> {{ section.percentage|floatformat:1 }}%
-                                    </small>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <small class="text-muted d-flex align-items-center">
+                                            <i class="fas fa-check-circle text-success me-1"></i>
+                                            <strong>{{ section.answered }}</strong> answered
+                                        </small>
+                                        {% if section.total > section.answered %}
+                                        <small class="text-muted d-flex align-items-center">
+                                            <i class="fas fa-clock text-warning me-1"></i>
+                                            <strong>{{ section.total|add:"-section.answered" }}</strong> remaining
+                                        </small>
+                                        {% endif %}
+                                        {% if section.has_critical_failure %}
+                                        <small class="text-danger d-flex align-items-center">
+                                            <i class="fas fa-exclamation-triangle me-1"></i>
+                                            Critical failure
+                                        </small>
+                                        {% endif %}
+                                    </div>
                                 </div>
-                                <div class="col-md-6 text-end">
-                                    <small class="text-muted">
-                                        <strong>Current Score:</strong> {{ section.section_score|floatformat:1 }}/{{ section.possible_points|floatformat:1 }}
-                                    </small>
+                                <div class="col-md-6 text-md-end">
+                                    <div class="btn-group mt-2 mt-md-0">
+                                        <a href="{% url 'core:audit_form' audit.id %}?section={{ section.section.id }}"
+                                           class="btn btn-sm {% if section.percentage == 100 %}btn-outline-success{% else %}btn-primary{% endif %}">
+                                            <i class="fas fa-{% if section.percentage == 100 %}eye{% else %}edit{% endif %} me-1"></i>
+                                            {% if section.percentage == 100 %}
+                                            Review
+                                            {% else %}
+                                            {% if section.percentage > 0 %}Continue{% else %}Start{% endif %}
+                                            {% endif %}
+                                        </a>
+                                        <button class="btn btn-sm btn-outline-info section-details-toggle"
+                                                data-section-id="{{ section.section.id }}">
+                                            <i class="fas fa-chart-bar"></i>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 
-                            <!-- Action Buttons -->
-                            <div class="mt-2">
-                                <a href="{% url 'core:audit_form' audit.id %}#nav-{{ section.section.id }}-tab"
-                                   class="btn btn-sm {% if section.percentage == 100 %}btn-outline-success{% else %}btn-primary{% endif %}">
-                                    <i class="fas fa-{% if section.percentage == 100 %}check{% else %}edit{% endif %}"></i>
-                                    {% if section.percentage == 100 %}
-                                    Review Section
-                                    {% else %}
-                                    {% if section.percentage > 0 %}Continue{% else %}Start{% endif %} Section
-                                    {% endif %}
-                                </a>
-
-                                {% if section.answered > 0 %}
-                                <span class="badge bg-light text-dark ms-2">
-                                    <i class="fas fa-check-circle text-success"></i>
-                                    {{ section.answered }} answered
-                                </span>
-                                {% endif %}
-
-                                {% if section.total > section.answered %}
-                                <span class="badge bg-light text-dark ms-2">
-                                    <i class="fas fa-clock text-warning"></i>
-                                    {{ section.total|add:"-section.answered" }} remaining
-                                </span>
-                                {% endif %}
+                            <!-- Expandable Details -->
+                            <div class="section-expanded-details mt-3" id="details-{{ section.section.id }}" style="display: none;">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <small class="text-muted d-block">
+                                            <strong>Section Score:</strong>
+                                            {{ section.section_score|floatformat:1 }}/{{ section.possible_points|floatformat:1 }} points
+                                        </small>
+                                        <small class="text-muted d-block">
+                                            <strong>Completion Rate:</strong> {{ section.percentage|floatformat:1 }}%
+                                        </small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <small class="text-muted d-block">
+                                            <strong>Critical Questions:</strong>
+                                            {{ section.critical_questions }} total
+                                        </small>
+                                        <small class="text-muted d-block">
+                                            <strong>Last Updated:</strong>
+                                            <span class="section-last-updated">{{ section.last_updated|default:"Never" }}</span>
+                                        </small>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     {% if not forloop.last %}
-                    <hr>
+                    <hr class="my-4">
                     {% endif %}
+                    {% empty %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No Sections Available</h5>
+                        <p class="text-muted">There are no sections configured for this audit template.</p>
+                    </div>
                     {% endfor %}
                 </div>
             </div>
@@ -217,59 +489,108 @@
     </div>
 
     <!-- Quick Actions -->
+    {% if not audit.is_submitted %}
     <div class="row mt-4">
         <div class="col-12">
-            <div class="card">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0"><i class="fas fa-bolt"></i> Quick Actions</h5>
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">
+                        <i class="fas fa-bolt me-2 text-warning"></i> Quick Actions
+                    </h5>
                 </div>
                 <div class="card-body">
-                    <div class="d-grid gap-2 d-md-flex justify-content-md-start">
-                        <a href="{% url 'core:audit_form' audit.id %}" class="btn btn-primary">
-                            <i class="fas fa-play-circle"></i> Continue Audit
+                    <div class="d-flex flex-wrap gap-3">
+                        <a href="{% url 'core:audit_form' audit.id %}" class="btn btn-primary quick-action-btn">
+                            <i class="fas fa-play-circle me-2"></i> Continue Audit
                         </a>
-                        <a href="{% url 'core:audit_results' audit.id %}" class="btn btn-info">
-                            <i class="fas fa-chart-bar"></i> View Current Results
+                        <a href="{% url 'core:audit_results' audit.id %}" class="btn btn-info quick-action-btn">
+                            <i class="fas fa-chart-bar me-2"></i> View Current Results
                         </a>
-                        {% if not audit.is_submitted %}
-                        <button class="btn btn-success" onclick="submitAudit()">
-                            <i class="fas fa-paper-plane"></i> Submit Audit
+                        <button class="btn btn-success quick-action-btn" id="submitAuditBtn"
+                                {% if overall_completion < 80 %}disabled title="Complete at least 80% of questions to submit"{% endif %}>
+                            <i class="fas fa-paper-plane me-2"></i> Submit Audit
                         </button>
-                        {% endif %}
-                        <a href="{% url 'core:audit_list' %}" class="btn btn-secondary">
-                            <i class="fas fa-list"></i> All Audits
+                        <a href="{% url 'core:audit_list' %}" class="btn btn-outline-secondary quick-action-btn">
+                            <i class="fas fa-list me-2"></i> All Audits
                         </a>
                     </div>
+
+                    {% if overall_completion < 80 %}
+                    <div class="alert alert-warning mt-3 mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Complete at least <strong>80%</strong> of questions to submit this audit.
+                        Current completion: <strong>{{ overall_completion }}%</strong>
+                    </div>
+                    {% elif audit.has_critical_failure %}
+                    <div class="alert alert-danger mt-3 mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Critical failure detected!</strong> This audit cannot receive a passing grade due to critical question failures.
+                    </div>
+                    {% endif %}
                 </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modals -->
+<div class="modal fade" id="submitConfirmModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle me-2"></i> Confirm Submission
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to submit this audit?</p>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>This action cannot be undone.</strong> Once submitted, the audit will be finalized and no further changes can be made.
+                </div>
+                <div id="submissionWarning" class="alert alert-warning" style="display: none;">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <span id="warningMessage"></span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="confirmSubmitBtn">
+                    <i class="fas fa-paper-plane me-2"></i> Submit Audit
+                </button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Success Modal -->
 <div class="modal fade" id="successModal" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header bg-success text-white">
-                <h5 class="modal-title">Success</h5>
+                <h5 class="modal-title">
+                    <i class="fas fa-check-circle me-2"></i> Success
+                </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <p id="successMessage"></p>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-success" data-bs-dismiss="modal">Continue</button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Error Modal -->
 <div class="modal fade" id="errorModal" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title">Error</h5>
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle me-2"></i> Error
+                </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
@@ -283,104 +604,222 @@
 </div>
 {% endblock %}
 
-{% block scripts %}
+{% block extra_js %}
 <script>
-    function submitAudit() {
-        if (confirm('Are you sure you want to submit this audit? This action cannot be undone.')) {
-            fetch("{% url 'core:submit_audit' audit.id %}", {
+class AuditProgressManager {
+    constructor() {
+        this.auditId = {{ audit.id }};
+        this.isSubmitted = {% if audit.is_submitted %}true{% else %}false{% endif %};
+        this.overallCompletion = {{ overall_completion }};
+        this.hasCriticalFailure = {% if audit.has_critical_failure %}true{% else %}false{% endif %};
+
+        this.init();
+    }
+
+    init() {
+        this.bindEvents();
+        this.startAutoRefresh();
+        this.initializeSectionDetails();
+    }
+
+    bindEvents() {
+        // Section details toggle
+        $('.section-details-toggle').on('click', (e) => {
+            this.toggleSectionDetails($(e.currentTarget).data('section-id'));
+        });
+
+        // Submit audit button
+        $('#submitAuditBtn').on('click', () => {
+            this.showSubmitConfirmation();
+        });
+
+        // Confirm submission
+        $('#confirmSubmitBtn').on('click', () => {
+            this.submitAudit();
+        });
+
+        // Keyboard shortcuts
+        $(document).on('keydown', (e) => {
+            if (e.key === 'Escape') {
+                $('.section-expanded-details').slideUp();
+            }
+        });
+    }
+
+    toggleSectionDetails(sectionId) {
+        const $details = $(`#details-${sectionId}`);
+        const $button = $(`.section-details-toggle[data-section-id="${sectionId}"]`);
+
+        if ($details.is(':visible')) {
+            $details.slideUp();
+            $button.removeClass('btn-info').addClass('btn-outline-info');
+        } else {
+            $details.slideDown();
+            $button.removeClass('btn-outline-info').addClass('btn-info');
+        }
+    }
+
+    initializeSectionDetails() {
+        // Auto-expand sections with critical failures
+        $('.critical-section .section-details-toggle').each((index, element) => {
+            const sectionId = $(element).data('section-id');
+            this.toggleSectionDetails(sectionId);
+        });
+    }
+
+    showSubmitConfirmation() {
+        if (this.overallCompletion < 80) {
+            this.showError('Please complete at least 80% of questions before submitting.');
+            return;
+        }
+
+        // Show warnings if applicable
+        const $warning = $('#submissionWarning');
+        const $warningMessage = $('#warningMessage');
+
+        if (this.hasCriticalFailure) {
+            $warningMessage.html(
+                'This audit has critical failures and will receive a failing grade. ' +
+                'Are you sure you want to submit?'
+            );
+            $warning.show();
+        } else if (this.overallCompletion < 100) {
+            $warningMessage.html(
+                `This audit is ${this.overallCompletion}% complete. ` +
+                'You can submit now or continue working to improve the score.'
+            );
+            $warning.show();
+        } else {
+            $warning.hide();
+        }
+
+        $('#submitConfirmModal').modal('show');
+    }
+
+    async submitAudit() {
+        $('#submitConfirmModal').modal('hide');
+        $('#submitAuditBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Submitting...');
+
+        try {
+            const response = await fetch("{% url 'core:submit_audit' audit.id %}", {
                 method: 'POST',
                 headers: {
-                    'X-CSRFToken': getCookie('csrftoken'),
-                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': this.getCSRFToken(),
+                    'Content-Type': 'application/json',
                 },
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showSuccess(`
-                        Audit submitted successfully!<br><br>
-                        <strong>Total Score:</strong> ${data.total_score.toFixed(2)}<br>
-                        <strong>Percentage:</strong> ${data.total_percentage.toFixed(1)}%<br>
-                        <strong>Grade:</strong> ${data.grade}<br><br>
-                        Redirecting to results page...
-                    `);
-
-                    setTimeout(function() {
-                        window.location.href = "{% url 'core:audit_results' audit.id %}";
-                    }, 3000);
-                } else {
-                    showError(data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showError('Error submitting audit. Please try again.');
             });
-        }
-    }
 
-    function showSuccess(message) {
-        document.getElementById('successMessage').innerHTML = message;
-        new bootstrap.Modal(document.getElementById('successModal')).show();
-    }
+            const data = await response.json();
 
-    function showError(message) {
-        document.getElementById('errorMessage').textContent = message;
-        new bootstrap.Modal(document.getElementById('errorModal')).show();
-    }
-
-    // CSRF token function
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
+            if (data.success) {
+                this.handleSubmissionSuccess(data);
+            } else {
+                this.handleSubmissionError(data.message || 'Failed to submit audit.');
             }
+        } catch (error) {
+            console.error('Submission error:', error);
+            this.handleSubmissionError('Network error. Please check your connection and try again.');
         }
-        return cookieValue;
     }
 
-    // Auto-refresh progress every 30 seconds
-    setInterval(() => {
-        window.location.reload();
-    }, 30000);
+    handleSubmissionSuccess(data) {
+        const successMessage = `
+            <div class="text-center">
+                <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                <h5>Audit Submitted Successfully!</h5>
+                <div class="mt-3 text-start">
+                    <div class="row">
+                        <div class="col-6"><strong>Final Score:</strong></div>
+                        <div class="col-6">${data.total_score ? data.total_score.toFixed(2) : '0.00'}</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6"><strong>Percentage:</strong></div>
+                        <div class="col-6">${data.total_percentage ? data.total_percentage.toFixed(1) : '0.0'}%</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6"><strong>Grade:</strong></div>
+                        <div class="col-6">
+                            <span class="badge ${data.grade === 'A' ? 'completion-excellent' : data.grade === 'B' ? 'completion-good' : data.grade === 'C' ? 'completion-fair' : 'completion-poor'}">
+                                ${data.grade || 'N/A'}
+                            </span>
+                        </div>
+                    </div>
+                    ${data.has_critical_failure ? `
+                    <div class="row mt-2">
+                        <div class="col-12">
+                            <span class="badge bg-danger">
+                                <i class="fas fa-exclamation-triangle me-1"></i>Critical Failure Detected
+                            </span>
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
+                <p class="mt-3 text-muted">Redirecting to results page...</p>
+            </div>
+        `;
+
+        $('#successMessage').html(successMessage);
+        $('#successModal').modal('show');
+
+        // Redirect after delay
+        setTimeout(() => {
+            window.location.href = "{% url 'core:audit_results' audit.id %}";
+        }, 3000);
+    }
+
+    handleSubmissionError(message) {
+        $('#submitAuditBtn').prop('disabled', false).html('<i class="fas fa-paper-plane me-2"></i>Submit Audit');
+        $('#errorMessage').text(message);
+        $('#errorModal').modal('show');
+    }
+
+    getCSRFToken() {
+        return document.querySelector('[name=csrfmiddlewaretoken]')?.value ||
+               document.cookie.match(/csrftoken=([^;]+)/)?.[1];
+    }
+
+    startAutoRefresh() {
+        if (!this.isSubmitted) {
+            // Refresh every 30 seconds
+            setInterval(() => {
+                this.refreshProgress();
+            }, 30000);
+        }
+    }
+
+    async refreshProgress() {
+        try {
+            const response = await fetch(window.location.href, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Cache-Control': 'no-cache'
+                }
+            });
+
+            if (response.ok) {
+                // Could implement partial updates here
+                console.log('Progress data refreshed');
+            }
+        } catch (error) {
+            console.log('Auto-refresh failed:', error);
+        }
+    }
+}
+
+// Initialize when document is ready
+$(document).ready(() => {
+    window.auditProgressManager = new AuditProgressManager();
+
+    // Add loading states for section links
+    $('a[href*="audit_form"]').on('click', function() {
+        const $btn = $(this);
+        const originalText = $btn.html();
+        $btn.html('<i class="fas fa-spinner fa-spin me-1"></i>Loading...').prop('disabled', true);
+
+        setTimeout(() => {
+            $btn.html(originalText).prop('disabled', false);
+        }, 2000);
+    });
+});
 </script>
-
-<style>
-    .progress-section {
-        padding: 15px;
-        border-radius: 8px;
-        background: #f8f9fa;
-        transition: all 0.3s ease;
-    }
-
-    .progress-section:hover {
-        background: #e9ecef;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    }
-
-    .progress {
-        border-radius: 10px;
-        overflow: hidden;
-    }
-
-    .progress-bar {
-        font-weight: bold;
-        transition: width 0.5s ease;
-    }
-
-    .section-details {
-        padding: 10px 0;
-    }
-
-    .btn-group .btn {
-        margin-left: 5px;
-    }
-</style>
 {% endblock %}

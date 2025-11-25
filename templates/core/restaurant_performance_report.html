@@ -1,10 +1,242 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends 'base.html' %}
+{% load static %}
 
-</body>
-</html>
+{% block title %}Restaurant Performance Report - McDonald's QA Audit System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+        <div>
+            <h1 class="h2 mcd-text-red mb-1">
+                <i class="fas fa-chart-line me-2"></i> Restaurant Performance Report
+            </h1>
+            <p class="text-muted mb-0">Compare and analyze restaurant performance across locations</p>
+        </div>
+    </div>
+
+    <!-- Sort Options -->
+    <div class="mcd-card mb-4">
+        <div class="mcd-card-body">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <label class="form-label text-danger fw-semibold">Sort By:</label>
+                    <select class="form-select mcd-form-select" id="sortSelect" onchange="sortRestaurants()">
+                        <option value="-avg_score" {% if current_sort == '-avg_score' %}selected{% endif %}>Highest Score</option>
+                        <option value="avg_score" {% if current_sort == 'avg_score' %}selected{% endif %}>Lowest Score</option>
+                        <option value="-total_audits" {% if current_sort == '-total_audits' %}selected{% endif %}>Most Audits</option>
+                        <option value="total_audits" {% if current_sort == 'total_audits' %}selected{% endif %}>Fewest Audits</option>
+                        <option value="-last_audit_date" {% if current_sort == '-last_audit_date' %}selected{% endif %}>Recent First</option>
+                    </select>
+                </div>
+                <div class="col-md-6 text-end">
+                    <span class="mcd-badge mcd-badge-primary p-2">
+                        <i class="fas fa-store me-1"></i> {{ total_restaurants }} Restaurants
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Restaurant Performance Table -->
+    <div class="mcd-card">
+        <div class="mcd-card-header">
+            <h5 class="mb-0"><i class="fas fa-trophy me-2"></i> Restaurant Performance Ranking</h5>
+        </div>
+        <div class="mcd-card-body">
+            {% if restaurants %}
+            <div class="table-responsive">
+                <table class="table table-hover mcd-table" id="performanceTable">
+                    <thead>
+                        <tr>
+                            <th width="5%">Rank</th>
+                            <th width="25%">Restaurant</th>
+                            <th width="15%">Performance Score</th>
+                            <th width="15%">Grade Distribution</th>
+                            <th width="15%">Audit History</th>
+                            <th width="15%">Last Audit</th>
+                            <th width="10%">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for restaurant in restaurants %}
+                        <tr>
+                            <td>
+                                <span class="fw-bold text-primary">#{{ forloop.counter }}</span>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-warning rounded-circle me-3 d-flex align-items-center justify-content-center" 
+                                         style="width: 40px; height: 40px;">
+                                        <i class="fas fa-store text-dark"></i>
+                                    </div>
+                                    <div>
+                                        <strong class="d-block">{{ restaurant.name }}</strong>
+                                        <small class="text-muted">{{ restaurant.code }} • {{ restaurant.city }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="text-center">
+                                    <h4 class="mb-1 
+                                        {% if restaurant.avg_score >= 90 %}text-success
+                                        {% elif restaurant.avg_score >= 80 %}text-warning
+                                        {% else %}text-danger{% endif %}">
+                                        {{ restaurant.avg_score|floatformat:1 }}%
+                                    </h4>
+                                    <div class="mcd-progress mx-auto" style="width: 80px; height: 6px;">
+                                        <div class="mcd-progress-bar" style="width: {{ restaurant.avg_score }}%"></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="small">
+                                    <div class="d-flex justify-content-between">
+                                        <span class="text-success">A: {{ restaurant.grade_a_count }}</span>
+                                        <span class="text-primary">B: {{ restaurant.grade_b_count }}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span class="text-warning">C: {{ restaurant.grade_c_count }}</span>
+                                        <span class="text-danger">F: {{ restaurant.grade_f_count }}</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="text-center">
+                                    <strong class="d-block">{{ restaurant.total_audits }}</strong>
+                                    <small class="text-muted">Total Audits</small>
+                                    <br>
+                                    <small class="text-danger">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>
+                                        {{ restaurant.critical_failures }} critical
+                                    </small>
+                                </div>
+                            </td>
+                            <td>
+                                {% if restaurant.last_audit_date %}
+                                <strong>{{ restaurant.last_audit_date|date:"M d, Y" }}</strong>
+                                <br>
+                                <small class="text-muted">
+                                    {% with days_since=restaurant.last_audit_date|timesince %}
+                                    {{ days_since }} ago
+                                    {% endwith %}
+                                </small>
+                                {% else %}
+                                <span class="text-muted">No audits</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group-vertical btn-group-sm">
+                                    <a href="{% url 'core:restaurant_audits' restaurant.id %}" 
+                                       class="btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-chart-bar"></i>
+                                    </a>
+                                    <a href="{% url 'core:create_audit' %}?restaurant={{ restaurant.id }}" 
+                                       class="btn btn-outline-success btn-sm">
+                                        <i class="fas fa-plus"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-chart-line fa-4x text-muted mb-3"></i>
+                <h4 class="text-muted">No Performance Data Available</h4>
+                <p class="text-muted">No audit data found for performance analysis.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- City Performance Summary -->
+    {% if city_performance %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="mcd-card">
+                <div class="mcd-card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-map-marked-alt me-2"></i> City Performance Summary</h5>
+                </div>
+                <div class="mcd-card-body">
+                    <div class="row">
+                        {% for city in city_performance %}
+                        <div class="col-md-4 col-lg-3 mb-3">
+                            <div class="mcd-card h-100">
+                                <div class="mcd-card-body text-center">
+                                    <h6 class="text-danger mb-2">{{ city.city }}</h6>
+                                    <h4 class="mb-2 
+                                        {% if city.avg_score >= 90 %}text-success
+                                        {% elif city.avg_score >= 80 %}text-warning
+                                        {% else %}text-danger{% endif %}">
+                                        {{ city.avg_score|floatformat:1 }}%
+                                    </h4>
+                                    <div class="mcd-progress mx-auto mb-2" style="width: 100px; height: 6px;">
+                                        <div class="mcd-progress-bar" style="width: {{ city.avg_score }}%"></div>
+                                    </div>
+                                    <div class="small text-muted">
+                                        {{ city.audit_count }} audits<br>
+                                        {{ city.restaurant_count }} locations
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    function sortRestaurants() {
+        const sortSelect = document.getElementById('sortSelect');
+        const sortValue = sortSelect.value;
+        window.location.href = `?sort=${sortValue}`;
+    }
+
+    function printPage() {
+        window.print();
+    }
+
+    function exportToCSV() {
+        // Implement CSV export logic here
+        alert('Export functionality will be implemented soon!');
+    }
+
+    // Add hover effects to table rows
+    document.addEventListener('DOMContentLoaded', function() {
+        const tableRows = document.querySelectorAll('#performanceTable tbody tr');
+        tableRows.forEach(row => {
+            row.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateX(5px)';
+                this.style.transition = 'transform 0.2s ease';
+            });
+            row.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateX(0)';
+            });
+        });
+    });
+</script>
+
+<style>
+    @media print {
+        .btn-toolbar, .mcd-card-header.bg-success {
+            display: none !important;
+        }
+        
+        .mcd-card {
+            box-shadow: none !important;
+            border: 1px solid #ddd !important;
+        }
+    }
+    
+    .btn-group-vertical .btn {
+        margin-bottom: 2px;
+    }
+</style>
+{% endblock %}

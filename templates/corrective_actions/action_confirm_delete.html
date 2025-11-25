@@ -1,10 +1,43 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
-</head>
-<body>
-$END$
-</body>
-</html>
+{% extends 'base.html' %}
+
+{% block title %}Delete Corrective Action #{{ object.id }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="text-danger mb-4">
+                    <i class="fas fa-exclamation-triangle fa-4x"></i>
+                </div>
+                
+                <h3>Delete Corrective Action?</h3>
+                
+                <p class="text-muted mb-4">
+                    Are you sure you want to delete corrective action #{{ object.id }}?
+                    <br>
+                    <strong>"{{ object.description|truncatewords:10 }}"</strong>
+                </p>
+
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-circle"></i>
+                    This action cannot be undone.
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> Yes, Delete
+                        </button>
+                        <a href="{% url 'core:corrective_action_detail' object.id %}"
+                           class="btn btn-secondary">
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

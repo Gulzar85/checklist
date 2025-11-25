@@ -1,10 +1,277 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
-</head>
-<body>
-$END$
-</body>
-</html>
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Corrective Actions Dashboard - McDonald's QA Audit System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+        <div>
+            <h1 class="h2 mcd-text-red mb-1">
+                <i class="fas fa-chart-bar me-2"></i> Corrective Actions Dashboard
+            </h1>
+            <p class="text-muted mb-0">Overview of corrective actions progress and statistics</p>
+        </div>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{% url 'core:action_list' %}" class="btn mcd-btn-outline">
+                <i class="fas fa-list me-2"></i> View All Actions
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="mcd-card stats-card shadow-subtle">
+                <div class="mcd-card-body text-center">
+                    <div class="stats-number mcd-text-red">{{ total_actions }}</div>
+                    <div class="stats-label text-muted">Total Actions</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="mcd-card stats-card shadow-subtle">
+                <div class="mcd-card-body text-center">
+                    <div class="stats-number text-success">{{ completed_actions }}</div>
+                    <div class="stats-label text-muted">Completed</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="mcd-card stats-card shadow-subtle">
+                <div class="mcd-card-body text-center">
+                    <div class="stats-number text-warning">{{ pending_actions }}</div>
+                    <div class="stats-label text-muted">Pending</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="mcd-card stats-card shadow-subtle">
+                <div class="mcd-card-body text-center">
+                    <div class="stats-number text-danger">{{ overdue_actions }}</div>
+                    <div class="stats-label text-muted">Overdue</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Risk Distribution -->
+        <div class="col-xl-6 col-lg-12 mb-4">
+            <div class="mcd-card h-100 shadow-subtle">
+                <div class="mcd-card-header">
+                    <h5 class="mb-0 text-white"><i class="fas fa-exclamation-triangle me-2"></i> Risk Level Distribution</h5>
+                </div>
+                <div class="mcd-card-body">
+                    {% for risk in risk_distribution %}
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="mcd-badge status-badge-compact
+                                {% if risk.level == 'CRITICAL' %}mcd-badge-danger
+                                {% elif risk.level == 'HIGH' %}mcd-badge-danger
+                                {% elif risk.level == 'MEDIUM' %}mcd-badge-warning
+                                {% else %}mcd-badge-info{% endif %}">
+                                {{ risk.display_name }}
+                            </span>
+                            <span class="fw-semibold text-muted">{{ risk.count }} ({{ risk.percentage|floatformat:1 }}%)</span>
+                        </div>
+                        <div class="mcd-progress">
+                            <div class="mcd-progress-bar"
+                                style="width: {{ risk.percentage }}%">
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="empty-state">
+                        <i class="fas fa-chart-pie fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No Risk Data</h5>
+                        <p class="text-muted">No corrective actions available for analysis</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Completion Progress -->
+        <div class="col-xl-6 col-lg-12 mb-4">
+            <div class="mcd-card h-100 shadow-subtle">
+                <div class="mcd-card-header">
+                    <h5 class="mb-0 text-white"><i class="fas fa-tasks me-2"></i> Overall Progress</h5>
+                </div>
+                <div class="mcd-card-body text-center">
+                    <div class="mb-4">
+                        <h2 class="mcd-text-red mb-2">{{ completion_rate|floatformat:1 }}%</h2>
+                        <p class="text-muted">Completion Rate</p>
+                    </div>
+                    <div class="mcd-progress" style="height: 25px; border-radius: 12px;">
+                        <div class="mcd-progress-bar d-flex align-items-center justify-content-center fw-semibold"
+                             style="width: {{ completion_rate }}%">
+                            {{ completion_rate|floatformat:1 }}%
+                        </div>
+                    </div>
+                    <div class="row mt-4">
+                        <div class="col-6">
+                            <div class="border-end pe-3">
+                                <h4 class="text-success mb-1">{{ completed_actions }}</h4>
+                                <small class="text-muted">Completed</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="ps-3">
+                                <h4 class="text-warning mb-1">{{ pending_actions }}</h4>
+                                <small class="text-muted">Pending</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Actions & Upcoming Deadlines -->
+    <div class="row mt-4">
+        <!-- Recent Actions -->
+        <div class="col-xl-6 col-lg-12 mb-4">
+            <div class="mcd-card h-100 shadow-subtle">
+                <div class="mcd-card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 text-white"><i class="fas fa-history me-2"></i> Recent Actions</h5>
+                    <span class="mcd-badge mcd-badge-primary">{{ recent_actions|length }}</span>
+                </div>
+                <div class="mcd-card-body">
+                    {% for action in recent_actions %}
+                    <div class="action-card border-left p-3 mb-3 round-md
+                        {% if action.risk_level == 'CRITICAL' %}action-card-critical
+                        {% elif action.risk_level == 'HIGH' %}action-card-high
+                        {% elif action.risk_level == 'MEDIUM' %}action-card-medium
+                        {% else %}action-card-low{% endif %}">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <strong class="mcd-text-red">#{{ action.id }}</strong>
+                            <span class="mcd-badge status-badge-compact
+                                {% if action.risk_level == 'CRITICAL' %}mcd-badge-danger
+                                {% elif action.risk_level == 'HIGH' %}mcd-badge-danger
+                                {% elif action.risk_level == 'MEDIUM' %}mcd-badge-warning
+                                {% else %}mcd-badge-info{% endif %}">
+                                {{ action.get_risk_level_display }}
+                            </span>
+                        </div>
+                        <p class="mb-2 small text-muted">{{ action.description|truncatewords:8 }}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                <i class="fas fa-store me-1"></i>{{ action.audit.restaurant.name }}
+                            </small>
+                            <small class="{% if action.completed %}text-success{% else %}text-warning{% endif %}">
+                                <i class="fas {% if action.completed %}fa-check-circle{% else %}fa-clock{% endif %} me-1"></i>
+                                {% if action.completed %}Completed{% else %}Pending{% endif %}
+                            </small>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="empty-state text-center py-4">
+                        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No Recent Actions</h5>
+                        <p class="text-muted mb-0">No corrective actions created recently</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Upcoming Deadlines -->
+        <div class="col-xl-6 col-lg-12 mb-4">
+            <div class="mcd-card h-100 shadow-subtle">
+                <div class="mcd-card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 text-white"><i class="fas fa-calendar-alt me-2"></i> Upcoming Deadlines</h5>
+                    <span class="mcd-badge mcd-badge-warning">{{ upcoming_actions|length }}</span>
+                </div>
+                <div class="mcd-card-body">
+                    {% for action in upcoming_actions %}
+                    <div class="action-card border-left p-3 mb-3 round-md
+                        {% if action.risk_level == 'CRITICAL' %}action-card-critical
+                        {% elif action.risk_level == 'HIGH' %}action-card-high
+                        {% elif action.risk_level == 'MEDIUM' %}action-card-medium
+                        {% else %}action-card-low{% endif %}">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <strong class="mcd-text-red">#{{ action.id }}</strong>
+                            <span class="text-warning fw-semibold">
+                                <i class="fas fa-hourglass-half me-1"></i>
+                                Due: {{ action.deadline|timeuntil:today }}
+                            </span>
+                        </div>
+                        <p class="mb-2 small text-muted">{{ action.description|truncatewords:8 }}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                <i class="fas fa-user me-1"></i>{{ action.assigned_to|default:"Unassigned" }}
+                            </small>
+                            <span class="mcd-badge status-badge-compact
+                                {% if action.risk_level == 'CRITICAL' %}mcd-badge-danger
+                                {% elif action.risk_level == 'HIGH' %}mcd-badge-danger
+                                {% elif action.risk_level == 'MEDIUM' %}mcd-badge-warning
+                                {% else %}mcd-badge-info{% endif %}">
+                                {{ action.get_risk_level_display }}
+                            </span>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="empty-state text-center py-4">
+                        <i class="fas fa-calendar-check fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No Upcoming Deadlines</h5>
+                        <p class="text-muted mb-0">All corrective actions are up to date</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Additional Statistics -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="mcd-card shadow-subtle">
+                <div class="mcd-card-header">
+                    <h5 class="mb-0 text-white"><i class="fas fa-chart-pie me-2"></i> Detailed Statistics</h5>
+                </div>
+                <div class="mcd-card-body">
+                    <div class="row text-center">
+                        <div class="col-md-2 col-6 mb-3">
+                            <div class="border-end border-md-end-0 border-bottom border-md-bottom-0 pb-3 pb-md-0">
+                                <h4 class="mcd-text-red mb-1">{{ stats.critical|default:0 }}</h4>
+                                <small class="text-muted">Critical Risk</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2 col-6 mb-3">
+                            <div class="border-end border-md-end-0 border-bottom border-md-bottom-0 pb-3 pb-md-0">
+                                <h4 class="text-danger mb-1">{{ stats.high|default:0 }}</h4>
+                                <small class="text-muted">High Risk</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2 col-6 mb-3">
+                            <div class="border-end border-md-end-0 border-bottom border-md-bottom-0 pb-3 pb-md-0">
+                                <h4 class="text-warning mb-1">{{ stats.medium|default:0 }}</h4>
+                                <small class="text-muted">Medium Risk</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2 col-6 mb-3">
+                            <div class="border-end border-md-end-0 border-bottom border-md-bottom-0 pb-3 pb-md-0">
+                                <h4 class="text-info mb-1">{{ stats.low|default:0 }}</h4>
+                                <small class="text-muted">Low Risk</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2 col-6 mb-3">
+                            <div class="border-end border-md-end-0 pb-3 pb-md-0">
+                                <h4 class="text-success mb-1">{{ completed_actions }}</h4>
+                                <small class="text-muted">Resolved</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2 col-6 mb-3">
+                            <div>
+                                <h4 class="text-secondary mb-1">{{ pending_actions }}</h4>
+                                <small class="text-muted">Open</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

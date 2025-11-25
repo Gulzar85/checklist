@@ -1,10 +1,435 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Corrective Actions - McDonald's QA Audit System{% endblock %}
 
-</body>
-</html>
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+        <div>
+            <h1 class="h2 mcd-text-red mb-1">
+                <i class="fas fa-exclamation-triangle me-2"></i> Corrective Actions
+            </h1>
+            <p class="text-muted mb-0">Manage and track corrective actions from audit findings</p>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="mcd-card text-center">
+                <div class="mcd-card-body">
+                    <h3 class="text-primary">{{ stats.total }}</h3>
+                    <p class="text-muted mb-0">Total Actions</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="mcd-card text-center">
+                <div class="mcd-card-body">
+                    <h3 class="text-success">{{ stats.completed }}</h3>
+                    <p class="text-muted mb-0">Completed</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="mcd-card text-center">
+                <div class="mcd-card-body">
+                    <h3 class="text-danger">{{ stats.overdue }}</h3>
+                    <p class="text-muted mb-0">Overdue</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="mcd-card text-center">
+                <div class="mcd-card-body">
+                    <h3 class="text-warning">{{ stats.critical }}</h3>
+                    <p class="text-muted mb-0">Critical</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="mcd-card mb-4">
+        <div class="mcd-card-body">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="mb-0">Overall Completion Progress</h6>
+                <span class="text-primary fw-bold">{{ completion_percentage }}% Complete</span>
+            </div>
+            <div class="progress" style="height: 20px;">
+                <div class="progress-bar bg-success" role="progressbar"
+                     style="width: {{ completion_percentage }}%"
+                     aria-valuenow="{{ completion_percentage }}" aria-valuemin="0" aria-valuemax="100">
+                    {{ completion_percentage }}%
+                </div>
+            </div>
+            <div class="row mt-2">
+                <div class="col-6">
+                    <small class="text-muted">Completed: {{ stats.completed }}/{{ stats.total }}</small>
+                </div>
+                <div class="col-6 text-end">
+                    <small class="text-muted">Pending: {{ stats.pending }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="mcd-card mb-4">
+        <div class="mcd-card-body">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label text-danger fw-semibold">Risk Level</label>
+                    <select class="form-select mcd-form-select" id="riskLevelFilter">
+                        <option value="">All Risk Levels</option>
+                        <option value="LOW" {% if risk_level_filter == 'LOW' %}selected{% endif %}>Low</option>
+                        <option value="MEDIUM" {% if risk_level_filter == 'MEDIUM' %}selected{% endif %}>Medium</option>
+                        <option value="HIGH" {% if risk_level_filter == 'HIGH' %}selected{% endif %}>High</option>
+                        <option value="CRITICAL" {% if risk_level_filter == 'CRITICAL' %}selected{% endif %}>Critical</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label text-danger fw-semibold">Status</label>
+                    <select class="form-select mcd-form-select" id="statusFilter">
+                        <option value="">All Status</option>
+                        <option value="true" {% if completed_filter == 'true' %}selected{% endif %}>Completed</option>
+                        <option value="false" {% if completed_filter == 'false' %}selected{% endif %}>Pending</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label text-danger fw-semibold">Overdue</label>
+                    <select class="form-select mcd-form-select" id="overdueFilter">
+                        <option value="">All Actions</option>
+                        <option value="true" {% if overdue_filter == 'true' %}selected{% endif %}>Overdue Only</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button class="btn mcd-btn-primary w-100 me-2" onclick="applyFilters()">
+                        <i class="fas fa-filter me-2"></i> Apply Filters
+                    </button>
+                    <a href="{% url 'core:action_list' %}" class="btn mcd-btn-outline w-100">
+                        <i class="fas fa-refresh me-2"></i> Clear
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Corrective Actions Table -->
+    <div class="mcd-card">
+        <div class="mcd-card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="fas fa-tasks me-2"></i> Corrective Actions</h5>
+            <span class="text-muted">{{ corrective_actions|length }} actions found</span>
+        </div>
+        <div class="mcd-card-body">
+            {% if corrective_actions %}
+            <div class="table-responsive">
+                <table class="table table-hover mcd-table">
+                    <thead>
+                        <tr>
+                            <th width="20%">Description</th>
+                            <th width="15%">Restaurant</th>
+                            <th width="10%">Risk Level</th>
+                            <th width="15%">Assigned To</th>
+                            <th width="10%">Deadline</th>
+                            <th width="10%">Status</th>
+                            <th width="10%">Days Left</th>
+                            <th width="10%">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for action in corrective_actions %}
+                        <tr class="{% if action.completed %}table-success{% elif action.is_overdue %}table-danger{% elif action.is_urgent %}table-warning{% endif %}">
+                            <td>
+                                <strong>{{ action.description|truncatewords:10 }}</strong>
+                                {% if action.question_response %}
+                                <br>
+                                <small class="text-muted">
+                                    From: {{ action.question_response.question.question_text|truncatewords:5 }}
+                                </small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <strong>{{ action.audit.restaurant.name }}</strong>
+                                <br>
+                                <small class="text-muted">{{ action.audit.audit_date|date:"M d, Y" }}</small>
+                            </td>
+                            <td>
+                                <span class="mcd-badge
+                                    {% if action.risk_level == 'CRITICAL' %}mcd-badge-danger
+                                    {% elif action.risk_level == 'HIGH' %}mcd-badge-danger
+                                    {% elif action.risk_level == 'MEDIUM' %}mcd-badge-warning
+                                    {% else %}mcd-badge-info{% endif %}">
+                                    {{ action.get_risk_level_display }}
+                                </span>
+                            </td>
+                            <td>
+                                {{ action.assigned_to }}
+                                {% if action.audit.manager_on_duty %}
+                                <br>
+                                <small class="text-muted">Manager: {{ action.audit.manager_on_duty }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <strong>{{ action.deadline|date:"M d, Y" }}</strong>
+                                {% if action.completion_date %}
+                                <br>
+                                <small class="text-success">Completed: {{ action.completion_date|date:"M d, Y" }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if action.completed %}
+                                <span class="mcd-badge mcd-badge-success">
+                                    <i class="fas fa-check-circle me-1"></i> Completed
+                                </span>
+                                {% else %}
+                                <span class="mcd-badge mcd-badge-warning">
+                                    <i class="fas fa-clock me-1"></i> Pending
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if not action.completed %}
+                                    {% with days_until=action.days_until_deadline %}
+                                        {% if days_until < 0 %}
+                                        <span class="text-danger fw-bold">
+                                            <i class="fas fa-exclamation-triangle me-1"></i>
+                                            {{ days_until|stringformat:"d"|slice:"1:" }} days overdue
+                                        </span>
+                                        {% elif days_until == 0 %}
+                                        <span class="text-warning fw-bold">Due today</span>
+                                        {% elif days_until <= 3 %}
+                                        <span class="text-warning">{{ days_until }} days</span>
+                                        {% else %}
+                                        <span class="text-success">{{ days_until }} days</span>
+                                        {% endif %}
+                                    {% endwith %}
+                                {% else %}
+                                <span class="text-muted">Completed</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'core:corrective_action_detail' action.id %}"
+                                       class="btn btn-outline-primary"
+                                       title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    {% if not action.completed %}
+                                    <button class="btn btn-outline-success"
+                                            onclick="markAsCompleted({{ action.id }})"
+                                            title="Mark Completed">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                    {% endif %}
+                                    <a href="{% url 'core:corrective_action_update' action.id %}"
+                                       class="btn btn-outline-info"
+                                       title="Edit Action">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% if user_is_admin %}
+                                    <a href="{% url 'core:corrective_action_delete' action.id %}"
+                                       class="btn btn-outline-danger"
+                                       title="Delete Action">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-check-circle fa-4x text-muted mb-3"></i>
+                <h4 class="text-muted">No Corrective Actions Found</h4>
+                <p class="text-muted">
+                    {% if risk_level_filter or completed_filter or overdue_filter %}
+                    Try adjusting your filters to see more results.
+                    {% else %}
+                    All audit findings have been addressed or no corrective actions are required.
+                    {% endif %}
+                </p>
+                {% if risk_level_filter or completed_filter or overdue_filter %}
+                <a href="{% url 'core:action_list' %}" class="btn mcd-btn-primary">
+                    <i class="fas fa-refresh me-2"></i> Clear Filters
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    function applyFilters() {
+        const riskLevel = document.getElementById('riskLevelFilter').value;
+        const status = document.getElementById('statusFilter').value;
+        const overdue = document.getElementById('overdueFilter').value;
+
+        let url = '{% url "core:action_list" %}?';
+        if (riskLevel) url += `risk_level=${riskLevel}&`;
+        if (status) url += `completed=${status}&`;
+        if (overdue) url += `overdue=${overdue}&`;
+
+        window.location.href = url.slice(0, -1); // Remove trailing & or ?
+    }
+
+function markAsCompleted(actionId) {
+    if (confirm('Are you sure you want to mark this corrective action as completed?')) {
+        // Show loading state
+        const btn = event.target;
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        btn.disabled = true;
+
+        // Make AJAX call to mark as completed - CORRECT URL
+        fetch(`/corrective-actions/${actionId}/complete/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Success', 'Corrective action marked as completed!', 'success');
+                // Reload the page after a short delay
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                showToast('Error', data.message || 'Failed to update action', 'error');
+                btn.innerHTML = originalHTML;
+                btn.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Error', 'An error occurred while updating the action', 'error');
+            btn.innerHTML = originalHTML;
+            btn.disabled = false;
+        });
+    }
+}
+    function printPage() {
+        window.print();
+    }
+
+    function exportToCSV() {
+        // Build export URL with current filters
+        const riskLevel = document.getElementById('riskLevelFilter').value;
+        const status = document.getElementById('statusFilter').value;
+        const overdue = document.getElementById('overdueFilter').value;
+
+        let url = '{% url "core:action_list" %}?export=csv&';
+        if (riskLevel) url += `risk_level=${riskLevel}&`;
+        if (status) url += `completed=${status}&`;
+        if (overdue) url += `overdue=${overdue}&`;
+
+        window.location.href = url.slice(0, -1);
+    }
+
+    // Utility function to get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // Toast notification function
+    function showToast(title, message, type = 'info') {
+        // Create toast element
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-white bg-${type === 'error' ? 'danger' : type} border-0`;
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <strong>${title}</strong><br>${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+
+        // Add to toast container
+        let toastContainer = document.getElementById('toastContainer');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.id = 'toastContainer';
+            toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+            toastContainer.style.zIndex = '9999';
+            document.body.appendChild(toastContainer);
+        }
+
+        toastContainer.appendChild(toast);
+
+        // Initialize and show toast
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+
+        // Remove toast after it's hidden
+        toast.addEventListener('hidden.bs.toast', () => {
+            toast.remove();
+        });
+    }
+</script>
+
+<style>
+    .table-success {
+        background-color: rgba(40, 167, 69, 0.1) !important;
+    }
+
+    .table-danger {
+        background-color: rgba(220, 53, 69, 0.1) !important;
+    }
+
+    .table-warning {
+        background-color: rgba(255, 193, 7, 0.1) !important;
+    }
+
+    .mcd-badge {
+        padding: 0.35em 0.65em;
+        font-size: 0.75em;
+        font-weight: 600;
+        border-radius: 0.25rem;
+    }
+
+    .mcd-badge-danger {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .mcd-badge-warning {
+        background-color: #ffc107;
+        color: black;
+    }
+
+    .mcd-badge-success {
+        background-color: #198754;
+        color: white;
+    }
+
+    .mcd-badge-info {
+        background-color: #0dcaf0;
+        color: black;
+    }
+
+    .btn-group-sm > .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+</style>
+{% endblock %}

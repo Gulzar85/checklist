@@ -1,210 +1,481 @@
-<!-- templates/base.html -->
 <!DOCTYPE html>
+
+{% load static %}
+
 <html lang="en">
+
 <head>
+
     <meta charset="UTF-8">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>{% block title %}McDonald's Pakistan - QA Audit System{% endblock %}</title>
 
+
+
     <!-- SEO Meta -->
-    <meta name="description" content="McDonald's Pakistan Quality Assurance Audit System">
-    <meta name="keywords" content="McDonald's, Pakistan, QA, Audit, System, Quality Assurance">
+
+    <meta name="description" content="McDonald's Pakistan Quality Assurance Audit System - Ensuring excellence across all locations">
+
+    <meta name="keywords" content="McDonald's, Pakistan, QA, Audit, System, Quality Assurance, Food Safety">
+
     <meta name="author" content="McDonald's Pakistan">
 
+
+
     <!-- Bootstrap 5 -->
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
+
+
     <!-- Font Awesome 6 -->
+
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 
-    <!-- Bootstrap Icons (Optional) -->
+
+
+    <!-- Bootstrap Icons -->
+
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 
-    <!-- Alpine.js -->
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 
-    <!-- jQuery (Latest) -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
-    <!-- McDonald’s Pakistan Theme -->
-    <style>
-        :root {
-            --mcd-red: #DA291C;
-            --mcd-yellow: #FFC72C;
-            --mcd-black: #27251F;
-            --mcd-white: #FFFFFF;
-        }
+    <!-- Google Fonts -->
 
-        body {
-            background-color: var(--mcd-white);
-            color: var(--mcd-black);
-            font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
-        }
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-        /* Theme Utility Classes */
-        .mcd-bg-red { background-color: var(--mcd-red) !important; }
-        .mcd-bg-yellow { background-color: var(--mcd-yellow) !important; }
-        .mcd-text-red { color: var(--mcd-red) !important; }
-        .mcd-text-yellow { color: var(--mcd-yellow) !important; }
-        .mcd-text-black { color: var(--mcd-black) !important; }
 
-        /* Buttons */
-        .mcd-btn-primary {
-            background-color: var(--mcd-red);
-            border-color: var(--mcd-red);
-            color: var(--mcd-white);
-            font-weight: 600;
-        }
-        .mcd-btn-primary:hover {
-            background-color: #b71c11;
-            border-color: #b71c11;
-            color: var(--mcd-white);
-        }
 
-        .mcd-btn-secondary {
-            background-color: var(--mcd-yellow);
-            border-color: var(--mcd-yellow);
-            color: var(--mcd-black);
-            font-weight: 600;
-        }
-        .mcd-btn-secondary:hover {
-            background-color: #e6b400;
-            border-color: #e6b400;
-            color: var(--mcd-black);
-        }
+    <!-- Custom CSS -->
 
-        /* Navbar */
-        .navbar-brand {
-            font-weight: bold;
-            font-size: 1.1rem;
-        }
-        .nav-link {
-            color: var(--mcd-white) !important;
-            transition: 0.2s ease;
-        }
-        .nav-link:hover, .nav-link.active {
-            color: var(--mcd-yellow) !important;
-        }
+    <link href="{% static 'css/style.css' %}" rel="stylesheet">
 
-        /* Card Headers */
-        .card-header {
-            font-weight: 600;
-            background-color: #f8f9fa;
-        }
 
-        /* Inputs */
-        input, select, textarea {
-            border: 2px solid #e9ecef;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-        }
-        input:focus, select:focus, textarea:focus {
-            border-color: var(--mcd-red);
-            box-shadow: 0 0 0 0.2rem rgba(218, 41, 28, 0.25);
-        }
 
-        /* Footer */
-        footer {
-            background-color: var(--mcd-black);
-        }
+    <!-- Favicon -->
 
-        /* Accessibility & UX */
-        a:focus, button:focus {
-            outline: 2px solid var(--mcd-yellow);
-            outline-offset: 2px;
-        }
+    <link rel="icon" href="{% static 'images/mcdonalds-favicon.ico' %}" type="image/x-icon">
 
-        /* Table Enhancements */
-        table th {
-            cursor: pointer;
-            user-select: none;
-        }
-
-        /* Transition Hover Effects */
-        .card, .btn {
-            transition: all 0.2s ease-in-out;
-        }
-        .card:hover {
-            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-        }
-    </style>
 </head>
 
-<body x-data="{ mobileMenu: false }">
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark mcd-bg-red sticky-top shadow-sm">
+
+
+<body class="d-flex flex-column min-vh-100">
+
+    <!-- Enhanced Navigation -->
+
+    <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+
         <div class="container">
-            <a class="navbar-brand d-flex align-items-center" href="{% url 'core:dashboard' %}">
-                <i class="fas fa-burger me-2"></i> McDonald's QA Audit
+
+            <a class="navbar-brand" href="{% url 'core:dashboard' %}">
+
+                <img src="{% static 'images/mcdonalds-logo.png' %}" alt="McDonald's Pakistan" class="me-2">
+
+                <span style="font-size: 0.9rem;">QA Audit System</span>
+
             </a>
 
-            <button class="navbar-toggler border-0" type="button" @click="mobileMenu = !mobileMenu" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <i class="fas fa-bars text-white"></i>
+
+
+            <!-- Proper Bootstrap Navbar Toggler -->
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+
+                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+
+                <span class="navbar-toggler-icon"></span>
+
             </button>
 
-            <div class="collapse navbar-collapse" :class="{'show': mobileMenu}" id="navbarNav">
+
+
+            <div class="collapse navbar-collapse" id="navbarNav">
+
                 <ul class="navbar-nav ms-auto align-items-lg-center">
-                    <li class="nav-item"><a class="nav-link" href="{% url 'core:dashboard' %}"><i class="fas fa-home me-1"></i> Dashboard</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'core:create_audit' %}"><i class="fas fa-plus-circle me-1"></i> New Audit</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'core:audit_list' %}"><i class="fas fa-list me-1"></i> All Audits</a></li>
+
+                    <li class="nav-item">
+
+                        <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
+
+                           href="{% url 'core:dashboard' %}" style="font-size: 0.8rem;">
+
+                            <i class="fas fa-home me-1"></i> Dashboard
+
+                        </a>
+
+                    </li>
+
+                    <li class="nav-item">
+
+                        <a class="nav-link {% if request.resolver_match.url_name == 'create_audit' %}active{% endif %}"
+
+                           href="{% url 'core:create_audit' %}" style="font-size: 0.8rem;">
+
+                            <i class="fas fa-plus-circle me-1"></i> New Audit
+
+                        </a>
+
+                    </li>
+
+                    <li class="nav-item">
+
+                        <a class="nav-link {% if request.resolver_match.url_name == 'audit_list' %}active{% endif %}"
+
+                           href="{% url 'core:audit_list' %}" style="font-size: 0.8rem;">
+
+                            <i class="fas fa-clipboard-list me-1"></i> All Audits
+
+                        </a>
+
+                    </li>
+
+                    <li class="nav-item">
+
+                        <a class="nav-link {% if request.resolver_match.url_name == 'restaurant_list' %}active{% endif %}"
+
+                           href="{% url 'core:restaurant_list' %}" style="font-size: 0.8rem;">
+
+                            <i class="fas fa-store me-1"></i> Restaurants
+
+                        </a>
+
+                    </li>
+
+
+
+                    <!-- Corrective Actions Dropdown -->
+
+                    <li class="nav-item dropdown">
+
+                        <a class="nav-link dropdown-toggle {% if 'corrective' in request.resolver_match.url_name or 'action' in request.resolver_match.url_name %}active{% endif %}"
+
+                           href="#" id="correctiveActionsMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 0.8rem;">
+
+                            <i class="fas fa-tasks me-1"></i> Corrective Actions
+
+                        </a>
+
+                        <ul class="dropdown-menu dropdown-menu-end shadow mcd-card" aria-labelledby="correctiveActionsMenu" style="font-size: 0.8rem;">
+
+                            <li>
+
+                                <a class="dropdown-item" href="{% url 'core:corrective_action_dashboard' %}">
+
+                                    <i class="fas fa-tachometer-alt me-2 text-primary"></i> Dashboard
+
+                                </a>
+
+                            </li>
+
+                            <li>
+
+                                <a class="dropdown-item" href="{% url 'core:action_list' %}">
+
+                                    <i class="fas fa-list me-2 text-success"></i> All Actions
+
+                                </a>
+
+                            </li>
+
+                            <li><hr class="dropdown-divider"></li>
+
+                            <li>
+
+                                <a class="dropdown-item" href="{% url 'core:reports_overview' %}">
+
+                                    <i class="fas fa-chart-bar me-2 text-info"></i> Reports
+
+                                </a>
+
+                            </li>
+
+                        </ul>
+
+                    </li>
+
+
 
                     {% if user.is_authenticated %}
+
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="fas fa-user-circle me-1"></i> {{ user.get_full_name|default:user.username }}
+
+                            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userMenu"
+
+                               role="button" data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 0.8rem;">
+
+                                <div class="bg-warning rounded-circle me-2 d-flex align-items-center justify-content-center"
+
+                                     style="width: 28px; height: 28px;">
+
+                                    <i class="fas fa-user text-dark" style="font-size: 0.7rem;"></i>
+
+                                </div>
+
+                                <span>{{ user.get_full_name|default:user.username }}</span>
+
                             </a>
-                            <ul class="dropdown-menu dropdown-menu-end shadow">
-                                <li><a class="dropdown-item" href="{% url 'accounts:profile' %}"><i class="fas fa-id-badge me-2"></i> Profile</a></li>
-                                <li><a class="dropdown-item" href="{% url 'accounts:password_change' %}"><i class="fas fa-key me-2"></i> Change Password</a></li>
-                                <li><hr class="dropdown-divider"></li>
+
+                            <ul class="dropdown-menu dropdown-menu-end shadow mcd-card" aria-labelledby="userMenu" style="font-size: 0.8rem;">
+
                                 <li>
-                                    <form action="{% url 'accounts:logout' %}" method="post" class="d-inline">
-                                        {% csrf_token %}
-                                        <button type="submit" class="dropdown-item text-danger">
-                                            <i class="fas fa-sign-out-alt me-2"></i> Logout
-                                        </button>
-                                    </form>
+
+                                    <a class="dropdown-item" href="{% url 'accounts:profile' %}">
+
+                                        <i class="fas fa-id-badge me-2 text-primary"></i> Profile
+
+                                    </a>
+
                                 </li>
+
+                                <li>
+
+                                    <a class="dropdown-item" href="{% url 'accounts:password_change' %}">
+
+                                        <i class="fas fa-key me-2 text-warning"></i> Change Password
+
+                                    </a>
+
+                                </li>
+
+                                {% if user.is_superuser %}
+
+                                <li><hr class="dropdown-divider"></li>
+
+                                <li>
+
+                                    <a class="dropdown-item" href="/admin/">
+
+                                        <i class="fas fa-shield-alt me-2 text-danger"></i> Admin Panel
+
+                                    </a>
+
+                                </li>
+
+                                {% endif %}
+
+                                <li><hr class="dropdown-divider"></li>
+
+                                <li>
+
+                                    <form action="{% url 'accounts:logout' %}" method="post" class="d-inline w-100">
+
+                                        {% csrf_token %}
+
+                                        <button type="submit" class="dropdown-item text-danger w-100 text-start">
+
+                                            <i class="fas fa-sign-out-alt me-2"></i> Logout
+
+                                        </button>
+
+                                    </form>
+
+                                </li>
+
                             </ul>
+
                         </li>
+
                     {% else %}
-                        <li class="nav-item"><a class="nav-link" href="{% url 'accounts:login' %}"><i class="fas fa-sign-in-alt me-1"></i> Login</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{% url 'accounts:register' %}"><i class="fas fa-user-plus me-1"></i> Register</a></li>
+
+                        <li class="nav-item">
+
+                            <a class="nav-link" href="{% url 'accounts:login' %}" style="font-size: 0.8rem;">
+
+                                <i class="fas fa-sign-in-alt me-1"></i> Login
+
+                            </a>
+
+                        </li>
+
+                        <li class="nav-item">
+
+                            <a class="nav-link" href="{% url 'accounts:register' %}" style="font-size: 0.8rem;">
+
+                                <i class="fas fa-user-plus me-1"></i> Register
+
+                            </a>
+
+                        </li>
+
                     {% endif %}
+
                 </ul>
+
             </div>
+
         </div>
+
     </nav>
 
-    <!-- Flash Messages -->
-    <div class="container mt-3">
+
+
+    <!-- Enhanced Flash Messages -->
+
+    <div class="container mt-3" id="alertContainer">
+
         {% if messages %}
+
             {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                    <i class="fas fa-info-circle me-2"></i>{{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+
+                <div class="mcd-alert mcd-alert-{{ message.tags }} alert-dismissible fade show fade-in-up" role="alert">
+
+                    <div class="d-flex align-items-center">
+
+                        <i class="fas
+
+                            {% if message.tags == 'success' %}fa-check-circle
+
+                            {% elif message.tags == 'warning' %}fa-exclamation-triangle
+
+                            {% elif message.tags == 'error' %}fa-times-circle
+
+                            {% else %}fa-info-circle{% endif %} me-3"></i>
+
+                        <span class="flex-grow-1">{{ message }}</span>
+
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+
+                    </div>
+
                 </div>
+
             {% endfor %}
+
         {% endif %}
+
     </div>
 
+
+
     <!-- Main Content -->
-    <main class="container-fluid mt-4" role="main">
+
+    <main class="container-fluid mt-4 flex-grow-1" role="main">
+
         {% block content %}
+
+        <!-- Content will be injected here -->
+
         {% endblock %}
+
     </main>
 
-    <!-- Footer -->
-    <footer class="text-light py-3 mt-5">
-        <div class="container text-center">
-            <small>&copy; 2025 McDonald's Pakistan — Quality Assurance Audit System</small>
+
+
+<!-- ===========================
+
+     McDonald's Branded Footer
+
+     =========================== -->
+
+<footer class="mcd-footer py-4 mt-5">
+
+    <div class="container">
+
+        <div class="row align-items-center">
+
+
+
+            <!-- Left -->
+
+            <div class="col-md-6 text-center text-md-start mb-3 mb-md-0">
+
+                <div class="d-flex align-items-center justify-content-center justify-content-md-start">
+
+
+
+                    <!-- Logo -->
+
+                    <img src="{% static 'images/mcdonalds-logo.png' %}"
+
+                         alt="McDonald's Pakistan"
+
+                         height="38"
+
+                         class="me-3 footer-logo">
+
+
+
+                    <!-- Text -->
+
+                    <div>
+
+                        <small class="footer-title d-block">© 2025 McDonald's Pakistan</small>
+
+                        <small class="footer-subtitle">Quality Assurance Audit System</small>
+
+                    </div>
+
+
+
+                </div>
+
+            </div>
+
+
+
+            <!-- Right -->
+
+            <div class="col-md-6 text-center text-md-end">
+
+                <div class="d-flex flex-column flex-md-row align-items-center justify-content-center justify-content-md-end gap-3">
+
+
+
+                    <small class="footer-tagline">
+
+                        <i class="fas fa-shield-alt me-1"></i> Ensuring Quality Across Pakistan
+
+                    </small>
+
+
+
+                </div>
+
+            </div>
+
+
+
         </div>
-    </footer>
+
+    </div>
+
+</footer>
+
+
+
+    <!-- Alpine.js -->
+
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+
+
+
+    <!-- jQuery -->
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+
 
     <!-- Bootstrap Bundle JS (with Popper) -->
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
+
+
+    <!-- Custom JavaScript -->
+
+    <script src="{% static 'js/main.js' %}"></script>
+
+
+
     {% block scripts %}
+
+    <!-- Page-specific scripts will be injected here -->
+
     {% endblock %}
+
 </body>
+
 </html>

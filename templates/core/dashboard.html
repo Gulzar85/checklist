@@ -1,82 +1,208 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Dashboard - McDonald's QA Audit System{% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="container-fluid">
     <!-- Page Header -->
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
-        <h1 class="h2 mcd-text-red">
-            <i class="fas fa-tachometer-alt"></i>
-            Dashboard Overview
-        </h1>
+        <div>
+            <h1 class="h3 mcd-text-red mb-2" style="font-size: 1.4rem;">
+                <i class="fas fa-tachometer-alt me-2"></i>
+                Dashboard Overview
+            </h1>
+            <p class="text-muted mb-0" style="font-size: 0.85rem;">Welcome back, {{ user.get_full_name|default:user.username }}! Here's your audit performance summary.</p>
+        </div>
         <div class="btn-toolbar mb-2 mb-md-0">
-            <a href="{% url 'core:create_audit' %}" class="btn mcd-btn-primary">
-                <i class="fas fa-plus-circle"></i> New Audit
+            <a href="{% url 'core:create_audit' %}" class="btn mcd-btn-primary" style="font-size: 0.85rem;">
+                <i class="fas fa-plus-circle me-2"></i> New Audit
             </a>
         </div>
     </div>
 
     <!-- Statistics Cards -->
-    <div class="row">
-        <div class="col-md-3 mb-4">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body mcd-bg-red text-white">
-                    <div class="d-flex justify-content-between">
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="mcd-card h-100 fade-in-up" data-delay="0.1">
+                <div class="mcd-card-body">
+                    <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h3 class="card-title">{{ total_audits }}</h3>
-                            <p class="card-text mb-0">Total Audits</p>
+                            <h2 class="fw-bold text-primary mb-1" style="font-size: 2rem;">{{ total_audits }}</h2>
+                            <p class="mb-0 fw-semibold text-muted" style="font-size: 0.8rem;">Total Audits</p>
                         </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-clipboard-list fa-2x"></i>
+                        <div class="bg-primary rounded-circle p-2 d-flex align-items-center justify-content-center">
+                            <i class="fas fa-clipboard-list text-white" style="font-size: 1.5rem;"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted" style="font-size: 0.75rem;">
+                                <i class="fas fa-check-circle text-success me-1"></i>
+                                {{ submitted_count }} submitted
+                            </small>
+                            <small class="text-muted" style="font-size: 0.75rem;">
+                                <i class="fas fa-edit text-warning me-1"></i>
+                                {{ in_progress_count }} in progress
+                            </small>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-3 mb-4">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body bg-success text-white">
-                    <div class="d-flex justify-content-between">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="mcd-card h-100 fade-in-up" data-delay="0.2">
+                <div class="mcd-card-body">
+                    <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h3 class="card-title">{{ avg_score|floatformat:1 }}%</h3>
-                            <p class="card-text mb-0">Average Score</p>
+                            <h2 class="fw-bold text-success mb-1" style="font-size: 2rem;">{{ avg_score|floatformat:1 }}%</h2>
+                            <p class="mb-0 fw-semibold text-muted" style="font-size: 0.8rem;">Average Score</p>
                         </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-chart-line fa-2x"></i>
+                        <div class="bg-success rounded-circle p-2 d-flex align-items-center justify-content-center">
+                            <i class="fas fa-chart-line text-white" style="font-size: 1.5rem;"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <div class="mcd-progress">
+                            <div class="mcd-progress-bar" style="width: {{ avg_score }}%"></div>
+                        </div>
+                        <small class="text-muted d-block mt-1" style="font-size: 0.75rem;">
+                            <i class="fas fa-trending-up me-1"></i>
+                            Overall performance
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="mcd-card h-100 fade-in-up" data-delay="0.3">
+                <div class="mcd-card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="fw-bold text-info mb-1" style="font-size: 2rem;">{{ restaurants.count }}</h2>
+                            <p class="mb-0 fw-semibold text-muted" style="font-size: 0.8rem;">Restaurants</p>
+                        </div>
+                        <div class="bg-info rounded-circle p-2 d-flex align-items-center justify-content-center">
+                            <i class="fas fa-store text-white" style="font-size: 1.5rem;"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted" style="font-size: 0.75rem;">
+                                <i class="fas fa-map-marker-alt me-1"></i>
+                                {{ active_locations|default:"0" }} active
+                            </small>
+                            <small class="text-muted" style="font-size: 0.75rem;">
+                                <i class="fas fa-flag me-1"></i>
+                                {{ cities_count|default:"0" }} cities
+                            </small>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-3 mb-4">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body bg-info text-white">
-                    <div class="d-flex justify-content-between">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="mcd-card h-100 fade-in-up" data-delay="0.4">
+                <div class="mcd-card-body">
+                    <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h3 class="card-title">{{ restaurants.count }}</h3>
-                            <p class="card-text mb-0">Restaurants</p>
+                            <h2 class="fw-bold text-warning mb-1" style="font-size: 2rem;">{{ critical_count|default:"0" }}</h2>
+                            <p class="mb-0 fw-semibold text-muted" style="font-size: 0.8rem;">Critical Issues</p>
                         </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-utensils fa-2x"></i>
+                        <div class="bg-warning rounded-circle p-2 d-flex align-items-center justify-content-center">
+                            <i class="fas fa-exclamation-triangle text-dark" style="font-size: 1.5rem;"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted" style="font-size: 0.75rem;">
+                                <i class="fas fa-clock me-1"></i>
+                                {{ overdue_count|default:"0" }} overdue
+                            </small>
+                            <small class="text-muted" style="font-size: 0.75rem;">
+                                <i class="fas fa-check me-1"></i>
+                                {{ resolved_count|default:"0" }} resolved
+                            </small>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <div class="col-md-3 mb-4">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body bg-warning text-dark">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h3 class="card-title">16</h3>
-                            <p class="card-text mb-0">Sections</p>
+    <!-- Corrective Actions Overview -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="mcd-card fade-in-up" data-delay="0.5">
+                <div class="mcd-card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0" style="font-size: 0.95rem;">
+                        <i class="fas fa-tasks me-2"></i> Corrective Actions Overview
+                    </h5>
+                    <a href="{% url 'core:corrective_action_dashboard' %}" class="btn btn-sm mcd-btn-outline" style="font-size: 0.8rem;">
+                        View Dashboard <i class="fas fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+                <div class="mcd-card-body">
+                    <div class="row text-center">
+                        <div class="col-md-2 col-6 mb-3">
+                            <div class="stats-card bg-light rounded p-3">
+                                <div class="stats-number text-primary">{{ total_corrective_actions|default:"0" }}</div>
+                                <div class="stats-label">Total Actions</div>
+                            </div>
                         </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-folder fa-2x"></i>
+                        <div class="col-md-2 col-6 mb-3">
+                            <div class="stats-card bg-light rounded p-3">
+                                <div class="stats-number text-success">{{ completed_corrective_actions|default:"0" }}</div>
+                                <div class="stats-label">Completed</div>
+                            </div>
+                        </div>
+                        <div class="col-md-2 col-6 mb-3">
+                            <div class="stats-card bg-light rounded p-3">
+                                <div class="stats-number text-warning">{{ pending_corrective_actions|default:"0" }}</div>
+                                <div class="stats-label">Pending</div>
+                            </div>
+                        </div>
+                        <div class="col-md-2 col-6 mb-3">
+                            <div class="stats-card bg-light rounded p-3">
+                                <div class="stats-number text-danger">{{ overdue_corrective_actions|default:"0" }}</div>
+                                <div class="stats-label">Overdue</div>
+                            </div>
+                        </div>
+                        <div class="col-md-2 col-6 mb-3">
+                            <div class="stats-card bg-light rounded p-3">
+                                <div class="stats-number text-danger">{{ critical_corrective_actions|default:"0" }}</div>
+                                <div class="stats-label">Critical</div>
+                            </div>
+                        </div>
+                        <div class="col-md-2 col-6 mb-3">
+                            <div class="stats-card bg-light rounded p-3">
+                                <div class="stats-number text-info">{{ corrective_completion_percentage|default:"0"|floatformat:1 }}%</div>
+                                <div class="stats-label">Completion</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Risk Level Distribution -->
+                    <div class="mt-4">
+                        <h6 class="text-muted mb-3" style="font-size: 0.85rem;">Risk Level Distribution</h6>
+                        <div class="row">
+                            {% for risk in corrective_risk_distribution %}
+                            <div class="col-md-3 col-6 mb-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="risk-badge risk-badge-{{ risk.level|lower }}" style="font-size: 0.75rem;">
+                                        {{ risk.display_name }}
+                                    </span>
+                                    <span class="fw-bold" style="font-size: 0.85rem;">{{ risk.count }}</span>
+                                </div>
+                                <div class="mcd-progress mt-1">
+                                    <div class="mcd-progress-bar" style="width: {{ risk.percentage|default:0 }}%"></div>
+                                </div>
+                                <small class="text-muted" style="font-size: 0.7rem;">{{ risk.percentage|default:0|floatformat:1 }}%</small>
+                            </div>
+                            {% endfor %}
                         </div>
                     </div>
                 </div>
@@ -85,23 +211,50 @@
     </div>
 
     <div class="row">
-        <!-- Quick Actions & User Profile -->
-        <div class="col-md-4 mb-4">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header mcd-bg-red text-white">
-                    <h5 class="mb-0"><i class="fas fa-bolt"></i> Quick Actions</h5>
+        <!-- Quick Actions & Profile -->
+        <div class="col-lg-4 mb-4">
+            <!-- Quick Actions -->
+            <div class="mcd-card mb-4 fade-in-up" data-delay="0.5">
+                <div class="mcd-card-header">
+                    <h5 class="mb-0" style="font-size: 0.95rem;"><i class="fas fa-bolt me-2"></i> Quick Actions</h5>
                 </div>
-                <div class="card-body">
+                <div class="mcd-card-body">
                     <div class="d-grid gap-2">
-                        <a href="{% url 'core:create_audit' %}" class="btn mcd-btn-primary">
-                            <i class="fas fa-plus-circle"></i> Create New Audit
+                        <a href="{% url 'core:create_audit' %}" class="btn mcd-btn-primary mb-2 py-2 d-flex align-items-center justify-content-center" style="font-size: 0.85rem;">
+                            <i class="fas fa-plus-circle me-3" style="font-size: 1.1rem;"></i>
+                            <div class="text-start">
+                                <div class="fw-bold">Create New Audit</div>
+                                <small class="opacity-75" style="font-size: 0.75rem;">Start a new quality assessment</small>
+                            </div>
                         </a>
-                        <a href="{% url 'core:audit_list' %}" class="btn mcd-btn-secondary">
-                            <i class="fas fa-list"></i> View All Audits
+                        <a href="{% url 'core:action_list' %}" class="btn mcd-btn-secondary mb-2 py-2 d-flex align-items-center justify-content-center" style="font-size: 0.85rem;">
+                            <i class="fas fa-tasks me-3" style="font-size: 1.1rem;"></i>
+                            <div class="text-start">
+                                <div class="fw-bold">Corrective Actions</div>
+                                <small class="opacity-75" style="font-size: 0.75rem;">Manage action items</small>
+                            </div>
                         </a>
-                        {% if user.is_superuser or user.role == 'admin' %}
-                        <a href="/admin/" class="btn btn-outline-danger" target="_blank">
-                            <i class="fas fa-cog"></i> Admin Panel
+                        <a href="{% url 'core:audit_list' %}" class="btn mcd-btn-outline mb-2 py-2 d-flex align-items-center justify-content-center" style="font-size: 0.85rem;">
+                            <i class="fas fa-list me-3" style="font-size: 1.1rem;"></i>
+                            <div class="text-start">
+                                <div class="fw-bold">View All Audits</div>
+                                <small class="opacity-75" style="font-size: 0.75rem;">Browse audit history</small>
+                            </div>
+                        </a>
+                        <a href="{% url 'core:restaurant_list' %}" class="btn btn-outline-primary mb-2 py-2 d-flex align-items-center justify-content-center" style="font-size: 0.85rem;">
+                            <i class="fas fa-store me-3" style="font-size: 1.1rem;"></i>
+                            <div class="text-start">
+                                <div class="fw-bold">Manage Restaurants</div>
+                                <small class="opacity-75" style="font-size: 0.75rem;">View locations & performance</small>
+                            </div>
+                        </a>
+                        {% if user.is_superuser %}
+                        <a href="/admin/" class="btn btn-outline-danger py-2 d-flex align-items-center justify-content-center" style="font-size: 0.85rem;">
+                            <i class="fas fa-shield-alt me-3" style="font-size: 1.1rem;"></i>
+                            <div class="text-start">
+                                <div class="fw-bold">Admin Panel</div>
+                                <small class="opacity-75" style="font-size: 0.75rem;">System administration</small>
+                            </div>
                         </a>
                         {% endif %}
                     </div>
@@ -109,193 +262,358 @@
             </div>
 
             <!-- User Profile Card -->
-            <div class="card border-0 shadow-sm mt-4">
-                <div class="card-body text-center">
+            <div class="mcd-card fade-in-up" data-delay="0.6">
+                <div class="mcd-card-body text-center">
                     <div class="mb-3">
-                        <div style="width: 80px; height: 80px; background: var(--mcd-yellow); border-radius: 50%; margin: 0 auto; display: flex; align-items: center; justify-content: center;">
-                            <span style="color: var(--mcd-red); font-weight: bold; font-size: 2rem;">M</span>
+                        <div class="bg-warning rounded-circle mx-auto d-flex align-items-center justify-content-center pulse"
+                             style="width: 80px; height: 80px; border: 3px solid var(--mcd-red);">
+                            <i class="fas fa-user-check text-dark" style="font-size: 1.5rem;"></i>
                         </div>
                     </div>
-                    <h6 class="text-danger">{{ user.get_full_name|default:user.username }}</h6>
-                    <p class="text-muted small mb-2">{{ user.designation|default:"Quality Auditor" }}</p>
-                    <p class="text-muted small mb-3">{{ user.department|default:"Quality Assurance" }}</p>
-                    <a href="{% url 'accounts:profile' %}" class="btn btn-outline-danger btn-sm">
-                        <i class="fas fa-user-edit"></i> Edit Profile
-                    </a>
+                    <h5 class="text-danger mb-1" style="font-size: 1rem;">{{ user.get_full_name|default:user.username }}</h5>
+                    <p class="text-muted mb-2" style="font-size: 0.85rem;">{{ user.designation|default:"Quality Auditor" }}</p>
+                    <p class="text-muted small mb-3" style="font-size: 0.8rem;">{{ user.department|default:"Quality Assurance" }}</p>
+
+                    <!-- User Stats -->
+                    <div class="row text-center mb-3">
+                        <div class="col-4">
+                            <div class="border-end">
+                                <div class="fw-bold text-primary" style="font-size: 0.9rem;">{{ user_audit_count|default:"0" }}</div>
+                                <small class="text-muted" style="font-size: 0.75rem;">My Audits</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="border-end">
+                                <div class="fw-bold text-success" style="font-size: 0.9rem;">{{ user_avg_score|default:"0"|floatformat:1 }}%</div>
+                                <small class="text-muted" style="font-size: 0.75rem;">Avg Score</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="fw-bold text-info" style="font-size: 0.9rem;">{{ user_restaurants|default:"0" }}</div>
+                            <small class="text-muted" style="font-size: 0.75rem;">Locations</small>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'accounts:profile' %}" class="btn btn-outline-danger btn-sm" style="font-size: 0.8rem;">
+                            <i class="fas fa-user-edit me-2"></i> Edit Profile
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Recent Audits -->
-        <div class="col-md-8">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header mcd-bg-red text-white">
-                    <h5 class="mb-0"><i class="fas fa-history"></i> Recent Audits</h5>
+        <!-- Recent Audits & Performance -->
+        <div class="col-lg-8">
+            <!-- Recent Audits -->
+            <div class="mcd-card mb-4 fade-in-up" data-delay="0.5">
+                <div class="mcd-card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0" style="font-size: 0.95rem;">
+                        <i class="fas fa-history me-2"></i> Recent Audits
+                        <small class="text-muted ms-2" style="font-size: 0.8rem;">(Last 30 days)</small>
+                    </h5>
+                    <a href="{% url 'core:audit_list' %}" class="btn btn-sm mcd-btn-outline" style="font-size: 0.8rem;">
+                        View All <i class="fas fa-arrow-right ms-1"></i>
+                    </a>
                 </div>
-                <div class="card-body">
+                <div class="mcd-card-body">
                     {% if recent_audits %}
                     <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead class="table-light">
-                            <tr>
-                                <th>Restaurant</th>
-                                <th>Date</th>
-                                <th>Score</th>
-                                <th>Grade</th>
-                                <th>Status</th>
-                                <th>Critical</th>
-                                <th>Actions</th>
-                            </tr>
+                        <table class="table table-hover mcd-table mb-0">
+                            <thead>
+                                <tr>
+                                    <th width="25%" style="font-size: 0.85rem;"><i class="fas fa-store me-1"></i> Restaurant</th>
+                                    <th width="15%" style="font-size: 0.85rem;"><i class="fas fa-calendar me-1"></i> Date</th>
+                                    <th width="15%" style="font-size: 0.85rem;"><i class="fas fa-chart-line me-1"></i> Score</th>
+                                    <th width="15%" style="font-size: 0.85rem;"><i class="fas fa-grade me-1"></i> Grade</th>
+                                    <th width="15%" style="font-size: 0.85rem;"><i class="fas fa-status me-1"></i> Status</th>
+                                    <th width="15%" style="font-size: 0.85rem;"><i class="fas fa-cog me-1"></i> Actions</th>
+                                </tr>
                             </thead>
                             <tbody>
-                            {% for audit in recent_audits %}
-                            <tr>
-                                <td>
-                                    <strong>{{ audit.restaurant.name }}</strong>
-                                    <br>
-                                    <small class="text-muted">
-                                        {{ audit.auditor_name.get_full_name|default:audit.auditor_name.username }}
-                                    </small>
-                                </td>
-                                <td>{{ audit.audit_date|date:"M d, Y" }}</td>
-                                <td>
-                                    <span class="badge {% if audit.total_percentage >= 90 %}bg-success{% elif audit.total_percentage >= 80 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
-                                        {{ audit.total_percentage|floatformat:1 }}%
-                                    </span>
-                                </td>
-                                <td>
-                                    <span class="badge {% if audit.grade == 'A' %}bg-success{% elif audit.grade == 'B' %}bg-primary{% elif audit.grade == 'C' %}bg-warning text-dark{% else %}bg-danger{% endif %}">
-                                        {{ audit.grade }}
-                                    </span>
-                                </td>
-                                <td>
-                                    {% if audit.is_submitted %}
-                                    <span class="badge bg-success">Submitted</span>
-                                    {% else %}
-                                    <span class="badge bg-warning text-dark">In Progress</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if audit.has_critical_failure %}
-                                    <span class="badge bg-danger" title="Critical Failure">
-                                        <i class="fas fa-exclamation-triangle"></i>
-                                    </span>
-                                    {% else %}
-                                    <span class="badge bg-success" title="No Critical Issues">
-                                        <i class="fas fa-check"></i>
-                                    </span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <div class="btn-group btn-group-sm">
-                                        <a href="{% url 'core:audit_results' audit.id %}" class="btn btn-outline-primary" title="View Results">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-                                        {% if not audit.is_submitted %}
-                                        <a href="{% url 'core:audit_form' audit.id %}" class="btn btn-outline-success" title="Continue Audit">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
+                                {% for audit in recent_audits %}
+                                <tr class="fade-in-up">
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="bg-light rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0"
+                                                 style="width: 35px; height: 35px;">
+                                                <i class="fas fa-store text-danger" style="font-size: 0.9rem;"></i>
+                                            </div>
+                                            <div>
+                                                <strong class="d-block text-dark" style="font-size: 0.85rem;">{{ audit.restaurant.name }}</strong>
+                                                <small class="text-muted" style="font-size: 0.75rem;">
+                                                    {{ audit.auditor_name.get_full_name|default:audit.auditor_name.username }}
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <strong class="text-dark" style="font-size: 0.85rem;">{{ audit.audit_date|date:"M d, Y" }}</strong>
+                                        {% if audit.created_at %}
+                                        <br>
+                                        <small class="text-muted" style="font-size: 0.75rem;">Created: {{ audit.created_at|date:"M d, Y" }}</small>
                                         {% endif %}
-                                        <a href="{% url 'core:audit_detail' audit.id %}" class="btn btn-outline-info" title="View Details">
-                                            <i class="fas fa-info-circle"></i>
-                                        </a>
-                                    </div>
-                                </td>
-                            </tr>
-                            {% endfor %}
+                                    </td>
+                                    <td>
+                                        <span class="mcd-badge d-inline-flex align-items-center" style="font-size: 0.75rem; white-space: nowrap;
+                                            {% if audit.total_percentage >= 90 %}mcd-badge-success
+                                            {% elif audit.total_percentage >= 80 %}mcd-badge-warning
+                                            {% else %}mcd-badge-danger{% endif %}">
+                                            {{ audit.total_percentage|floatformat:1 }}%
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="mcd-badge d-inline-flex align-items-center justify-content-center"
+                                              style="font-size: 0.75rem; min-width: 32px; height: 24px;
+                                            {% if audit.grade == 'A' %}mcd-badge-success
+                                            {% elif audit.grade == 'B' %}mcd-badge-primary
+                                            {% elif audit.grade == 'C' %}mcd-badge-warning
+                                            {% else %}mcd-badge-danger{% endif %}">
+                                            {{ audit.grade }}
+                                        </span>
+                                        {% if audit.has_critical_failure %}
+                                        <br><small class="text-danger" style="font-size: 0.7rem;"><i class="fas fa-exclamation-triangle"></i> Critical</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if audit.is_submitted %}
+                                        <span class="mcd-badge mcd-badge-success d-inline-flex align-items-center"
+                                              style="font-size: 0.7rem; padding: 4px 8px; white-space: nowrap;">
+                                            <i class="fas fa-check me-1" style="font-size: 0.65rem;"></i>Submitted
+                                        </span>
+                                        {% else %}
+                                        <span class="mcd-badge mcd-badge-warning d-inline-flex align-items-center"
+                                              style="font-size: 0.7rem; padding: 4px 8px; white-space: nowrap;">
+                                            <i class="fas fa-edit me-1" style="font-size: 0.65rem;"></i>In Progress
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'core:audit_results' audit.id %}" class="btn btn-outline-primary"
+                                               data-bs-toggle="tooltip" title="View Results" style="font-size: 0.75rem;">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            {% if not audit.is_submitted %}
+                                            <a href="{% url 'core:audit_form' audit.id %}" class="btn btn-outline-success"
+                                               data-bs-toggle="tooltip" title="Continue Audit" style="font-size: 0.75rem;">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            {% endif %}
+                                            <a href="{% url 'core:audit_detail' audit.id %}" class="btn btn-outline-info"
+                                               data-bs-toggle="tooltip" title="View Details" style="font-size: 0.75rem;">
+                                                <i class="fas fa-info-circle"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
                             </tbody>
                         </table>
                     </div>
                     {% else %}
-                    <div class="text-center py-4">
-                        <div class="mb-3">
-                            <i class="fas fa-clipboard-list fa-4x text-muted"></i>
-                        </div>
-                        <h5 class="text-muted">No Audits Conducted Yet</h5>
-                        <p class="text-muted mb-3">Start by creating your first quality audit</p>
-                        <a href="{% url 'core:create_audit' %}" class="btn mcd-btn-primary">
-                            <i class="fas fa-plus-circle"></i> Create First Audit
+                    <div class="table-empty-state">
+                        <i class="fas fa-clipboard-list text-muted"></i>
+                        <h5>No Recent Audits</h5>
+                        <p>Start by creating your first quality audit</p>
+                        <a href="{% url 'core:create_audit' %}" class="btn mcd-btn-primary" style="font-size: 0.85rem;">
+                            <i class="fas fa-plus-circle me-2"></i> Create First Audit
                         </a>
                     </div>
                     {% endif %}
                 </div>
             </div>
-        </div>
-    </div>
 
-    <!-- Restaurant List Section -->
-    <div class="row mt-4">
-        <div class="col-12">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header mcd-bg-red text-white">
-                    <h5 class="mb-0"><i class="fas fa-utensils"></i> Restaurants</h5>
+            <!-- Recent Corrective Actions -->
+            <div class="mcd-card mb-4 fade-in-up" data-delay="0.6">
+                <div class="mcd-card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0" style="font-size: 0.95rem;">
+                        <i class="fas fa-tasks me-2"></i> Recent Corrective Actions
+                    </h5>
+                    <a href="{% url 'core:action_list' %}" class="btn btn-sm mcd-btn-outline" style="font-size: 0.8rem;">
+                        View All <i class="fas fa-arrow-right ms-1"></i>
+                    </a>
                 </div>
-                <div class="card-body">
-                    {% if restaurants %}
-                    <div class="row">
-                        {% for restaurant in restaurants %}
-                        <div class="col-md-3 mb-3">
-                            <div class="card border-0 shadow-sm h-100">
-                                <div class="card-body text-center">
-                                    <div class="mb-3">
-                                        <div style="width: 60px; height: 60px; background: var(--mcd-yellow); border-radius: 50%; margin: 0 auto; display: flex; align-items: center; justify-content: center;">
-                                            <i class="fas fa-store text-danger"></i>
+                <div class="mcd-card-body">
+                    {% if recent_corrective_actions %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mcd-table mb-0">
+                            <thead>
+                                <tr>
+                                    <th width="25%" style="font-size: 0.85rem;"><i class="fas fa-store me-1"></i> Restaurant</th>
+                                    <th width="20%" style="font-size: 0.85rem;"><i class="fas fa-tasks me-1"></i> Description</th>
+                                    <th width="15%" style="font-size: 0.85rem;"><i class="fas fa-exclamation me-1"></i> Risk</th>
+                                    <th width="15%" style="font-size: 0.85rem;"><i class="fas fa-calendar me-1"></i> Due Date</th>
+                                    <th width="15%" style="font-size: 0.85rem;"><i class="fas fa-status me-1"></i> Status</th>
+                                    <th width="10%" style="font-size: 0.85rem;"><i class="fas fa-cog me-1"></i> Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for action in recent_corrective_actions %}
+                                <tr class="fade-in-up">
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="bg-light rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0"
+                                                 style="width: 35px; height: 35px;">
+                                                <i class="fas fa-store text-danger" style="font-size: 0.9rem;"></i>
+                                            </div>
+                                            <div>
+                                                <strong class="d-block text-dark" style="font-size: 0.85rem;">{{ action.audit.restaurant.name }}</strong>
+                                                <small class="text-muted" style="font-size: 0.75rem;">{{ action.audit.audit_date|date:"M d, Y" }}</small>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <h6 class="text-danger mb-1">
-                                        <a href="{% url 'core:restaurant_audits' restaurant.id %}" class="text-danger text-decoration-none">
-                                            {{ restaurant.name }}
-                                        </a>
-                                    </h6>
-                                    <small class="text-muted d-block">{{ restaurant.code }}</small>
-                                    <small class="text-muted">{{ restaurant.city }}</small>
-                                    <div class="mt-2">
-                                        <a href="{% url 'core:restaurant_audits' restaurant.id %}" class="btn btn-sm btn-outline-danger">
-                                            <i class="fas fa-clipboard-list"></i> View Audits
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        {% endfor %}
+                                    </td>
+                                    <td>
+                                        <span class="text-dark" style="font-size: 0.85rem;">{{ action.description|truncatewords:5 }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="risk-badge risk-badge-{{ action.risk_level|lower }}" style="font-size: 0.75rem;">
+                                            {{ action.get_risk_level_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="due-date {% if action.deadline < today %}overdue{% elif action.deadline <= today|add:7 %}upcoming{% else %}normal{% endif %}"
+                                              data-due-date="{{ action.deadline|date:'Y-m-d' }}" style="font-size: 0.85rem;">
+                                            {{ action.deadline|date:"M d, Y" }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if action.completed %}
+                                        <span class="mcd-badge mcd-badge-success d-inline-flex align-items-center"
+                                              style="font-size: 0.7rem; padding: 4px 8px; white-space: nowrap;">
+                                            <i class="fas fa-check me-1" style="font-size: 0.65rem;"></i>Completed
+                                        </span>
+                                        {% else %}
+                                        <span class="mcd-badge mcd-badge-warning d-inline-flex align-items-center"
+                                              style="font-size: 0.7rem; padding: 4px 8px; white-space: nowrap;">
+                                            <i class="fas fa-clock me-1" style="font-size: 0.65rem;"></i>Pending
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'core:corrective_action_detail' action.id %}" class="btn btn-outline-primary"
+                                               data-bs-toggle="tooltip" title="View Details" style="font-size: 0.75rem;">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            {% if not action.completed %}
+                                            <button class="btn btn-outline-success completion-toggle"
+                                                    data-action-id="{{ action.id }}"
+                                                    data-completed="{{ action.completed|yesno:'true,false' }}"
+                                                    data-bs-toggle="tooltip" title="Mark Complete" style="font-size: 0.75rem;">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
                     {% else %}
-                    <div class="text-center py-4">
-                        <div class="mb-3">
-                            <i class="fas fa-store fa-4x text-muted"></i>
-                        </div>
-                        <h5 class="text-muted">No Restaurants Added</h5>
-                        <p class="text-muted mb-3">Add restaurants to start conducting audits</p>
-                        <a href="/admin/core/restaurant/add/" class="btn mcd-btn-primary" target="_blank">
-                            <i class="fas fa-plus-circle"></i> Add Restaurant via Admin
+                    <div class="table-empty-state">
+                        <i class="fas fa-tasks text-muted"></i>
+                        <h5>No Corrective Actions</h5>
+                        <p>All action items are completed</p>
+                        <a href="{% url 'core:audit_list' %}" class="btn mcd-btn-primary" style="font-size: 0.85rem;">
+                            <i class="fas fa-clipboard-list me-2"></i> View Audits
                         </a>
                     </div>
                     {% endif %}
                 </div>
             </div>
-        </div>
-    </div>
 
-    <!-- McDonald's Quality Message -->
-    <div class="row mt-4">
-        <div class="col-12">
-            <div class="card border-danger">
-                <div class="card-body text-center py-4">
-                    <div class="row align-items-center">
-                        <div class="col-md-2 text-center">
-                            <div style="width: 80px; height: 80px; background: var(--mcd-yellow); border-radius: 50%; margin: 0 auto; display: flex; align-items: center; justify-content: center;">
-                                <span style="color: var(--mcd-red); font-weight: bold; font-size: 2rem;">M</span>
+            <!-- Performance Overview -->
+            <div class="row">
+                <!-- Grade Distribution -->
+                <div class="col-md-6 mb-4">
+                    <div class="mcd-card h-100 fade-in-up" data-delay="0.7">
+                        <div class="mcd-card-header">
+                            <h5 class="mb-0" style="font-size: 0.95rem;"><i class="fas fa-chart-pie me-2"></i> Grade Distribution</h5>
+                        </div>
+                        <div class="mcd-card-body">
+                            {% if grade_distribution %}
+                            <div class="text-center">
+                                <div class="mb-4" style="height: 160px;">
+                                    <!-- Simple CSS-based chart -->
+                                    <div class="d-flex align-items-center justify-content-center h-100">
+                                        <div class="position-relative" style="width: 140px; height: 140px;">
+                                            {% for grade in grade_distribution %}
+                                            <div class="position-absolute top-50 start-50 translate-middle grade-chart"
+                                                 data-grade="{{ grade.grade }}"
+                                                 data-percentage="{{ grade.percentage }}"
+                                                 style="width: {{ grade.percentage }}%; height: {{ grade.percentage }}%;
+                                                        border-radius: 50%;">
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    {% for grade in grade_distribution %}
+                                    <div class="col-3 text-center">
+                                        <div class="mcd-badge mb-1" style="font-size: 0.75rem;
+                                            {% if grade.grade == 'A' %}mcd-badge-success
+                                            {% elif grade.grade == 'B' %}mcd-badge-primary
+                                            {% elif grade.grade == 'C' %}mcd-badge-warning
+                                            {% else %}mcd-badge-danger{% endif %}">
+                                            {{ grade.grade }}
+                                        </div>
+                                        <div class="fw-bold" style="font-size: 0.85rem;">{{ grade.count }}</div>
+                                        <small class="text-muted" style="font-size: 0.75rem;">{{ grade.percentage|floatformat:1 }}%</small>
+                                    </div>
+                                    {% endfor %}
+                                </div>
                             </div>
+                            {% else %}
+                            <div class="text-center py-4">
+                                <i class="fas fa-chart-pie text-muted mb-3" style="font-size: 2.5rem;"></i>
+                                <p class="text-muted" style="font-size: 0.85rem;">No grade data available</p>
+                            </div>
+                            {% endif %}
                         </div>
-                        <div class="col-md-8">
-                            <h4 class="text-danger mb-2">McDonald's Quality Excellence</h4>
-                            <p class="text-muted mb-0">
-                                "Committed to delivering the highest standards of quality, safety, and consistency
-                                across all McDonald's Pakistan locations through rigorous quality assurance audits."
-                            </p>
+                    </div>
+                </div>
+
+                <!-- Quick Reports -->
+                <div class="col-md-6 mb-4">
+                    <div class="mcd-card h-100 fade-in-up" data-delay="0.8">
+                        <div class="mcd-card-header">
+                            <h5 class="mb-0" style="font-size: 0.95rem;"><i class="fas fa-chart-bar me-2"></i> Quick Reports</h5>
                         </div>
-                        <div class="col-md-2 text-center">
-                            <i class="fas fa-award text-warning fa-3x"></i>
+                        <div class="mcd-card-body">
+                            <div class="d-grid gap-2">
+                                <a href="{% url 'core:restaurant_performance_report' %}" class="btn btn-outline-primary text-start p-2" style="font-size: 0.85rem;">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-store me-3 text-primary" style="font-size: 1.5rem;"></i>
+                                        <div>
+                                            <div class="fw-bold">Restaurant Performance</div>
+                                            <small class="text-muted" style="font-size: 0.75rem;">Compare location scores</small>
+                                        </div>
+                                    </div>
+                                </a>
+
+                                <a href="{% url 'core:reports_overview' %}" class="btn btn-outline-success text-start p-2" style="font-size: 0.85rem;">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-chart-line me-3 text-success" style="font-size: 1.5rem;"></i>
+                                        <div>
+                                            <div class="fw-bold">Analytics Overview</div>
+                                            <small class="text-muted" style="font-size: 0.75rem;">Detailed performance insights</small>
+                                        </div>
+                                    </div>
+                                </a>
+
+                                <a href="{% url 'core:corrective_action_dashboard' %}" class="btn btn-outline-warning text-start p-2" style="font-size: 0.85rem;">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-tachometer-alt me-3 text-warning" style="font-size: 1.5rem;"></i>
+                                        <div>
+                                            <div class="fw-bold">Corrective Actions</div>
+                                            <small class="text-muted" style="font-size: 0.75rem;">Dashboard & analytics</small>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -303,28 +621,61 @@
         </div>
     </div>
 </div>
+{% endblock %}
 
-<style>
-    .card {
-        transition: transform 0.2s ease-in-out;
-    }
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize tooltips
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
 
-    .card:hover {
-        transform: translateY(-2px);
-    }
+        // Handle fade-in animations
+        const fadeElements = document.querySelectorAll('.fade-in-up');
+        fadeElements.forEach(element => {
+            const delay = parseFloat(element.getAttribute('data-delay')) || 0;
+            setTimeout(() => {
+                element.style.opacity = '1';
+                element.style.transform = 'translateY(0)';
+            }, delay * 100);
+        });
 
-    .table th {
-        border-top: none;
-        font-weight: 600;
-        color: var(--mcd-red);
-    }
+        // Add click animation to cards
+        document.querySelectorAll('.mcd-card').forEach(card => {
+            card.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A' || e.target.closest('a')) return;
 
-    .btn-group-sm > .btn {
-        padding: 0.25rem 0.5rem;
-    }
+                this.style.transform = 'scale(0.98)';
+                setTimeout(() => {
+                    this.style.transform = '';
+                }, 150);
+            });
+        });
 
-    .badge {
-        font-size: 0.75em;
-    }
-</style>
+        // Initialize grade chart colors
+        const gradeElements = document.querySelectorAll('.grade-chart');
+        gradeElements.forEach(element => {
+            const grade = element.getAttribute('data-grade');
+            let color;
+            switch(grade) {
+                case 'A': color = '#28a745'; break;
+                case 'B': color = '#007bff'; break;
+                case 'C': color = '#ffc107'; break;
+                default: color = '#dc3545';
+            }
+            element.style.background = color;
+            element.style.opacity = '0.7';
+
+            // Add animation delay based on index
+            const index = Array.from(gradeElements).indexOf(element);
+            element.style.animationDelay = `${index * 0.2}s`;
+        });
+
+        // Initialize corrective action functionality
+        initCorrectiveActions();
+        initDueDateCalculations();
+    });
+</script>
 {% endblock %}
