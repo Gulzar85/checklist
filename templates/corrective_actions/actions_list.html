@@ -10,41 +10,42 @@
             <h1 class="h2 mcd-text-red mb-1">
                 <i class="fas fa-exclamation-triangle me-2"></i> Corrective Actions
             </h1>
-            <p class="text-muted mb-0">Manage and track corrective actions from audit findings</p>
+            <p class="text-muted mb-0 d-none d-md-block">Manage and track corrective actions from audit findings</p>
+            <p class="text-muted mb-0 d-md-none">Track audit corrective actions</p>
         </div>
     </div>
 
     <!-- Statistics Cards -->
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="mcd-card text-center">
+    <div class="row row-cols-2 row-cols-md-4 g-3 mb-4">
+        <div class="col">
+            <div class="mcd-card text-center h-100">
                 <div class="mcd-card-body">
                     <h3 class="text-primary">{{ stats.total }}</h3>
-                    <p class="text-muted mb-0">Total Actions</p>
+                    <p class="text-muted mb-0 small">Total Actions</p>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="mcd-card text-center">
+        <div class="col">
+            <div class="mcd-card text-center h-100">
                 <div class="mcd-card-body">
                     <h3 class="text-success">{{ stats.completed }}</h3>
-                    <p class="text-muted mb-0">Completed</p>
+                    <p class="text-muted mb-0 small">Completed</p>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="mcd-card text-center">
+        <div class="col">
+            <div class="mcd-card text-center h-100">
                 <div class="mcd-card-body">
                     <h3 class="text-danger">{{ stats.overdue }}</h3>
-                    <p class="text-muted mb-0">Overdue</p>
+                    <p class="text-muted mb-0 small">Overdue</p>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="mcd-card text-center">
+        <div class="col">
+            <div class="mcd-card text-center h-100">
                 <div class="mcd-card-body">
                     <h3 class="text-warning">{{ stats.critical }}</h3>
-                    <p class="text-muted mb-0">Critical</p>
+                    <p class="text-muted mb-0 small">Critical</p>
                 </div>
             </div>
         </div>
@@ -55,22 +56,18 @@
         <div class="mcd-card-body">
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <h6 class="mb-0">Overall Completion Progress</h6>
-                <span class="text-primary fw-bold">{{ completion_percentage }}% Complete</span>
+                <span class="text-primary fw-bold">{{ completion_percentage }}%</span>
             </div>
-            <div class="progress" style="height: 20px;">
-                <div class="progress-bar bg-success" role="progressbar"
+            <div class="progress mb-2" style="height: 20px;">
+                <div class="progress-bar bg-success"
                      style="width: {{ completion_percentage }}%"
-                     aria-valuenow="{{ completion_percentage }}" aria-valuemin="0" aria-valuemax="100">
-                    {{ completion_percentage }}%
+                     aria-label="Completion progress: {{ completion_percentage }}%">
+                    <span class="d-md-inline d-none">{{ completion_percentage }}%</span>
                 </div>
             </div>
-            <div class="row mt-2">
-                <div class="col-6">
-                    <small class="text-muted">Completed: {{ stats.completed }}/{{ stats.total }}</small>
-                </div>
-                <div class="col-6 text-end">
-                    <small class="text-muted">Pending: {{ stats.pending }}</small>
-                </div>
+            <div class="d-flex justify-content-between small">
+                <span class="text-muted">Completed: {{ stats.completed }}/{{ stats.total }}</span>
+                <span class="text-muted">Pending: {{ stats.pending }}</span>
             </div>
         </div>
     </div>
@@ -79,8 +76,8 @@
     <div class="mcd-card mb-4">
         <div class="mcd-card-body">
             <div class="row g-3">
-                <div class="col-md-3">
-                    <label class="form-label text-danger fw-semibold">Risk Level</label>
+                <div class="col-12 col-md-3">
+                    <label class="form-label text-danger fw-semibold small">Risk Level</label>
                     <select class="form-select mcd-form-select" id="riskLevelFilter">
                         <option value="">All Risk Levels</option>
                         <option value="LOW" {% if risk_level_filter == 'LOW' %}selected{% endif %}>Low</option>
@@ -89,27 +86,27 @@
                         <option value="CRITICAL" {% if risk_level_filter == 'CRITICAL' %}selected{% endif %}>Critical</option>
                     </select>
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label text-danger fw-semibold">Status</label>
+                <div class="col-12 col-md-3">
+                    <label class="form-label text-danger fw-semibold small">Status</label>
                     <select class="form-select mcd-form-select" id="statusFilter">
                         <option value="">All Status</option>
                         <option value="true" {% if completed_filter == 'true' %}selected{% endif %}>Completed</option>
                         <option value="false" {% if completed_filter == 'false' %}selected{% endif %}>Pending</option>
                     </select>
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label text-danger fw-semibold">Overdue</label>
+                <div class="col-12 col-md-3">
+                    <label class="form-label text-danger fw-semibold small">Overdue</label>
                     <select class="form-select mcd-form-select" id="overdueFilter">
                         <option value="">All Actions</option>
                         <option value="true" {% if overdue_filter == 'true' %}selected{% endif %}>Overdue Only</option>
                     </select>
                 </div>
-                <div class="col-md-3 d-flex align-items-end">
+                <div class="col-12 col-md-3 d-flex">
                     <button class="btn mcd-btn-primary w-100 me-2" onclick="applyFilters()">
-                        <i class="fas fa-filter me-2"></i> Apply Filters
+                        <i class="fas fa-filter me-2"></i> <span class="d-none d-md-inline">Apply</span>
                     </button>
                     <a href="{% url 'core:action_list' %}" class="btn mcd-btn-outline w-100">
-                        <i class="fas fa-refresh me-2"></i> Clear
+                        <i class="fas fa-refresh me-2"></i> <span class="d-none d-md-inline">Clear</span>
                     </a>
                 </div>
             </div>
@@ -119,41 +116,40 @@
     <!-- Corrective Actions Table -->
     <div class="mcd-card">
         <div class="mcd-card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0"><i class="fas fa-tasks me-2"></i> Corrective Actions</h5>
-            <span class="text-muted">{{ corrective_actions|length }} actions found</span>
+            <h5 class="mb-0"><i class="fas fa-tasks me-2"></i> <span class="d-none d-md-inline">Corrective</span> Actions</h5>
+            <span class="text-muted small">{{ corrective_actions|length }} found</span>
         </div>
-        <div class="mcd-card-body">
+        <div class="mcd-card-body p-0 p-md-3">
             {% if corrective_actions %}
             <div class="table-responsive">
-                <table class="table table-hover mcd-table">
-                    <thead>
+                <table class="table table-hover mcd-table mb-0">
+                    <thead class="d-none d-md-table-header-group">
                         <tr>
-                            <th width="20%">Description</th>
-                            <th width="15%">Restaurant</th>
-                            <th width="10%">Risk Level</th>
-                            <th width="15%">Assigned To</th>
-                            <th width="10%">Deadline</th>
-                            <th width="10%">Status</th>
-                            <th width="10%">Days Left</th>
-                            <th width="10%">Actions</th>
+                            <th>Description</th>
+                            <th>Restaurant</th>
+                            <th>Risk</th>
+                            <th>Assigned To</th>
+                            <th>Deadline</th>
+                            <th>Status</th>
+                            <th>Days Left</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for action in corrective_actions %}
-                        <tr class="{% if action.completed %}table-success{% elif action.is_overdue %}table-danger{% elif action.is_urgent %}table-warning{% endif %}">
+                        <!-- Desktop View -->
+                        <tr class="d-none d-md-table-row {% if action.completed %}table-success{% elif action.is_overdue %}table-danger{% elif action.is_urgent %}table-warning{% endif %}">
                             <td>
-                                <strong>{{ action.description|truncatewords:10 }}</strong>
+                                <div class="fw-bold">{{ action.description|truncatewords:10 }}</div>
                                 {% if action.question_response %}
-                                <br>
-                                <small class="text-muted">
+                                <div class="small text-muted">
                                     From: {{ action.question_response.question.question_text|truncatewords:5 }}
-                                </small>
+                                </div>
                                 {% endif %}
                             </td>
                             <td>
-                                <strong>{{ action.audit.restaurant.name }}</strong>
-                                <br>
-                                <small class="text-muted">{{ action.audit.audit_date|date:"M d, Y" }}</small>
+                                <div class="fw-bold">{{ action.audit.restaurant.name }}</div>
+                                <div class="small text-muted">{{ action.audit.audit_date|date:"M d, Y" }}</div>
                             </td>
                             <td>
                                 <span class="mcd-badge
@@ -167,21 +163,19 @@
                             <td>
                                 {{ action.assigned_to }}
                                 {% if action.audit.manager_on_duty %}
-                                <br>
-                                <small class="text-muted">Manager: {{ action.audit.manager_on_duty }}</small>
+                                <div class="small text-muted">Manager: {{ action.audit.manager_on_duty }}</div>
                                 {% endif %}
                             </td>
                             <td>
-                                <strong>{{ action.deadline|date:"M d, Y" }}</strong>
+                                <div class="fw-bold">{{ action.deadline|date:"M d, Y" }}</div>
                                 {% if action.completion_date %}
-                                <br>
-                                <small class="text-success">Completed: {{ action.completion_date|date:"M d, Y" }}</small>
+                                <div class="small text-success">Completed: {{ action.completion_date|date:"M d, Y" }}</div>
                                 {% endif %}
                             </td>
                             <td>
                                 {% if action.completed %}
                                 <span class="mcd-badge mcd-badge-success">
-                                    <i class="fas fa-check-circle me-1"></i> Completed
+                                    <i class="fas fa-check-circle me-1"></i> Done
                                 </span>
                                 {% else %}
                                 <span class="mcd-badge mcd-badge-warning">
@@ -191,49 +185,128 @@
                             </td>
                             <td>
                                 {% if not action.completed %}
-                                    {% with days_until=action.days_until_deadline %}
+                                    {% with days_until=action.days_remaining %}
                                         {% if days_until < 0 %}
                                         <span class="text-danger fw-bold">
                                             <i class="fas fa-exclamation-triangle me-1"></i>
-                                            {{ days_until|stringformat:"d"|slice:"1:" }} days overdue
+                                            {{ days_until|stringformat:"d"|slice:"1:" }}d
                                         </span>
                                         {% elif days_until == 0 %}
-                                        <span class="text-warning fw-bold">Due today</span>
+                                        <span class="text-warning fw-bold">Today</span>
                                         {% elif days_until <= 3 %}
-                                        <span class="text-warning">{{ days_until }} days</span>
+                                        <span class="text-warning">{{ days_until }}d</span>
                                         {% else %}
-                                        <span class="text-success">{{ days_until }} days</span>
+                                        <span class="text-success">{{ days_until }}d</span>
                                         {% endif %}
                                     {% endwith %}
                                 {% else %}
-                                <span class="text-muted">Completed</span>
+                                <span class="text-muted">-</span>
                                 {% endif %}
                             </td>
                             <td>
                                 <div class="btn-group btn-group-sm">
                                     <a href="{% url 'core:corrective_action_detail' action.id %}"
                                        class="btn btn-outline-primary"
-                                       title="View Details">
+                                       aria-label="View details">
                                         <i class="fas fa-eye"></i>
                                     </a>
                                     {% if not action.completed %}
                                     <button class="btn btn-outline-success"
                                             onclick="markAsCompleted({{ action.id }})"
-                                            title="Mark Completed">
+                                            aria-label="Mark as completed">
                                         <i class="fas fa-check"></i>
                                     </button>
                                     {% endif %}
                                     <a href="{% url 'core:corrective_action_update' action.id %}"
                                        class="btn btn-outline-info"
-                                       title="Edit Action">
+                                       aria-label="Edit action">
                                         <i class="fas fa-edit"></i>
                                     </a>
                                     {% if user_is_admin %}
                                     <a href="{% url 'core:corrective_action_delete' action.id %}"
                                        class="btn btn-outline-danger"
-                                       title="Delete Action">
+                                       aria-label="Delete action">
                                         <i class="fas fa-trash"></i>
                                     </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+
+                        <!-- Mobile View -->
+                        <tr class="d-md-none">
+                            <td class="p-3 {% if action.completed %}table-success{% elif action.is_overdue %}table-danger{% elif action.is_urgent %}table-warning{% endif %}">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <span class="mcd-badge
+                                            {% if action.risk_level == 'CRITICAL' %}mcd-badge-danger
+                                            {% elif action.risk_level == 'HIGH' %}mcd-badge-danger
+                                            {% elif action.risk_level == 'MEDIUM' %}mcd-badge-warning
+                                            {% else %}mcd-badge-info{% endif %} me-2">
+                                            {{ action.get_risk_level_display|slice:":1" }}
+                                        </span>
+                                        {% if action.completed %}
+                                        <span class="mcd-badge mcd-badge-success">
+                                            <i class="fas fa-check-circle"></i>
+                                        </span>
+                                        {% else %}
+                                        <span class="mcd-badge mcd-badge-warning">
+                                            <i class="fas fa-clock"></i>
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="btn-group">
+                                        <a href="{% url 'core:corrective_action_detail' action.id %}"
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        {% if not action.completed %}
+                                        <button class="btn btn-sm btn-outline-success"
+                                                onclick="markAsCompleted({{ action.id }})">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="mb-2">
+                                    <strong>{{ action.description|truncatewords:8 }}</strong>
+                                </div>
+
+                                <div class="small mb-2">
+                                    <i class="fas fa-store text-muted me-1"></i>
+                                    {{ action.audit.restaurant.name|truncatechars:20 }}
+                                </div>
+
+                                <div class="small mb-2">
+                                    <i class="fas fa-user text-muted me-1"></i>
+                                    {{ action.assigned_to|truncatechars:15 }}
+                                </div>
+
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <i class="fas fa-calendar-alt text-muted me-1"></i>
+                                        <span class="{% if action.is_overdue %}text-danger fw-bold{% elif action.is_urgent %}text-warning{% endif %}">
+                                            {{ action.deadline|date:"M d" }}
+                                        </span>
+                                    </div>
+
+                                    {% if not action.completed %}
+                                        {% with days_until=action.days_remaining %}
+                                            {% if days_until < 0 %}
+                                            <span class="text-danger fw-bold small">
+                                                {{ days_until|stringformat:"d"|slice:"1:" }} days overdue
+                                            </span>
+                                            {% elif days_until == 0 %}
+                                            <span class="text-warning fw-bold small">Due today</span>
+                                            {% elif days_until <= 3 %}
+                                            <span class="text-warning small">{{ days_until }} days left</span>
+                                            {% else %}
+                                            <span class="text-success small">{{ days_until }} days left</span>
+                                            {% endif %}
+                                        {% endwith %}
+                                    {% else %}
+                                    <span class="text-success small">Completed</span>
                                     {% endif %}
                                 </div>
                             </td>
@@ -250,7 +323,7 @@
                     {% if risk_level_filter or completed_filter or overdue_filter %}
                     Try adjusting your filters to see more results.
                     {% else %}
-                    All audit findings have been addressed or no corrective actions are required.
+                    All audit findings have been addressed.
                     {% endif %}
                 </p>
                 {% if risk_level_filter or completed_filter or overdue_filter %}
@@ -271,77 +344,58 @@
         const overdue = document.getElementById('overdueFilter').value;
 
         let url = '{% url "core:action_list" %}?';
-        if (riskLevel) url += `risk_level=${riskLevel}&`;
-        if (status) url += `completed=${status}&`;
-        if (overdue) url += `overdue=${overdue}&`;
+        const params = new URLSearchParams();
 
-        window.location.href = url.slice(0, -1); // Remove trailing & or ?
+        if (riskLevel) params.append('risk_level', riskLevel);
+        if (status) params.append('completed', status);
+        if (overdue) params.append('overdue', overdue);
+
+        window.location.href = url + params.toString();
     }
 
-function markAsCompleted(actionId) {
-    if (confirm('Are you sure you want to mark this corrective action as completed?')) {
-        // Show loading state
-        const btn = event.target;
-        const originalHTML = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-        btn.disabled = true;
+    function markAsCompleted(actionId) {
+        if (confirm('Are you sure you want to mark this corrective action as completed?')) {
+            const btn = event.currentTarget;
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            btn.disabled = true;
 
-        // Make AJAX call to mark as completed - CORRECT URL
-        fetch(`/corrective-actions/${actionId}/complete/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': getCookie('csrftoken'),
-                'Content-Type': 'application/json',
-            },
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showToast('Success', 'Corrective action marked as completed!', 'success');
-                // Reload the page after a short delay
-                setTimeout(() => {
-                    location.reload();
-                }, 1500);
-            } else {
-                showToast('Error', data.message || 'Failed to update action', 'error');
+            fetch(`/corrective-actions/${actionId}/complete/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('Success', 'Corrective action marked as completed!', 'success');
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    showToast('Error', data.message || 'Failed to update action', 'error');
+                    btn.innerHTML = originalHTML;
+                    btn.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('Error', 'An error occurred while updating the action', 'error');
                 btn.innerHTML = originalHTML;
                 btn.disabled = false;
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showToast('Error', 'An error occurred while updating the action', 'error');
-            btn.innerHTML = originalHTML;
-            btn.disabled = false;
-        });
-    }
-}
-    function printPage() {
-        window.print();
+            });
+        }
     }
 
-    function exportToCSV() {
-        // Build export URL with current filters
-        const riskLevel = document.getElementById('riskLevelFilter').value;
-        const status = document.getElementById('statusFilter').value;
-        const overdue = document.getElementById('overdueFilter').value;
-
-        let url = '{% url "core:action_list" %}?export=csv&';
-        if (riskLevel) url += `risk_level=${riskLevel}&`;
-        if (status) url += `completed=${status}&`;
-        if (overdue) url += `overdue=${overdue}&`;
-
-        window.location.href = url.slice(0, -1);
-    }
-
-    // Utility function to get CSRF token
     function getCookie(name) {
         let cookieValue = null;
         if (document.cookie && document.cookie !== '') {
             const cookies = document.cookie.split(';');
             for (let i = 0; i < cookies.length; i++) {
                 const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                if (cookie.startsWith(name + '=')) {
                     cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
                     break;
                 }
@@ -350,21 +404,19 @@ function markAsCompleted(actionId) {
         return cookieValue;
     }
 
-    // Toast notification function
     function showToast(title, message, type = 'info') {
-        // Create toast element
         const toast = document.createElement('div');
         toast.className = `toast align-items-center text-white bg-${type === 'error' ? 'danger' : type} border-0`;
+        toast.setAttribute('role', 'alert');
         toast.innerHTML = `
             <div class="d-flex">
                 <div class="toast-body">
                     <strong>${title}</strong><br>${message}
                 </div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
             </div>
         `;
 
-        // Add to toast container
         let toastContainer = document.getElementById('toastContainer');
         if (!toastContainer) {
             toastContainer = document.createElement('div');
@@ -376,11 +428,9 @@ function markAsCompleted(actionId) {
 
         toastContainer.appendChild(toast);
 
-        // Initialize and show toast
         const bsToast = new bootstrap.Toast(toast);
         bsToast.show();
 
-        // Remove toast after it's hidden
         toast.addEventListener('hidden.bs.toast', () => {
             toast.remove();
         });
@@ -389,15 +439,15 @@ function markAsCompleted(actionId) {
 
 <style>
     .table-success {
-        background-color: rgba(40, 167, 69, 0.1) !important;
+        background-color: rgba(40, 167, 69, 0.05) !important;
     }
 
     .table-danger {
-        background-color: rgba(220, 53, 69, 0.1) !important;
+        background-color: rgba(220, 53, 69, 0.05) !important;
     }
 
     .table-warning {
-        background-color: rgba(255, 193, 7, 0.1) !important;
+        background-color: rgba(255, 193, 7, 0.05) !important;
     }
 
     .mcd-badge {
@@ -405,6 +455,8 @@ function markAsCompleted(actionId) {
         font-size: 0.75em;
         font-weight: 600;
         border-radius: 0.25rem;
+        display: inline-block;
+        line-height: 1;
     }
 
     .mcd-badge-danger {
@@ -427,9 +479,22 @@ function markAsCompleted(actionId) {
         color: black;
     }
 
-    .btn-group-sm > .btn {
-        padding: 0.25rem 0.5rem;
-        font-size: 0.75rem;
+    @media (max-width: 768px) {
+        .mcd-card-body {
+            padding: 1rem !important;
+        }
+
+        .mcd-table {
+            font-size: 0.875rem;
+        }
+
+        .btn-group-sm > .btn {
+            padding: 0.2rem 0.4rem;
+        }
+
+        .table > :not(caption) > * > * {
+            padding: 0.75rem 0.5rem;
+        }
     }
 </style>
 {% endblock %}

@@ -68,7 +68,7 @@ def validate_response_points(sender, instance, **kwargs):
         )
         instance.scored_points = 0
 
-
+'''
 @receiver(post_save, sender=AuditQuestionResponse)
 def auto_create_corrective_action(sender, instance, created, **kwargs):
     """
@@ -104,7 +104,6 @@ def auto_create_corrective_action(sender, instance, created, **kwargs):
             instance.id, str(e)
         )
 
-
 @receiver(post_save, sender=CorrectiveAction)
 def update_completion_date(sender, instance, **kwargs):
     """
@@ -127,7 +126,7 @@ def update_completion_date(sender, instance, **kwargs):
             "Error setting completion_date for corrective action id=%s: %s",
             instance.id, str(e)
         )
-
+'''
 
 @receiver(post_save, sender=Audit)
 def update_previous_audit_info(sender, instance, created, **kwargs):
@@ -140,7 +139,7 @@ def update_previous_audit_info(sender, instance, created, **kwargs):
         except Exception as e:
             logger.error("Error updating previous audit info: %s", str(e))
 
-
+'''
 def send_critical_failure_notification(corrective_action):
     """
     Send email notification for critical failures
@@ -197,3 +196,63 @@ def send_corrective_action_completion_notification(corrective_action):
         )
     except Exception as e:
         logger.error("Error sending completion notification: %s", str(e))
+
+'''
+
+@receiver(post_delete, sender=CorrectiveAction)
+def update_on_corrective_action_delete(sender, instance, **kwargs):
+    """
+    Signal handler to update related fields when a CorrectiveAction is deleted.
+    This ensures updates happen even if delete happens outside the view.
+    """
+    try:
+        question_response = instance.question_response
+        audit = instance.audit
+
+        # --- Update needs_corrective_action on QuestionResponse ---
+        if question_response:
+            other_actions_exist = CorrectiveAction.objects.filter(
+                question_response=question_response
+            ).exclude(id=instance.id).exists()
+
+            if not other_actions_exist:
+                question_response.needs_corrective_action = False
+                question_response.save(update_fields=['needs_corrective_action'])
+
+                logger.debug(
+                    "Signal: Updated AuditQuestionResponse id=%s after CorrectiveAction delete",
+                    question_response.id
+                )
+
+        # --- Update audit critical failure status ---
+        if audit and question_response and getattr(question_response.question, "is_critical", False):
+
+            critical_actions_exist = CorrectiveAction.objects.filter(
+                audit=audit,
+                question_response__question__is_critical=True
+            ).exclude(id=instance.id).exists()
+
+            critical_sections_exist = audit.auditsection_set.filter(
+                has_critical_failure=True
+            ).exists()
+
+            new_status = critical_actions_exist or critical_sections_exist
+
+            if audit.has_critical_failure != new_status:
+                audit.has_critical_failure = new_status
+
+                if new_status:
+                    audit.grade = 'F'
+                else:
+                    # Ensure total_percentage is usable as float
+                    audit.grade = audit.calculate_normal_grade(float(audit.total_percentage or 0))
+
+                audit.save(update_fields=['has_critical_failure', 'grade'])
+
+                logger.debug(
+                    "Signal: Updated Audit id=%s critical status to %s",
+                    audit.id, new_status
+                )
+
+    except Exception as e:
+        logger.exception("Error in post_delete signal for CorrectiveAction: %s", str(e))

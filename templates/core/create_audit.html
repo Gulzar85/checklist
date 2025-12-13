@@ -93,10 +93,18 @@
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Set minimum date to today
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('audit_date').setAttribute('min', today);
+     document.addEventListener('DOMContentLoaded', function() {
+        // Calculate date 6 months ago
+        const today = new Date();
+        const sixMonthsAgo = new Date();
+        sixMonthsAgo.setMonth(today.getMonth() - 6);
+
+        // Format to YYYY-MM-DD
+        const minDate = sixMonthsAgo.toISOString().split('T')[0];
+
+        // Set date range
+        const auditDateInput = document.getElementById('audit_date');
+        auditDateInput.setAttribute('min', minDate);
 
         // Auto-focus on restaurant select
         document.getElementById('restaurant').focus();

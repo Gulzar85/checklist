@@ -1,0 +1,714 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    Create Corrective Action – {{ audit.restaurant.name }} ({{ audit.audit_date }})
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-xxl-10 col-xl-12">
+
+            <!-- Main Card -->
+            <div class="mcd-card shadow-medium round-lg">
+                <div class="mcd-card-header">
+                    <h4 class="mb-0 text-white">
+                        <i class="fas fa-exclamation-triangle me-2"></i> Create Corrective Action
+                    </h4>
+                </div>
+
+                <div class="mcd-card-body">
+                    <!-- Audit Summary -->
+                    <div class="row g-4 mb-4">
+                        <div class="col-12">
+                            <div class="mcd-alert mcd-alert-info round-md">
+                                <div class="row g-3 align-items-center">
+                                    <div class="col-lg-3">
+                                        <div class="d-flex align-items-center">
+                                            <div class="me-3">
+                                                <i class="fas fa-store fa-xl text-mcd-red"></i>
+                                            </div>
+                                            <div>
+                                                <small class="text-muted d-block">Restaurant</small>
+                                                <strong class="text-mcd-black fs-6">{{ audit.restaurant.name }}</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-2">
+                                        <div class="d-flex align-items-center">
+                                            <div class="me-3">
+                                                <i class="fas fa-calendar-alt fa-xl text-mcd-red"></i>
+                                            </div>
+                                            <div>
+                                                <small class="text-muted d-block">Audit Date</small>
+                                                <strong class="text-mcd-black fs-6">{{ audit.audit_date }}</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-3">
+                                        <div class="d-flex align-items-center">
+                                            <div class="me-3">
+                                                <i class="fas fa-user-check fa-xl text-mcd-red"></i>
+                                            </div>
+                                            <div>
+                                                <small class="text-muted d-block">Auditor</small>
+                                                <strong class="text-mcd-black fs-6">{{ audit.auditor_name.get_full_name|default:audit.auditor_name.username }}</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4">
+                                        <div class="row g-2">
+                                            <div class="col-4">
+                                                <small class="text-muted d-block">Grade</small>
+                                                {% with percentage=audit.total_percentage|floatformat:1 %}
+                                                <span class="mcd-badge
+                                                    {% if percentage >= 96 %}mcd-badge-success
+                                                    {% elif percentage >= 90 %}mcd-badge-success
+                                                    {% elif percentage >= 80 %}mcd-badge-warning
+                                                    {% else %}mcd-badge-danger{% endif %} status-badge-compact fs-6 px-3">
+                                                    {{ audit.grade }}
+                                                </span>
+                                                {% endwith %}
+                                            </div>
+                                            <div class="col-4">
+                                                <small class="text-muted d-block">Score</small>
+                                                <strong class="text-mcd-black fs-6">{{ audit.total_percentage|floatformat:1 }}%</strong>
+                                            </div>
+                                            <div class="col-4">
+                                                <small class="text-muted d-block">Critical</small>
+                                                <span class="mcd-badge {% if audit.has_critical_failure %}mcd-badge-danger{% else %}mcd-badge-success{% endif %} status-badge-compact fs-6 px-3">
+                                                    {% if audit.has_critical_failure %}Yes{% else %}No{% endif %}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form method="post" id="correctiveActionForm">
+                        {% csrf_token %}
+
+                        <div class="row g-4">
+                            <!-- Left Column - Question Selection -->
+                            <div class="col-xl-6">
+                                <!-- Question Selector Card -->
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-header bg-light border-0">
+                                        <h5 class="mb-0 text-mcd-red">
+                                            <i class="fas fa-question-circle me-2"></i> Select Question
+                                        </h5>
+                                        <small class="text-muted">Click on a row to select a question for corrective action</small>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                                            <table class="table table-hover mb-0">
+                                                <thead class="table-light sticky-top">
+                                                    <tr>
+                                                        <th width="40" class="ps-3"></th>
+                                                        <th>Section & Question</th>
+                                                        <th width="90" class="text-center">Score</th>
+                                                        <th width="80" class="text-center">Status</th>
+                                                        <th width="70" class="text-center pe-3">Actions</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for response in responses %}
+                                                        <tr class="question-row {% if response.question.is_critical %}table-danger{% endif %}"
+                                                            onclick="selectQuestion({{ response.id }})">
+                                                            <td class="ps-3 align-middle">
+                                                                <div class="form-check m-0">
+                                                                    <input type="radio"
+                                                                           class="form-check-input question-select"
+                                                                           name="response_id"
+                                                                           value="{{ response.id }}"
+                                                                           id="response_{{ response.id }}"
+                                                                           {% if forloop.first %}checked{% endif %}>
+                                                                </div>
+                                                            </td>
+                                                            <td>
+                                                                <div class="d-flex flex-column">
+                                                                    <span class="badge bg-secondary mb-1" style="width: fit-content;">
+                                                                        {{ response.audit_section.section.name }}
+                                                                    </span>
+                                                                    <small class="text-mcd-black fw-medium">
+                                                                        {{ response.question.question_text|truncatechars:70 }}
+                                                                        {% if response.question.is_critical %}
+                                                                            <span class="badge bg-danger ms-1">Critical</span>
+                                                                        {% endif %}
+                                                                    </small>
+                                                                    {% if response.comments %}
+                                                                    <small class="text-muted mt-1">
+                                                                        <i class="fas fa-comment me-1"></i>{{ response.comments|truncatechars:30 }}
+                                                                    </small>
+                                                                    {% endif %}
+                                                                </div>
+                                                            </td>
+                                                            <td class="text-center align-middle">
+                                                                <span class="badge
+                                                                    {% if response.scored_points == response.question.possible_points %}bg-success
+                                                                    {% elif response.scored_points > 0 %}bg-warning text-dark
+                                                                    {% else %}bg-danger{% endif %}">
+                                                                    {{ response.scored_points }}/{{ response.question.possible_points }}
+                                                                </span>
+                                                            </td>
+                                                            <td class="text-center align-middle">
+                                                                {% if response.scored_points == 0 and response.question.is_critical %}
+                                                                    <span class="badge bg-danger">Critical</span>
+                                                                {% elif response.scored_points == 0 %}
+                                                                    <span class="badge bg-warning">Zero</span>
+                                                                {% elif response.needs_corrective_action %}
+                                                                    <span class="badge bg-info">Action</span>
+                                                                {% else %}
+                                                                    <span class="badge bg-success">OK</span>
+                                                                {% endif %}
+                                                            </td>
+                                                            <td class="text-center align-middle pe-3">
+                                                                {% with response.correctiveaction_set.count as c %}
+                                                                    {% if c %}
+                                                                        <span class="badge bg-primary">{{ c }}</span>
+                                                                    {% else %}
+                                                                        <span class="text-muted">—</span>
+                                                                    {% endif %}
+                                                                {% endwith %}
+                                                            </td>
+                                                        </tr>
+                                                    {% empty %}
+                                                        <tr>
+                                                            <td colspan="5" class="text-center text-muted py-4">
+                                                                <i class="fas fa-question-circle fa-2x opacity-50 mb-2"></i>
+                                                                <p class="mb-0">No questions found</p>
+                                                            </td>
+                                                        </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <div class="card-footer bg-light border-0 pt-3">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-muted">
+                                                <i class="fas fa-info-circle me-1"></i>
+                                                Showing {{ responses|length }} question{% if responses|length != 1 %}s{% endif %}
+                                            </small>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="clearSelection()">
+                                                <i class="fas fa-times me-1"></i> Clear Selection
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Right Column - Corrective Action Form -->
+                            <div class="col-xl-6">
+                                <!-- Corrective Action Form Card -->
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-header bg-light border-0">
+                                        <h5 class="mb-0 text-mcd-red">
+                                            <i class="fas fa-tasks me-2"></i> Action Details
+                                        </h5>
+                                        <small class="text-muted">Fill in the details for the corrective action</small>
+                                    </div>
+                                    <div class="card-body">
+                                        <!-- Selected Question Preview -->
+                                        <div class="alert alert-info border-start border-3 border-info bg-info bg-opacity-10 mb-4">
+                                            <div class="d-flex">
+                                                <div class="flex-grow-1">
+                                                    <div class="d-flex align-items-center mb-2">
+                                                        <span class="badge bg-mcd-red me-2" id="previewSection">
+                                                            {% if responses %}{{ responses.0.audit_section.section.name }}{% else %}N/A{% endif %}
+                                                        </span>
+                                                        <span class="badge bg-success" id="previewScore">
+                                                            {% if responses %}{{ responses.0.scored_points }}/{{ responses.0.question.possible_points }}{% else %}0/0{% endif %}
+                                                        </span>
+                                                    </div>
+                                                    <h6 class="mb-1" id="previewQuestion">
+                                                        {% if responses %}{{ responses.0.question.question_text|truncatechars:80 }}{% else %}Select a question from the list{% endif %}
+                                                    </h6>
+                                                    <p class="text-muted small mb-0" id="previewComments">
+                                                        {% if responses and responses.0.comments %}{{ responses.0.comments|truncatechars:100 }}{% else %}No comments{% endif %}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Form Fields -->
+                                        <div class="row g-3">
+                                            <!-- Description -->
+                                            <div class="col-12">
+                                                <label class="form-label fw-bold text-mcd-black">
+                                                    <i class="fas fa-file-alt me-1"></i> Description *
+                                                    <small class="text-muted">(Describe the issue and required corrective action)</small>
+                                                </label>
+                                                <textarea class="form-control border-2 rounded-2"
+                                                          id="description"
+                                                          name="description"
+                                                          required
+                                                          rows="4"
+                                                          placeholder="Describe the issue and what corrective action needs to be taken..."
+                                                          oninput="updateCharCounter(this, 'descCounter', 500)"></textarea>
+                                                <div class="text-end mt-1">
+                                                    <small class="text-muted" id="descCounter">0/500 characters</small>
+                                                </div>
+                                            </div>
+
+                                            <!-- Risk Level -->
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-bold text-mcd-black">
+                                                    <i class="fas fa-shield-alt me-1"></i> Risk Level *
+                                                </label>
+                                                <select class="form-select border-2 rounded-2" id="risk_level" name="risk_level" required
+                                                        onchange="updateRiskPreview(this.value)">
+                                                    {% for value, display in risk_levels %}
+                                                        <option value="{{ value }}"
+                                                                {% if value == 'MEDIUM' %}selected{% endif %}
+                                                                class="{% if value == 'CRITICAL' %}text-danger
+                                                                       {% elif value == 'HIGH' %}text-warning
+                                                                       {% elif value == 'MEDIUM' %}text-info
+                                                                       {% else %}text-success{% endif %}">
+                                                            {{ display }}
+                                                        </option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+
+                                            <!-- Assigned To -->
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-bold text-mcd-black">
+                                                    <i class="fas fa-user-check me-1"></i> Assigned To *
+                                                </label>
+                                                <input type="text"
+                                                       class="form-control border-2 rounded-2"
+                                                       id="assigned_to"
+                                                       name="assigned_to"
+                                                       required
+                                                       placeholder="Enter person name"
+                                                       list="assigneeSuggestions">
+                                                <datalist id="assigneeSuggestions">
+                                                    <option value="Restaurant Manager">
+                                                    <option value="Quality Supervisor">
+                                                    <option value="Area Manager">
+                                                    <option value="Training Coordinator">
+                                                </datalist>
+                                            </div>
+
+                                            <!-- Deadline -->
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-bold text-mcd-black">
+                                                    <i class="fas fa-calendar-alt me-1"></i> Deadline *
+                                                </label>
+                                                <input type="date"
+                                                       class="form-control border-2 rounded-2"
+                                                       id="deadline"
+                                                       name="deadline"
+                                                       required
+                                                       min="{{ today|date:'Y-m-d' }}">
+                                                <small class="text-muted d-block mt-1">Target completion date</small>
+                                            </div>
+
+                                            <!-- Comments -->
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-bold text-mcd-black">
+                                                    <i class="fas fa-comment-dots me-1"></i> Additional Comments
+                                                </label>
+                                                <textarea class="form-control border-2 rounded-2"
+                                                          name="comments"
+                                                          id="comments"
+                                                          rows="1"
+                                                          placeholder="Optional notes..."
+                                                          oninput="updateCharCounter(this, 'commentCounter', 250)"></textarea>
+                                                <div class="text-end mt-1">
+                                                    <small class="text-muted" id="commentCounter">0/250 characters</small>
+                                                </div>
+                                            </div>
+
+                                            <!-- Risk Preview -->
+                                            <div class="col-12 mt-2">
+                                                <div id="riskPreview" class="alert alert-warning border-start border-3 border-warning bg-warning bg-opacity-10 mb-0">
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="flex-grow-1">
+                                                            <h6 class="mb-1" id="riskLevelDisplay">Medium Risk</h6>
+                                                            <small class="text-muted" id="riskDescription">
+                                                                Requires attention within standard timeframe
+                                                            </small>
+                                                        </div>
+                                                        <div class="text-end">
+                                                            <small class="text-muted d-block">Typical Timeline</small>
+                                                            <strong class="fs-5" id="typicalDeadline">7-14 days</strong>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="card-footer bg-light border-0 pt-3">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <a href="{% url 'core:audit_results' audit.id %}" class="btn btn-outline-secondary">
+                                                <i class="fas fa-arrow-left me-2"></i> Back
+                                            </a>
+                                            <div class="d-flex gap-2">
+                                                <button type="button" class="btn btn-outline-danger" onclick="clearForm()">
+                                                    <i class="fas fa-eraser me-2"></i> Clear
+                                                </button>
+                                                <button type="submit" class="btn btn-success">
+                                                    <i class="fas fa-check-circle me-2"></i> Create Action
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- JS -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Initialize first question selection
+    if (document.querySelector('.question-select:checked')) {
+        const firstQuestionId = document.querySelector('.question-select:checked').value;
+        updateQuestionPreview(firstQuestionId);
+    }
+
+    // Initialize risk preview
+    updateRiskPreview(document.getElementById('risk_level').value);
+
+    // Set default deadline (7 days from now)
+    const defaultDeadline = new Date();
+    defaultDeadline.setDate(defaultDeadline.getDate() + 7);
+    document.getElementById('deadline').value = defaultDeadline.toISOString().split('T')[0];
+
+    // Initialize character counters
+    updateCharCounter(document.getElementById('description'), 'descCounter', 500);
+    updateCharCounter(document.getElementById('comments'), 'commentCounter', 250);
+});
+
+function selectQuestion(questionId) {
+    const radio = document.querySelector(`.question-select[value="${questionId}"]`);
+    if (radio) {
+        radio.checked = true;
+        updateQuestionPreview(questionId);
+
+        // Highlight selected row
+        document.querySelectorAll('.question-row').forEach(row => {
+            row.classList.remove('table-primary');
+            row.style.backgroundColor = '';
+        });
+        const selectedRow = radio.closest('.question-row');
+        if (selectedRow) {
+            selectedRow.classList.add('table-primary');
+            selectedRow.style.backgroundColor = 'rgba(13, 110, 253, 0.1)';
+        }
+    }
+}
+
+function clearSelection() {
+    document.querySelectorAll('.question-select').forEach(radio => {
+        radio.checked = false;
+    });
+    document.querySelectorAll('.question-row').forEach(row => {
+        row.classList.remove('table-primary');
+        row.style.backgroundColor = '';
+    });
+    document.getElementById('selectedQuestionPreview').innerHTML = `
+        <div class="text-center py-3">
+            <i class="fas fa-mouse-pointer fa-2x text-muted mb-2"></i>
+            <p class="text-muted mb-0">Select a question from the list</p>
+        </div>
+    `;
+}
+
+function updateQuestionPreview(questionId) {
+    const row = document.querySelector(`.question-row[onclick*="${questionId}"]`);
+    if (!row) return;
+
+    // Extract data from row
+    const section = row.querySelector('.badge.bg-secondary').textContent;
+    const questionText = row.querySelector('small.fw-medium').textContent;
+    const score = row.querySelector('td:nth-child(3) .badge').textContent;
+    const comments = row.querySelector('small.text-muted i') ?
+        row.querySelector('small.text-muted').textContent.replace(' ', '') : 'No comments';
+
+    // Update preview
+    document.getElementById('previewSection').textContent = section;
+    document.getElementById('previewQuestion').textContent = questionText;
+    document.getElementById('previewScore').textContent = score;
+    document.getElementById('previewComments').textContent = comments;
+}
+
+function updateRiskPreview(riskLevel) {
+    const levelDisplay = document.getElementById('riskLevelDisplay');
+    const description = document.getElementById('riskDescription');
+    const typicalDeadline = document.getElementById('typicalDeadline');
+    const preview = document.getElementById('riskPreview');
+
+    // Update content based on risk level
+    const riskInfo = {
+        'CRITICAL': {
+            display: 'Critical Risk',
+            description: 'Immediate action required within 24 hours',
+            deadline: '1-3 days',
+            color: 'danger',
+            bgColor: 'bg-danger bg-opacity-10',
+            borderColor: 'border-danger'
+        },
+        'HIGH': {
+            display: 'High Risk',
+            description: 'Urgent action required within 48 hours',
+            deadline: '3-7 days',
+            color: 'warning',
+            bgColor: 'bg-warning bg-opacity-10',
+            borderColor: 'border-warning'
+        },
+        'MEDIUM': {
+            display: 'Medium Risk',
+            description: 'Requires attention within standard timeframe',
+            deadline: '7-14 days',
+            color: 'info',
+            bgColor: 'bg-info bg-opacity-10',
+            borderColor: 'border-info'
+        },
+        'LOW': {
+            display: 'Low Risk',
+            description: 'Can be addressed during routine maintenance',
+            deadline: '14-30 days',
+            color: 'success',
+            bgColor: 'bg-success bg-opacity-10',
+            borderColor: 'border-success'
+        }
+    };
+
+    const info = riskInfo[riskLevel];
+    levelDisplay.textContent = info.display;
+    levelDisplay.className = `mb-1 text-${info.color}`;
+    description.textContent = info.description;
+    typicalDeadline.textContent = info.deadline;
+    typicalDeadline.className = `fs-5 text-${info.color}`;
+
+    // Update alert styling
+    preview.className = `alert alert-${info.color} border-start border-3 border-${info.color} ${info.bgColor}`;
+}
+
+function updateCharCounter(textarea, counterId, maxLength) {
+    const length = textarea.value.length;
+    const counter = document.getElementById(counterId);
+    counter.textContent = `${length}/${maxLength} characters`;
+
+    // Update color based on length
+    if (length > maxLength * 0.8) {
+        counter.classList.add('text-warning');
+        counter.classList.remove('text-muted');
+    } else if (length > maxLength * 0.95) {
+        counter.classList.add('text-danger');
+        counter.classList.remove('text-muted', 'text-warning');
+    } else {
+        counter.className = 'text-muted';
+    }
+}
+
+function clearForm() {
+    if (confirm('Are you sure you want to clear all form fields?')) {
+        document.getElementById('description').value = '';
+        document.getElementById('assigned_to').value = '';
+        document.getElementById('comments').value = '';
+        document.getElementById('risk_level').value = 'MEDIUM';
+
+        // Reset deadline to default
+        const defaultDeadline = new Date();
+        defaultDeadline.setDate(defaultDeadline.getDate() + 7);
+        document.getElementById('deadline').value = defaultDeadline.toISOString().split('T')[0];
+
+        // Reset counters
+        updateCharCounter(document.getElementById('description'), 'descCounter', 500);
+        updateCharCounter(document.getElementById('comments'), 'commentCounter', 250);
+
+        // Reset risk preview
+        updateRiskPreview('MEDIUM');
+
+        showToast('Form cleared successfully', 'info');
+    }
+}
+
+// Form validation
+document.getElementById('correctiveActionForm').addEventListener('submit', e => {
+    let isValid = true;
+
+    // Clear previous errors
+    document.querySelectorAll('.is-invalid').forEach(el => {
+        el.classList.remove('is-invalid');
+    });
+
+    // Check description
+    const desc = document.getElementById('description').value.trim();
+    if (!desc) {
+        isValid = false;
+        document.getElementById('description').classList.add('is-invalid');
+        showToast('Please provide a description', 'error');
+    }
+
+    // Check assigned to
+    const assignedTo = document.getElementById('assigned_to').value.trim();
+    if (!assignedTo) {
+        isValid = false;
+        document.getElementById('assigned_to').classList.add('is-invalid');
+        if (isValid) showToast('Please specify assigned person', 'error');
+    }
+
+    // Check deadline
+    const deadline = document.getElementById('deadline').value;
+    if (deadline) {
+        const d = new Date(deadline);
+        const today = new Date();
+        today.setHours(0,0,0,0);
+
+        if (d < today) {
+            isValid = false;
+            document.getElementById('deadline').classList.add('is-invalid');
+            showToast('Deadline cannot be in the past', 'error');
+        }
+    }
+
+    if (!isValid) {
+        e.preventDefault();
+    } else {
+        showToast('Creating corrective action...', 'success');
+    }
+});
+
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `toast align-items-center text-white bg-${type} border-0`;
+    toast.setAttribute('role', 'alert');
+    toast.setAttribute('aria-live', 'assertive');
+    toast.setAttribute('aria-atomic', 'true');
+
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
+                ${message}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    `;
+
+    const container = document.getElementById('toastContainer') || createToastContainer();
+    container.appendChild(toast);
+
+    const bsToast = new bootstrap.Toast(toast, {
+        autohide: true,
+        delay: 3000
+    });
+    bsToast.show();
+
+    toast.addEventListener('hidden.bs.toast', () => {
+        toast.remove();
+    });
+}
+
+function createToastContainer() {
+    const container = document.createElement('div');
+    container.id = 'toastContainer';
+    container.className = 'toast-container position-fixed top-3 end-3 p-3';
+    document.body.appendChild(container);
+    return container;
+}
+</script>
+
+<style>
+    .question-row {
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .question-row:hover {
+        background-color: rgba(0, 0, 0, 0.02) !important;
+        transform: translateX(2px);
+    }
+
+    .table-primary {
+        background-color: rgba(13, 110, 253, 0.1) !important;
+    }
+
+    .form-control, .form-select {
+        border-width: 2px;
+        border-radius: 8px !important;
+        transition: all 0.2s ease;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: var(--mcd-red);
+        box-shadow: 0 0 0 0.25rem rgba(218, 41, 28, 0.25);
+    }
+
+    .form-control.is-invalid, .form-select.is-invalid {
+        border-color: var(--mcd-danger);
+        box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25);
+    }
+
+    .badge {
+        font-weight: 500;
+        padding: 0.35em 0.65em;
+    }
+
+    .card {
+        border: none;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .card-header {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .card-body {
+        padding: 1.5rem;
+    }
+
+    .card-footer {
+        padding: 1rem 1.5rem;
+        border-top: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .table thead {
+        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    }
+
+    .table tbody tr {
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .border-2 {
+        border-width: 2px !important;
+    }
+
+    .rounded-2 {
+        border-radius: 10px !important;
+    }
+
+    @media (max-width: 768px) {
+        .card-header, .card-body, .card-footer {
+            padding: 1rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+
+        .table {
+            font-size: 0.875rem;
+        }
+    }
+</style>
+{% endblock %}

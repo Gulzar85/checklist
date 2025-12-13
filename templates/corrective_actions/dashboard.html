@@ -159,6 +159,9 @@
                             <small class="text-muted">
                                 <i class="fas fa-store me-1"></i>{{ action.audit.restaurant.name }}
                             </small>
+                            <small class="text-muted">
+                                <i class="fas fa-calendar me-1"></i>{{ action.audit.audit_date|date:"M d, Y" }}
+                            </small>
                             <small class="{% if action.completed %}text-success{% else %}text-warning{% endif %}">
                                 <i class="fas {% if action.completed %}fa-check-circle{% else %}fa-clock{% endif %} me-1"></i>
                                 {% if action.completed %}Completed{% else %}Pending{% endif %}

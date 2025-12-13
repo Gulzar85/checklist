@@ -4,51 +4,85 @@
 {% block title %}All Audits - McDonald's QA Audit System{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
+<div class="container-fluid px-3 px-md-4 py-3">
     <!-- Page Header -->
-    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
-        <h1 class="h3 mcd-text-red mb-0" style="font-size: 1.4rem;">
-            <i class="fas fa-clipboard-list me-2"></i> All Audits
-        </h1>
-        <div class="btn-toolbar mb-2 mb-md-0">
-            <a href="{% url 'core:create_audit' %}" class="btn mcd-btn-primary" style="font-size: 0.85rem;">
-                <i class="fas fa-plus-circle me-2"></i> New Audit
+    <div class="d-flex justify-content-between flex-wrap align-items-center pt-2 pb-3 mb-3 border-bottom">
+        <div>
+            <h1 class="h3 mcd-text-red mb-1">
+                <i class="fas fa-clipboard-list me-2"></i> All Audits
+            </h1>
+            <p class="text-muted mb-0 d-none d-md-block">View and manage all audit records</p>
+        </div>
+        <div class="btn-toolbar mt-2 mt-md-0 gap-2">
+            <a href="{% url 'core:create_audit' %}" class="btn mcd-btn-primary btn-sm">
+                <i class="fas fa-plus-circle me-1 me-md-2"></i>
+                <span class="d-none d-md-inline">New Audit</span>
+                <span class="d-md-none">New</span>
             </a>
+            <button class="btn btn-outline-secondary btn-sm" onclick="exportAudits()" title="Export to CSV">
+                <i class="fas fa-download"></i>
+            </button>
         </div>
     </div>
 
     <!-- Statistics Cards -->
-    <div class="row mb-4">
-        <div class="col-md-3">
+    <div class="row row-cols-2 row-cols-md-4 g-3 mb-4">
+        <div class="col">
             <div class="mcd-card text-center h-100 fade-in-up" data-delay="0.1">
-                <div class="mcd-card-body">
-                    <h3 class="text-primary mb-1" style="font-size: 1.8rem;">{{ total_audits }}</h3>
-                    <p class="text-muted mb-0" style="font-size: 0.8rem;">Total Audits</p>
+                <div class="mcd-card-body p-2 p-md-3">
+                    <h3 class="text-primary mb-1 display-6">{{ total_audits }}</h3>
+                    <p class="text-muted mb-0 small">Total Audits</p>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col">
             <div class="mcd-card text-center h-100 fade-in-up" data-delay="0.2">
-                <div class="mcd-card-body">
-                    <h3 class="text-success mb-1" style="font-size: 1.8rem;">{{ submitted_count }}</h3>
-                    <p class="text-muted mb-0" style="font-size: 0.8rem;">Submitted</p>
+                <div class="mcd-card-body p-2 p-md-3">
+                    <h3 class="text-success mb-1 display-6">{{ submitted_count }}</h3>
+                    <p class="text-muted mb-0 small">Submitted</p>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col">
             <div class="mcd-card text-center h-100 fade-in-up" data-delay="0.3">
-                <div class="mcd-card-body">
-                    <h3 class="text-warning mb-1" style="font-size: 1.8rem;">{{ in_progress_count }}</h3>
-                    <p class="text-muted mb-0" style="font-size: 0.8rem;">In Progress</p>
+                <div class="mcd-card-body p-2 p-md-3">
+                    <h3 class="text-warning mb-1 display-6">{{ in_progress_count }}</h3>
+                    <p class="text-muted mb-0 small">In Progress</p>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col">
             <div class="mcd-card text-center h-100 fade-in-up" data-delay="0.4">
-                <div class="mcd-card-body">
-                    <h3 class="text-danger mb-1" style="font-size: 1.8rem;">{{ critical_failure_count }}</h3>
-                    <p class="text-muted mb-0" style="font-size: 0.8rem;">Critical Failures</p>
+                <div class="mcd-card-body p-2 p-md-3">
+                    <h3 class="text-danger mb-1 display-6">{{ critical_failure_count }}</h3>
+                    <p class="text-muted mb-0 small">Critical</p>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Section for Mobile -->
+    <div class="d-md-none mb-3">
+        <div class="dropdown">
+            <button class="btn btn-outline-secondary w-100 dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <i class="fas fa-filter me-2"></i> Filter Audits
+            </button>
+            <div class="dropdown-menu w-100 p-3">
+                <div class="mb-3">
+                    <label class="form-label small">Status</label>
+                    <select class="form-select form-select-sm">
+                        <option>All Status</option>
+                        <option>Submitted</option>
+                        <option>In Progress</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small">Restaurant</label>
+                    <select class="form-select form-select-sm">
+                        <option>All Restaurants</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary btn-sm w-100">Apply Filters</button>
             </div>
         </div>
     </div>
@@ -56,66 +90,164 @@
     <!-- Audits Table -->
     <div class="mcd-card">
         <div class="mcd-card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0" style="font-size: 0.95rem;">
+            <h5 class="mb-0">
                 <i class="fas fa-list me-2"></i> Audit History
-                <small class="text-muted ms-2" style="font-size: 0.8rem;">({{ audits.count }} records)</small>
+                <small class="text-muted ms-2">({{ audits.count }} records)</small>
             </h5>
+            <div class="d-none d-md-flex align-items-center gap-2">
+                <input type="text" class="form-control form-control-sm" placeholder="Search audits..."
+                       style="width: 200px;" onkeyup="filterTable()" id="searchInput">
+            </div>
         </div>
-        <div class="mcd-card-body">
+        <div class="mcd-card-body p-0 p-md-3">
             {% if audits %}
-            <div class="table-responsive">
-                <table class="table table-hover mcd-table" id="auditsTable">
+            <!-- Mobile Card View -->
+            <div class="d-md-none">
+                {% for audit in audits %}
+                <div class="card border mb-3 fade-in-up" data-audit-id="{{ audit.id }}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <h6 class="mb-0 fw-bold">{{ audit.restaurant.name }}</h6>
+                                <small class="text-muted">{{ audit.restaurant.code }}</small>
+                            </div>
+                            <span class="mcd-badge
+                                {% if audit.grade == 'A' %}mcd-badge-success
+                                {% elif audit.grade == 'B' %}mcd-badge-primary
+                                {% elif audit.grade == 'C' %}mcd-badge-warning
+                                {% else %}mcd-badge-danger{% endif %}">
+                                {{ audit.grade }}
+                            </span>
+                        </div>
+
+                        <div class="row small mb-2">
+                            <div class="col-6">
+                                <i class="fas fa-calendar text-muted me-1"></i>
+                                {{ audit.audit_date|date:"M d" }}
+                            </div>
+                            <div class="col-6 text-end">
+                                <span class="fw-bold {% if audit.total_percentage >= 90 %}text-success{% elif audit.total_percentage >= 80 %}text-warning{% else %}text-danger{% endif %}">
+                                    {{ audit.total_percentage|floatformat:1 }}%
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="small mb-3">
+                            <div class="mb-1">
+                                <i class="fas fa-user-tie text-muted me-1"></i>
+                                {{ audit.manager_on_duty|truncatechars:20 }}
+                            </div>
+                            <div>
+                                <i class="fas fa-user-check text-muted me-1"></i>
+                                {{ audit.auditor_name.get_full_name|default:audit.auditor_name.username|truncatechars:20 }}
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                {% if audit.is_submitted %}
+                                <span class="mcd-badge mcd-badge-success">
+                                    <i class="fas fa-check me-1"></i>Submitted
+                                </span>
+                                {% else %}
+                                <span class="mcd-badge mcd-badge-warning">
+                                    <i class="fas fa-edit me-1"></i>In Progress
+                                </span>
+                                {% endif %}
+
+                                {% if audit.has_critical_failure %}
+                                <span class="mcd-badge mcd-badge-danger ms-2" title="Critical Failure">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </span>
+                                {% endif %}
+                            </div>
+
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'core:audit_results' audit.id %}" class="btn btn-outline-primary"
+                                   data-bs-toggle="tooltip" title="View Results">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                {% if not audit.is_submitted %}
+                                <a href="{% url 'core:audit_form' audit.id %}" class="btn btn-outline-success"
+                                   data-bs-toggle="tooltip" title="Continue">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% endif %}
+                                <a href="{% url 'core:audit_detail' audit.id %}" class="btn btn-outline-info"
+                                   data-bs-toggle="tooltip" title="Details">
+                                    <i class="fas fa-info-circle"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Desktop Table View -->
+            <div class="table-responsive d-none d-md-block">
+                <table class="table table-hover mcd-table mb-0" id="auditsTable">
                     <thead>
                         <tr>
-                            <th width="4%" style="font-size: 0.85rem;"><i class="fas fa-hashtag me-1"></i> #</th>
-                            <th width="20%" style="font-size: 0.85rem;"><i class="fas fa-store me-1"></i> Restaurant</th>
-                            <th width="10%" style="font-size: 0.85rem;"><i class="fas fa-calendar me-1"></i> Date</th>
-                            <th width="12%" style="font-size: 0.85rem;"><i class="fas fa-user-tie me-1"></i> Manager</th>
-                            <th width="12%" style="font-size: 0.85rem;"><i class="fas fa-user-check me-1"></i> Auditor</th>
-                            <th width="10%" style="font-size: 0.85rem;"><i class="fas fa-chart-line me-1"></i> Score</th>
-                            <th width="8%" style="font-size: 0.85rem;"><i class="fas fa-grade me-1"></i> Grade</th>
-                            <th width="10%" style="font-size: 0.85rem;"><i class="fas fa-status me-1"></i> Status</th>
-                            <th width="8%" style="font-size: 0.85rem;"><i class="fas fa-exclamation-triangle me-1"></i> Critical</th>
-                            <th width="12%" style="font-size: 0.85rem;"><i class="fas fa-cog me-1"></i> Actions</th>
+                            <th scope="col" class="sortable" onclick="sortTable(0)">#</th>
+                            <th scope="col" class="sortable" onclick="sortTable(1)">Restaurant</th>
+                            <th scope="col" class="sortable" onclick="sortTable(2)">Date</th>
+                            <th scope="col" class="sortable" onclick="sortTable(3)">Manager</th>
+                            <th scope="col" class="sortable" onclick="sortTable(4)">Auditor</th>
+                            <th scope="col" class="sortable" onclick="sortTable(5)">Score</th>
+                            <th scope="col" class="sortable" onclick="sortTable(6)">Grade</th>
+                            <th scope="col" class="sortable" onclick="sortTable(7)">Status</th>
+                            <th scope="col" class="sortable" onclick="sortTable(8)">Critical</th>
+                            <th scope="col">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for audit in audits %}
-                        <tr class="fade-in-up">
-                            <td style="font-size: 0.85rem;">{{ forloop.counter }}</td>
+                        <tr class="fade-in-up {% if audit.has_critical_failure %}table-danger{% endif %}"
+                            data-audit-id="{{ audit.id }}"
+                            data-restaurant="{{ audit.restaurant.name }}"
+                            data-restaurant-code="{{ audit.restaurant.code }}"
+                            data-date="{{ audit.audit_date|date:'M d, Y' }}"
+                            data-manager="{{ audit.manager_on_duty }}"
+                            data-auditor="{{ audit.auditor_name.get_full_name|default:audit.auditor_name.username }}"
+                            data-score="{{ audit.total_percentage|floatformat:1 }}"
+                            data-grade="{{ audit.grade }}"
+                            data-status="{% if audit.is_submitted %}Submitted{% else %}In Progress{% endif %}"
+                            data-critical="{% if audit.has_critical_failure %}Yes{% else %}No{% endif %}">
+                            <td class="text-muted">{{ forloop.counter }}</td>
                             <td>
                                 <div class="d-flex align-items-center">
                                     <div class="bg-light rounded-circle me-2 d-flex align-items-center justify-content-center flex-shrink-0"
-                                         style="width: 32px; height: 32px;">
-                                        <i class="fas fa-store text-danger" style="font-size: 0.8rem;"></i>
+                                         style="width: 36px; height: 36px;">
+                                        <i class="fas fa-store text-danger"></i>
                                     </div>
                                     <div>
-                                        <strong style="font-size: 0.85rem;">{{ audit.restaurant.name }}</strong>
+                                        <strong>{{ audit.restaurant.name }}</strong>
                                         <br>
-                                        <small class="text-muted" style="font-size: 0.75rem;">{{ audit.restaurant.code }}</small>
+                                        <small class="text-muted">{{ audit.restaurant.code }}</small>
                                     </div>
                                 </div>
                             </td>
-                            <td style="font-size: 0.85rem;">
+                            <td>
                                 <strong>{{ audit.audit_date|date:"M d, Y" }}</strong>
                             </td>
-                            <td style="font-size: 0.85rem;">{{ audit.manager_on_duty }}</td>
-                            <td style="font-size: 0.85rem;">{{ audit.auditor_name.get_full_name|default:audit.auditor_name.username }}</td>
+                            <td>{{ audit.manager_on_duty|truncatechars:15 }}</td>
+                            <td>{{ audit.auditor_name.get_full_name|default:audit.auditor_name.username|truncatechars:15 }}</td>
                             <td>
-                                <span class="mcd-badge d-inline-flex align-items-center" style="font-size: 0.75rem; white-space: nowrap;
+                                <span class="mcd-badge d-inline-flex align-items-center
                                     {% if audit.total_percentage >= 90 %}mcd-badge-success
                                     {% elif audit.total_percentage >= 80 %}mcd-badge-warning
                                     {% else %}mcd-badge-danger{% endif %}">
                                     {{ audit.total_percentage|floatformat:1 }}%
                                 </span>
                                 <br>
-                                <small class="text-muted" style="font-size: 0.7rem;">
+                                <small class="text-muted">
                                     {{ audit.total_scored|floatformat:1 }}/{{ audit.total_possible|floatformat:1 }}
                                 </small>
                             </td>
                             <td>
                                 <span class="mcd-badge d-inline-flex align-items-center justify-content-center"
-                                      style="font-size: 0.75rem; min-width: 32px; height: 24px;
+                                      style="width: 36px; height: 24px;
                                     {% if audit.grade == 'A' %}mcd-badge-success
                                     {% elif audit.grade == 'B' %}mcd-badge-primary
                                     {% elif audit.grade == 'C' %}mcd-badge-warning
@@ -125,11 +257,11 @@
                             </td>
                             <td>
                                 {% if audit.is_submitted %}
-                                <span class="mcd-badge mcd-badge-success d-inline-flex align-items-center status-badge-compact">
+                                <span class="mcd-badge mcd-badge-success">
                                     <i class="fas fa-check me-1"></i>Submitted
                                 </span>
                                 {% else %}
-                                <span class="mcd-badge mcd-badge-warning d-inline-flex align-items-center status-badge-compact">
+                                <span class="mcd-badge mcd-badge-warning">
                                     <i class="fas fa-edit me-1"></i>In Progress
                                 </span>
                                 {% endif %}
@@ -137,30 +269,30 @@
                             <td>
                                 {% if audit.has_critical_failure %}
                                 <span class="mcd-badge mcd-badge-danger d-inline-flex align-items-center justify-content-center"
-                                      title="Critical Failure" style="font-size: 0.75rem; width: 24px; height: 24px;">
-                                    <i class="fas fa-exclamation-triangle" style="font-size: 0.7rem;"></i>
+                                      title="Critical Failure" style="width: 32px; height: 24px;">
+                                    <i class="fas fa-exclamation-triangle"></i>
                                 </span>
                                 {% else %}
                                 <span class="mcd-badge mcd-badge-success d-inline-flex align-items-center justify-content-center"
-                                      title="No Critical Issues" style="font-size: 0.75rem; width: 24px; height: 24px;">
-                                    <i class="fas fa-check" style="font-size: 0.7rem;"></i>
+                                      title="No Critical Issues" style="width: 32px; height: 24px;">
+                                    <i class="fas fa-check"></i>
                                 </span>
                                 {% endif %}
                             </td>
                             <td>
                                 <div class="btn-group btn-group-sm">
                                     <a href="{% url 'core:audit_results' audit.id %}" class="btn btn-outline-primary"
-                                       data-bs-toggle="tooltip" title="View Results" style="font-size: 0.75rem;">
+                                       data-bs-toggle="tooltip" title="View Results">
                                         <i class="fas fa-eye"></i>
                                     </a>
                                     {% if not audit.is_submitted %}
                                     <a href="{% url 'core:audit_form' audit.id %}" class="btn btn-outline-success"
-                                       data-bs-toggle="tooltip" title="Continue Audit" style="font-size: 0.75rem;">
+                                       data-bs-toggle="tooltip" title="Continue Audit">
                                         <i class="fas fa-edit"></i>
                                     </a>
                                     {% endif %}
                                     <a href="{% url 'core:audit_detail' audit.id %}" class="btn btn-outline-info"
-                                       data-bs-toggle="tooltip" title="View Details" style="font-size: 0.75rem;">
+                                       data-bs-toggle="tooltip" title="View Details">
                                         <i class="fas fa-info-circle"></i>
                                     </a>
                                 </div>
@@ -173,24 +305,34 @@
 
             <!-- Pagination -->
             {% if is_paginated %}
-            <nav aria-label="Audit pagination" class="mt-4 table-pagination">
-                <ul class="pagination justify-content-center">
+            <nav aria-label="Audit pagination" class="mt-4">
+                <ul class="pagination justify-content-center pagination-sm flex-wrap">
                     {% if page_obj.has_previous %}
                     <li class="page-item">
-                        <a class="page-link text-danger" href="?page={{ page_obj.previous_page_number }}" style="font-size: 0.85rem;">
-                            <i class="fas fa-chevron-left me-1"></i> Previous
+                        <a class="page-link text-danger" href="?page={{ page_obj.previous_page_number }}">
+                            <i class="fas fa-chevron-left me-1"></i>
+                            <span class="d-none d-sm-inline">Previous</span>
                         </a>
                     </li>
                     {% endif %}
+
                     {% for num in page_obj.paginator.page_range %}
-                    <li class="page-item {% if page_obj.number == num %}active{% endif %}">
-                        <a class="page-link" href="?page={{ num }}" style="font-size: 0.85rem;">{{ num }}</a>
-                    </li>
+                        {% if num == page_obj.number %}
+                        <li class="page-item active" aria-current="page">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                        {% elif num > page_obj.number|add:"-3" and num < page_obj.number|add:"3" %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                        </li>
+                        {% endif %}
                     {% endfor %}
+
                     {% if page_obj.has_next %}
                     <li class="page-item">
-                        <a class="page-link text-danger" href="?page={{ page_obj.next_page_number }}" style="font-size: 0.85rem;">
-                            Next <i class="fas fa-chevron-right ms-1"></i>
+                        <a class="page-link text-danger" href="?page={{ page_obj.next_page_number }}">
+                            <span class="d-none d-sm-inline">Next</span>
+                            <i class="fas fa-chevron-right ms-1"></i>
                         </a>
                     </li>
                     {% endif %}
@@ -199,11 +341,11 @@
             {% endif %}
 
             {% else %}
-            <div class="table-empty-state">
-                <i class="fas fa-clipboard-list text-muted"></i>
-                <h4>No Audits Found</h4>
-                <p>You haven't conducted any audits yet.</p>
-                <a href="{% url 'core:create_audit' %}" class="btn mcd-btn-primary" style="font-size: 0.85rem;">
+            <div class="text-center py-5">
+                <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+                <h4 class="text-muted">No Audits Found</h4>
+                <p class="text-muted">You haven't conducted any audits yet.</p>
+                <a href="{% url 'core:create_audit' %}" class="btn mcd-btn-primary">
                     <i class="fas fa-plus-circle me-2"></i> Create Your First Audit
                 </a>
             </div>
@@ -211,107 +353,354 @@
         </div>
     </div>
 </div>
+
+<style>
+    /* Custom styles for this page */
+    .container-fluid {
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+
+    .mcd-card {
+        border-radius: var(--radius-lg);
+        border: 1px solid rgba(0,0,0,0.08);
+        transition: transform var(--trans-mid), box-shadow var(--trans-mid);
+    }
+
+    .mcd-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-medium);
+    }
+
+    .mcd-card-header {
+        background: linear-gradient(135deg, var(--mcd-red), var(--mcd-dark-red));
+        color: white;
+        padding: 1rem 1.5rem;
+        border-bottom: 2px solid rgba(255,255,255,0.1);
+    }
+
+    .mcd-badge {
+        padding: 0.35em 0.65em;
+        font-size: 0.85em;
+        font-weight: 600;
+        border-radius: 20px;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35em;
+    }
+
+    /* Animation for fade-in-up */
+    .fade-in-up {
+        opacity: 0;
+        transform: translateY(20px);
+        animation: fadeInUp 0.6s ease forwards;
+    }
+
+    @keyframes fadeInUp {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Table sorting */
+    .sortable {
+        cursor: pointer;
+        user-select: none;
+        position: relative;
+        padding-right: 1.5rem !important;
+    }
+
+    .sortable::after {
+        content: "↕";
+        position: absolute;
+        right: 0.5rem;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 0.8rem;
+        color: rgba(255,255,255,0.7);
+    }
+
+    .sortable.asc::after {
+        content: "↑";
+        color: var(--mcd-yellow);
+    }
+
+    .sortable.desc::after {
+        content: "↓";
+        color: var(--mcd-yellow);
+    }
+
+    /* Mobile specific styles */
+    @media (max-width: 768px) {
+        .container-fluid {
+            padding-left: 12px;
+            padding-right: 12px;
+        }
+
+        .mcd-card-body {
+            padding: 1rem !important;
+        }
+
+        .card.border.mb-3 {
+            border-radius: var(--radius-md);
+            border: 1px solid rgba(0,0,0,0.08);
+            box-shadow: var(--shadow-subtle);
+        }
+
+        .btn-group-sm > .btn {
+            padding: 0.25rem 0.4rem;
+            font-size: 0.75rem;
+        }
+
+        .display-6 {
+            font-size: 1.75rem;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .row-cols-2 > .col {
+            padding: 0 6px;
+        }
+
+        h1.h3 {
+            font-size: 1.25rem;
+        }
+
+        .mcd-badge {
+            font-size: 0.75rem;
+        }
+
+        .pagination {
+            font-size: 0.85rem;
+        }
+    }
+</style>
 {% endblock %}
 
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Initialize animations
+        // Initialize animations with delay
         const fadeElements = document.querySelectorAll('.fade-in-up');
-        fadeElements.forEach(element => {
-            setTimeout(() => {
-                element.style.opacity = '1';
-                element.style.transform = 'translateY(0)';
-            }, 100);
+        fadeElements.forEach((element, index) => {
+            element.style.animationDelay = `${index * 0.05}s`;
         });
 
         // Initialize tooltips
-        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-        const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl);
-        });
-
-        // Initialize table sorting
-        initTableSorting();
+        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+        const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
     });
 
-    function showAlert(message, type) {
-        // Remove existing alerts
-        document.querySelectorAll('.mcd-alert').forEach(alert => alert.remove());
+    function filterTable() {
+        const input = document.getElementById('searchInput');
+        if (!input) return;
 
-        const alert = document.createElement('div');
-        alert.className = `mcd-alert mcd-alert-${type} alert-dismissible fade show`;
-        alert.innerHTML = `
-            <div class="d-flex align-items-center">
-                <i class="fas fa-${type === 'success' ? 'check-circle' : 'info-circle'} me-3"></i>
-                <span class="flex-grow-1">${message}</span>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        `;
-        document.querySelector('.container-fluid').insertBefore(alert, document.querySelector('.container-fluid').firstChild);
+        const filter = input.value.toLowerCase();
+            const rows = document.querySelectorAll('#auditsTable tbody tr');
+
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(filter) ? '' : 'none';
+        });
     }
 
-    // Enhanced table sorting
-    function initTableSorting() {
+    function sortTable(column) {
         const table = document.getElementById('auditsTable');
         if (!table) return;
 
-        const headers = table.querySelectorAll('th');
-        let sortDirection = 1;
-        let currentSortColumn = -1;
+        const tbody = table.querySelector('tbody');
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        const headers = table.querySelectorAll('th.sortable');
 
-        headers.forEach((header, index) => {
-            header.style.cursor = 'pointer';
-            header.style.userSelect = 'none';
-            header.addEventListener('click', () => {
-                sortTable(index);
-            });
-        });
+        // Remove sort classes from all headers
+        headers.forEach(header => header.classList.remove('asc', 'desc'));
 
-        function sortTable(column) {
-            const tbody = table.querySelector('tbody');
-            const rows = Array.from(tbody.querySelectorAll('tr'));
+        // Determine sort direction
+        const currentHeader = headers[column];
+        const isAsc = !currentHeader.classList.contains('asc');
+        currentHeader.classList.toggle('asc', isAsc);
+        currentHeader.classList.toggle('desc', !isAsc);
 
-            // Remove previous sort indicators
-            headers.forEach(header => {
-                header.classList.remove('sort-asc', 'sort-desc');
-            });
+        rows.sort((a, b) => {
+            // Get data from data attributes or text content
+            let aValue, bValue;
 
-            // Add sort indicator to current column
-            if (currentSortColumn === column) {
-                sortDirection *= -1;
+            if (column === 0) { // #
+                aValue = parseInt(a.cells[0].textContent) || 0;
+                bValue = parseInt(b.cells[0].textContent) || 0;
+            } else if (column === 1) { // Restaurant
+                aValue = a.dataset.restaurant || a.cells[1].textContent;
+                bValue = b.dataset.restaurant || b.cells[1].textContent;
+            } else if (column === 2) { // Date
+                aValue = new Date(a.dataset.date || a.cells[2].querySelector('strong')?.textContent);
+                bValue = new Date(b.dataset.date || b.cells[2].querySelector('strong')?.textContent);
+            } else if (column === 5) { // Score
+                aValue = parseFloat(a.dataset.score) || 0;
+                bValue = parseFloat(b.dataset.score) || 0;
+            } else if (column === 6) { // Grade
+                aValue = a.dataset.grade || a.cells[6].querySelector('.mcd-badge')?.textContent;
+                bValue = b.dataset.grade || b.cells[6].querySelector('.mcd-badge')?.textContent;
+            } else if (column === 7) { // Status
+                aValue = a.dataset.status || a.cells[7].querySelector('.mcd-badge')?.textContent;
+                bValue = b.dataset.status || b.cells[7].querySelector('.mcd-badge')?.textContent;
+            } else if (column === 8) { // Critical
+                aValue = a.dataset.critical === 'Yes' ? 1 : 0;
+                bValue = b.dataset.critical === 'Yes' ? 1 : 0;
             } else {
-                sortDirection = 1;
-                currentSortColumn = column;
+                // Default text comparison for other columns
+                aValue = a.cells[column]?.textContent?.toLowerCase() || '';
+                bValue = b.cells[column]?.textContent?.toLowerCase() || '';
             }
 
-            headers[column].classList.add(sortDirection === 1 ? 'sort-asc' : 'sort-desc');
+            // Numeric comparison for scores and dates
+            if (column === 0 || column === 5) {
+                return isAsc ? aValue - bValue : bValue - aValue;
+            }
 
-            rows.sort((a, b) => {
-                const aValue = a.cells[column].textContent.trim();
-                const bValue = b.cells[column].textContent.trim();
+            if (column === 2 && aValue instanceof Date && bValue instanceof Date) {
+                return isAsc ? aValue - bValue : bValue - aValue;
+            }
 
-                // Handle numeric values (scores, percentages)
-                if (column === 5 || column === 0) {
-                    const aNum = parseFloat(aValue) || 0;
-                    const bNum = parseFloat(bValue) || 0;
-                    return (aNum - bNum) * sortDirection;
-                }
+            if (column === 8) { // Critical (Yes/No)
+                return isAsc ? aValue - bValue : bValue - aValue;
+            }
 
-                // Handle dates
-                if (column === 2) {
-                    const aDate = new Date(aValue);
-                    const bDate = new Date(bValue);
-                    return (aDate - bDate) * sortDirection;
-                }
+            // String comparison
+            return isAsc ?
+                String(aValue).localeCompare(String(bValue)) :
+                String(bValue).localeCompare(String(aValue));
+        });
 
-                // Default string comparison
-                return aValue.localeCompare(bValue) * sortDirection;
+        // Re-append sorted rows
+        rows.forEach(row => tbody.appendChild(row));
+    }
+
+    // Fixed CSV Export function - extracts clean data from data attributes
+    function exportAudits() {
+        let csv = 'Restaurant,Restaurant Code,Date,Manager,Auditor,Score,Grade,Status,Critical\n';
+
+        // Try desktop table first
+        const desktopRows = document.querySelectorAll('#auditsTable tbody tr');
+
+        if (desktopRows.length > 0) {
+            desktopRows.forEach(row => {
+                const data = {
+                    restaurant: row.dataset.restaurant || '',
+                    restaurantCode: row.dataset.restaurantCode || '',
+                    date: row.dataset.date || '',
+                    manager: row.dataset.manager || '',
+                    auditor: row.dataset.auditor || '',
+                    score: row.dataset.score || '',
+                    grade: row.dataset.grade || '',
+                    status: row.dataset.status || '',
+                    critical: row.dataset.critical || 'No'
+                };
+
+                const rowData = [
+                    data.restaurant,
+                    data.restaurantCode,
+                    data.date,
+                    data.manager,
+                    data.auditor,
+                    data.score,
+                    data.grade,
+                    data.status,
+                    data.critical
+                ];
+
+                csv += rowData.map(cell => `"${cell}"`).join(',') + '\n';
             });
+        } else {
+            // Fallback to mobile cards
+            const mobileCards = document.querySelectorAll('.card.border.mb-3[data-audit-id]');
+            mobileCards.forEach(card => {
+                const restaurant = card.querySelector('h6.mb-0')?.textContent?.trim() || '';
+                const restaurantCode = card.querySelector('small.text-muted')?.textContent?.trim() || '';
+                const dateElement = card.querySelector('.row.small.mb-2 .col-6');
+                const date = dateElement ? dateElement.textContent.replace(/[^\w\s]/gi, '').trim() : '';
+                const scoreElement = card.querySelector('.row.small.mb-2 .col-6 .fw-bold');
+                const score = scoreElement ? scoreElement.textContent.replace('%', '').trim() : '';
 
-            // Re-append sorted rows
-            rows.forEach(row => tbody.appendChild(row));
+                const managerElement = card.querySelector('.small.mb-3 .mb-1');
+                const manager = managerElement ? managerElement.textContent.replace(/[\n\r]+|[\s]{2,}/g, ' ').trim() : '';
+
+                const auditorElement = card.querySelector('.small.mb-3 div:last-child');
+                const auditor = auditorElement ? auditorElement.textContent.replace(/[\n\r]+|[\s]{2,}/g, ' ').trim() : '';
+
+                const gradeElement = card.querySelector('.mcd-badge:not(.mcd-badge-success):not(.mcd-badge-warning)');
+                const grade = gradeElement ? gradeElement.textContent.trim() : '';
+
+                const statusElement = card.querySelector('.mcd-badge-success, .mcd-badge-warning');
+                const status = statusElement ? statusElement.textContent.replace(/[\n\r]+|[\s]{2,}/g, ' ').trim() : '';
+
+                const criticalElement = card.querySelector('.mcd-badge-danger');
+                const critical = criticalElement ? 'Yes' : 'No';
+
+                const rowData = [
+                    restaurant,
+                    restaurantCode,
+                    date,
+                    manager,
+                    auditor,
+                    score,
+                    grade,
+                    status,
+                    critical
+                ];
+
+                csv += rowData.map(cell => `"${cell}"`).join(',') + '\n';
+            });
         }
+
+        // Create and download CSV
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `audits-export-${new Date().toISOString().slice(0,10)}.csv`;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        // Show success message
+        showAlert('Audits exported successfully!', 'success');
+    }
+
+    function showAlert(message, type = 'success') {
+        // Create toast element
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-white bg-${type} border-0`;
+        toast.setAttribute('role', 'alert');
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : 'info-circle'} me-2"></i>
+                    ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+
+        let toastContainer = document.getElementById('toastContainer');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.id = 'toastContainer';
+            toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+            toastContainer.style.zIndex = '9999';
+            document.body.appendChild(toastContainer);
+        }
+
+        toastContainer.appendChild(toast);
+
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+
+        toast.addEventListener('hidden.bs.toast', () => {
+            toast.remove();
+        });
     }
 </script>
 {% endblock %}

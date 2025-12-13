@@ -4,44 +4,46 @@
 {% block title %}Dashboard - McDonald's QA Audit System{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
+<div class="container-fluid px-0 px-md-3">
     <!-- Page Header -->
-    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
-        <div>
-            <h1 class="h3 mcd-text-red mb-2" style="font-size: 1.4rem;">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center pt-3 pb-2 mb-4 border-bottom px-3 px-md-0">
+        <div class="mb-3 mb-md-0">
+            <h1 class="h3 mcd-text-red mb-2">
                 <i class="fas fa-tachometer-alt me-2"></i>
                 Dashboard Overview
             </h1>
-            <p class="text-muted mb-0" style="font-size: 0.85rem;">Welcome back, {{ user.get_full_name|default:user.username }}! Here's your audit performance summary.</p>
+            <p class="text-muted mb-0" style="font-size: 0.85rem;">Welcome back, {{ user.get_full_name|default:user.username }}!</p>
         </div>
-        <div class="btn-toolbar mb-2 mb-md-0">
-            <a href="{% url 'core:create_audit' %}" class="btn mcd-btn-primary" style="font-size: 0.85rem;">
-                <i class="fas fa-plus-circle me-2"></i> New Audit
+        <div class="align-self-stretch align-self-md-center">
+            <a href="{% url 'core:create_audit' %}" class="btn mcd-btn-primary d-block d-md-inline-block w-100 w-md-auto">
+                <i class="fas fa-plus-circle me-2"></i>
+                <span class="d-none d-md-inline">New Audit</span>
+                <span class="d-md-none">New</span>
             </a>
         </div>
     </div>
 
     <!-- Statistics Cards -->
-    <div class="row mb-4">
-        <div class="col-xl-3 col-md-6 mb-4">
+    <div class="row g-2 mb-4 px-2 px-md-0">
+        <div class="col-6 col-md-6 col-xl-3 mb-2 mb-md-4">
             <div class="mcd-card h-100 fade-in-up" data-delay="0.1">
-                <div class="mcd-card-body">
+                <div class="mcd-card-body p-2 p-md-3">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h2 class="fw-bold text-primary mb-1" style="font-size: 2rem;">{{ total_audits }}</h2>
-                            <p class="mb-0 fw-semibold text-muted" style="font-size: 0.8rem;">Total Audits</p>
+                            <h2 class="fw-bold text-primary mb-1 fs-4 fs-md-3">{{ total_audits }}</h2>
+                            <p class="mb-0 fw-semibold text-muted small">Total Audits</p>
                         </div>
-                        <div class="bg-primary rounded-circle p-2 d-flex align-items-center justify-content-center">
-                            <i class="fas fa-clipboard-list text-white" style="font-size: 1.5rem;"></i>
+                        <div class="bg-primary rounded-circle p-1 p-md-2 d-flex align-items-center justify-content-center">
+                            <i class="fas fa-clipboard-list text-white"></i>
                         </div>
                     </div>
-                    <div class="mt-3">
+                    <div class="mt-2 mt-md-3">
                         <div class="d-flex justify-content-between align-items-center">
-                            <small class="text-muted" style="font-size: 0.75rem;">
+                            <small class="text-muted" style="font-size: 0.7rem;">
                                 <i class="fas fa-check-circle text-success me-1"></i>
                                 {{ submitted_count }} submitted
                             </small>
-                            <small class="text-muted" style="font-size: 0.75rem;">
+                            <small class="text-muted" style="font-size: 0.7rem;">
                                 <i class="fas fa-edit text-warning me-1"></i>
                                 {{ in_progress_count }} in progress
                             </small>
@@ -51,23 +53,23 @@
             </div>
         </div>
 
-        <div class="col-xl-3 col-md-6 mb-4">
+        <div class="col-6 col-md-6 col-xl-3 mb-2 mb-md-4">
             <div class="mcd-card h-100 fade-in-up" data-delay="0.2">
-                <div class="mcd-card-body">
+                <div class="mcd-card-body p-2 p-md-3">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h2 class="fw-bold text-success mb-1" style="font-size: 2rem;">{{ avg_score|floatformat:1 }}%</h2>
-                            <p class="mb-0 fw-semibold text-muted" style="font-size: 0.8rem;">Average Score</p>
+                            <h2 class="fw-bold text-success mb-1 fs-4 fs-md-3">{{ avg_score|floatformat:1 }}%</h2>
+                            <p class="mb-0 fw-semibold text-muted small">Avg Score</p>
                         </div>
-                        <div class="bg-success rounded-circle p-2 d-flex align-items-center justify-content-center">
-                            <i class="fas fa-chart-line text-white" style="font-size: 1.5rem;"></i>
+                        <div class="bg-success rounded-circle p-1 p-md-2 d-flex align-items-center justify-content-center">
+                            <i class="fas fa-chart-line text-white"></i>
                         </div>
                     </div>
-                    <div class="mt-3">
-                        <div class="mcd-progress">
+                    <div class="mt-2 mt-md-3">
+                        <div class="mcd-progress" style="height: 6px;">
                             <div class="mcd-progress-bar" style="width: {{ avg_score }}%"></div>
                         </div>
-                        <small class="text-muted d-block mt-1" style="font-size: 0.75rem;">
+                        <small class="text-muted d-block mt-1" style="font-size: 0.7rem;">
                             <i class="fas fa-trending-up me-1"></i>
                             Overall performance
                         </small>
@@ -76,25 +78,25 @@
             </div>
         </div>
 
-        <div class="col-xl-3 col-md-6 mb-4">
+        <div class="col-6 col-md-6 col-xl-3 mb-2 mb-md-4">
             <div class="mcd-card h-100 fade-in-up" data-delay="0.3">
-                <div class="mcd-card-body">
+                <div class="mcd-card-body p-2 p-md-3">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h2 class="fw-bold text-info mb-1" style="font-size: 2rem;">{{ restaurants.count }}</h2>
-                            <p class="mb-0 fw-semibold text-muted" style="font-size: 0.8rem;">Restaurants</p>
+                            <h2 class="fw-bold text-info mb-1 fs-4 fs-md-3">{{ restaurants.count }}</h2>
+                            <p class="mb-0 fw-semibold text-muted small">Restaurants</p>
                         </div>
-                        <div class="bg-info rounded-circle p-2 d-flex align-items-center justify-content-center">
-                            <i class="fas fa-store text-white" style="font-size: 1.5rem;"></i>
+                        <div class="bg-info rounded-circle p-1 p-md-2 d-flex align-items-center justify-content-center">
+                            <i class="fas fa-store text-white"></i>
                         </div>
                     </div>
-                    <div class="mt-3">
+                    <div class="mt-2 mt-md-3">
                         <div class="d-flex justify-content-between align-items-center">
-                            <small class="text-muted" style="font-size: 0.75rem;">
+                            <small class="text-muted" style="font-size: 0.7rem;">
                                 <i class="fas fa-map-marker-alt me-1"></i>
                                 {{ active_locations|default:"0" }} active
                             </small>
-                            <small class="text-muted" style="font-size: 0.75rem;">
+                            <small class="text-muted" style="font-size: 0.7rem;">
                                 <i class="fas fa-flag me-1"></i>
                                 {{ cities_count|default:"0" }} cities
                             </small>
@@ -104,25 +106,25 @@
             </div>
         </div>
 
-        <div class="col-xl-3 col-md-6 mb-4">
+        <div class="col-6 col-md-6 col-xl-3 mb-2 mb-md-4">
             <div class="mcd-card h-100 fade-in-up" data-delay="0.4">
-                <div class="mcd-card-body">
+                <div class="mcd-card-body p-2 p-md-3">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h2 class="fw-bold text-warning mb-1" style="font-size: 2rem;">{{ critical_count|default:"0" }}</h2>
-                            <p class="mb-0 fw-semibold text-muted" style="font-size: 0.8rem;">Critical Issues</p>
+                            <h2 class="fw-bold text-warning mb-1 fs-4 fs-md-3">{{ critical_count|default:"0" }}</h2>
+                            <p class="mb-0 fw-semibold text-muted small">Critical Issues</p>
                         </div>
-                        <div class="bg-warning rounded-circle p-2 d-flex align-items-center justify-content-center">
-                            <i class="fas fa-exclamation-triangle text-dark" style="font-size: 1.5rem;"></i>
+                        <div class="bg-warning rounded-circle p-1 p-md-2 d-flex align-items-center justify-content-center">
+                            <i class="fas fa-exclamation-triangle text-dark"></i>
                         </div>
                     </div>
-                    <div class="mt-3">
+                    <div class="mt-2 mt-md-3">
                         <div class="d-flex justify-content-between align-items-center">
-                            <small class="text-muted" style="font-size: 0.75rem;">
+                            <small class="text-muted" style="font-size: 0.7rem;">
                                 <i class="fas fa-clock me-1"></i>
                                 {{ overdue_count|default:"0" }} overdue
                             </small>
-                            <small class="text-muted" style="font-size: 0.75rem;">
+                            <small class="text-muted" style="font-size: 0.7rem;">
                                 <i class="fas fa-check me-1"></i>
                                 {{ resolved_count|default:"0" }} resolved
                             </small>
@@ -134,70 +136,72 @@
     </div>
 
     <!-- Corrective Actions Overview -->
-    <div class="row mb-4">
+    <div class="row mb-4 px-2 px-md-0">
         <div class="col-12">
             <div class="mcd-card fade-in-up" data-delay="0.5">
-                <div class="mcd-card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0" style="font-size: 0.95rem;">
-                        <i class="fas fa-tasks me-2"></i> Corrective Actions Overview
+                <div class="mcd-card-header d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center">
+                    <h5 class="mb-2 mb-md-0">
+                        <i class="fas fa-tasks me-2"></i>
+                        <span class="d-none d-md-inline">Corrective Actions Overview</span>
+                        <span class="d-md-none">Actions</span>
                     </h5>
-                    <a href="{% url 'core:corrective_action_dashboard' %}" class="btn btn-sm mcd-btn-outline" style="font-size: 0.8rem;">
-                        View Dashboard <i class="fas fa-arrow-right ms-1"></i>
+                    <a href="{% url 'core:corrective_action_dashboard' %}" class="btn btn-sm mcd-btn-outline align-self-start align-self-md-center">
+                        View Dashboard <i class="fas fa-arrow-right ms-1 d-none d-md-inline"></i>
                     </a>
                 </div>
-                <div class="mcd-card-body">
-                    <div class="row text-center">
-                        <div class="col-md-2 col-6 mb-3">
-                            <div class="stats-card bg-light rounded p-3">
-                                <div class="stats-number text-primary">{{ total_corrective_actions|default:"0" }}</div>
-                                <div class="stats-label">Total Actions</div>
+                <div class="mcd-card-body p-2 p-md-3">
+                    <div class="row g-2 text-center">
+                        <div class="col-4 col-md-2">
+                            <div class="stats-card bg-light rounded p-2 p-md-3">
+                                <div class="stats-number text-primary fs-5 fs-md-4">{{ total_corrective_actions|default:"0" }}</div>
+                                <div class="stats-label small">Total</div>
                             </div>
                         </div>
-                        <div class="col-md-2 col-6 mb-3">
-                            <div class="stats-card bg-light rounded p-3">
-                                <div class="stats-number text-success">{{ completed_corrective_actions|default:"0" }}</div>
-                                <div class="stats-label">Completed</div>
+                        <div class="col-4 col-md-2">
+                            <div class="stats-card bg-light rounded p-2 p-md-3">
+                                <div class="stats-number text-success fs-5 fs-md-4">{{ completed_corrective_actions|default:"0" }}</div>
+                                <div class="stats-label small">Done</div>
                             </div>
                         </div>
-                        <div class="col-md-2 col-6 mb-3">
-                            <div class="stats-card bg-light rounded p-3">
-                                <div class="stats-number text-warning">{{ pending_corrective_actions|default:"0" }}</div>
-                                <div class="stats-label">Pending</div>
+                        <div class="col-4 col-md-2">
+                            <div class="stats-card bg-light rounded p-2 p-md-3">
+                                <div class="stats-number text-warning fs-5 fs-md-4">{{ pending_corrective_actions|default:"0" }}</div>
+                                <div class="stats-label small">Pending</div>
                             </div>
                         </div>
-                        <div class="col-md-2 col-6 mb-3">
-                            <div class="stats-card bg-light rounded p-3">
-                                <div class="stats-number text-danger">{{ overdue_corrective_actions|default:"0" }}</div>
-                                <div class="stats-label">Overdue</div>
+                        <div class="col-4 col-md-2">
+                            <div class="stats-card bg-light rounded p-2 p-md-3">
+                                <div class="stats-number text-danger fs-5 fs-md-4">{{ overdue_corrective_actions|default:"0" }}</div>
+                                <div class="stats-label small">Overdue</div>
                             </div>
                         </div>
-                        <div class="col-md-2 col-6 mb-3">
-                            <div class="stats-card bg-light rounded p-3">
-                                <div class="stats-number text-danger">{{ critical_corrective_actions|default:"0" }}</div>
-                                <div class="stats-label">Critical</div>
+                        <div class="col-4 col-md-2">
+                            <div class="stats-card bg-light rounded p-2 p-md-3">
+                                <div class="stats-number text-danger fs-5 fs-md-4">{{ critical_corrective_actions|default:"0" }}</div>
+                                <div class="stats-label small">Critical</div>
                             </div>
                         </div>
-                        <div class="col-md-2 col-6 mb-3">
-                            <div class="stats-card bg-light rounded p-3">
-                                <div class="stats-number text-info">{{ corrective_completion_percentage|default:"0"|floatformat:1 }}%</div>
-                                <div class="stats-label">Completion</div>
+                        <div class="col-4 col-md-2">
+                            <div class="stats-card bg-light rounded p-2 p-md-3">
+                                <div class="stats-number text-info fs-5 fs-md-4">{{ corrective_completion_percentage|default:"0"|floatformat:1 }}%</div>
+                                <div class="stats-label small">Complete</div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Risk Level Distribution -->
-                    <div class="mt-4">
-                        <h6 class="text-muted mb-3" style="font-size: 0.85rem;">Risk Level Distribution</h6>
-                        <div class="row">
+                    <div class="mt-3 mt-md-4">
+                        <h6 class="text-muted mb-2" style="font-size: 0.85rem;">Risk Level Distribution</h6>
+                        <div class="row g-2">
                             {% for risk in corrective_risk_distribution %}
-                            <div class="col-md-3 col-6 mb-2">
+                            <div class="col-12 col-sm-6 mb-2">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <span class="risk-badge risk-badge-{{ risk.level|lower }}" style="font-size: 0.75rem;">
                                         {{ risk.display_name }}
                                     </span>
                                     <span class="fw-bold" style="font-size: 0.85rem;">{{ risk.count }}</span>
                                 </div>
-                                <div class="mcd-progress mt-1">
+                                <div class="mcd-progress mt-1" style="height: 4px;">
                                     <div class="mcd-progress-bar" style="width: {{ risk.percentage|default:0 }}%"></div>
                                 </div>
                                 <small class="text-muted" style="font-size: 0.7rem;">{{ risk.percentage|default:0|floatformat:1 }}%</small>
@@ -210,49 +214,49 @@
         </div>
     </div>
 
-    <div class="row">
+    <div class="row px-2 px-md-0">
         <!-- Quick Actions & Profile -->
         <div class="col-lg-4 mb-4">
             <!-- Quick Actions -->
             <div class="mcd-card mb-4 fade-in-up" data-delay="0.5">
                 <div class="mcd-card-header">
-                    <h5 class="mb-0" style="font-size: 0.95rem;"><i class="fas fa-bolt me-2"></i> Quick Actions</h5>
+                    <h5 class="mb-0"><i class="fas fa-bolt me-2"></i> Quick Actions</h5>
                 </div>
-                <div class="mcd-card-body">
+                <div class="mcd-card-body p-2 p-md-3">
                     <div class="d-grid gap-2">
-                        <a href="{% url 'core:create_audit' %}" class="btn mcd-btn-primary mb-2 py-2 d-flex align-items-center justify-content-center" style="font-size: 0.85rem;">
-                            <i class="fas fa-plus-circle me-3" style="font-size: 1.1rem;"></i>
+                        <a href="{% url 'core:create_audit' %}" class="btn mcd-btn-primary mb-2 py-2 d-flex align-items-center">
+                            <i class="fas fa-plus-circle me-3"></i>
                             <div class="text-start">
-                                <div class="fw-bold">Create New Audit</div>
-                                <small class="opacity-75" style="font-size: 0.75rem;">Start a new quality assessment</small>
+                                <div class="fw-bold small">New Audit</div>
+                                <small class="opacity-75" style="font-size: 0.75rem;">Start quality assessment</small>
                             </div>
                         </a>
-                        <a href="{% url 'core:action_list' %}" class="btn mcd-btn-secondary mb-2 py-2 d-flex align-items-center justify-content-center" style="font-size: 0.85rem;">
-                            <i class="fas fa-tasks me-3" style="font-size: 1.1rem;"></i>
+                        <a href="{% url 'core:action_list' %}" class="btn mcd-btn-secondary mb-2 py-2 d-flex align-items-center">
+                            <i class="fas fa-tasks me-3"></i>
                             <div class="text-start">
-                                <div class="fw-bold">Corrective Actions</div>
+                                <div class="fw-bold small">Corrective Actions</div>
                                 <small class="opacity-75" style="font-size: 0.75rem;">Manage action items</small>
                             </div>
                         </a>
-                        <a href="{% url 'core:audit_list' %}" class="btn mcd-btn-outline mb-2 py-2 d-flex align-items-center justify-content-center" style="font-size: 0.85rem;">
-                            <i class="fas fa-list me-3" style="font-size: 1.1rem;"></i>
+                        <a href="{% url 'core:audit_list' %}" class="btn mcd-btn-outline mb-2 py-2 d-flex align-items-center">
+                            <i class="fas fa-list me-3"></i>
                             <div class="text-start">
-                                <div class="fw-bold">View All Audits</div>
+                                <div class="fw-bold small">All Audits</div>
                                 <small class="opacity-75" style="font-size: 0.75rem;">Browse audit history</small>
                             </div>
                         </a>
-                        <a href="{% url 'core:restaurant_list' %}" class="btn btn-outline-primary mb-2 py-2 d-flex align-items-center justify-content-center" style="font-size: 0.85rem;">
-                            <i class="fas fa-store me-3" style="font-size: 1.1rem;"></i>
+                        <a href="{% url 'core:restaurant_list' %}" class="btn btn-outline-primary mb-2 py-2 d-flex align-items-center">
+                            <i class="fas fa-store me-3"></i>
                             <div class="text-start">
-                                <div class="fw-bold">Manage Restaurants</div>
+                                <div class="fw-bold small">Restaurants</div>
                                 <small class="opacity-75" style="font-size: 0.75rem;">View locations & performance</small>
                             </div>
                         </a>
                         {% if user.is_superuser %}
-                        <a href="/admin/" class="btn btn-outline-danger py-2 d-flex align-items-center justify-content-center" style="font-size: 0.85rem;">
-                            <i class="fas fa-shield-alt me-3" style="font-size: 1.1rem;"></i>
+                        <a href="/admin/" class="btn btn-outline-danger py-2 d-flex align-items-center">
+                            <i class="fas fa-shield-alt me-3"></i>
                             <div class="text-start">
-                                <div class="fw-bold">Admin Panel</div>
+                                <div class="fw-bold small">Admin Panel</div>
                                 <small class="opacity-75" style="font-size: 0.75rem;">System administration</small>
                             </div>
                         </a>
@@ -263,39 +267,38 @@
 
             <!-- User Profile Card -->
             <div class="mcd-card fade-in-up" data-delay="0.6">
-                <div class="mcd-card-body text-center">
+                <div class="mcd-card-body text-center p-2 p-md-3">
                     <div class="mb-3">
                         <div class="bg-warning rounded-circle mx-auto d-flex align-items-center justify-content-center pulse"
-                             style="width: 80px; height: 80px; border: 3px solid var(--mcd-red);">
-                            <i class="fas fa-user-check text-dark" style="font-size: 1.5rem;"></i>
+                             style="width: 60px; height: 60px; border: 3px solid var(--mcd-red);">
+                            <i class="fas fa-user-check text-dark"></i>
                         </div>
                     </div>
-                    <h5 class="text-danger mb-1" style="font-size: 1rem;">{{ user.get_full_name|default:user.username }}</h5>
-                    <p class="text-muted mb-2" style="font-size: 0.85rem;">{{ user.designation|default:"Quality Auditor" }}</p>
-                    <p class="text-muted small mb-3" style="font-size: 0.8rem;">{{ user.department|default:"Quality Assurance" }}</p>
+                    <h5 class="text-danger mb-1 small">{{ user.get_full_name|default:user.username|truncatechars:20 }}</h5>
+                    <p class="text-muted mb-2" style="font-size: 0.85rem;">{{ user.designation|default:"Quality Auditor"|truncatechars:25 }}</p>
 
                     <!-- User Stats -->
-                    <div class="row text-center mb-3">
+                    <div class="row text-center mb-3 g-1">
                         <div class="col-4">
                             <div class="border-end">
-                                <div class="fw-bold text-primary" style="font-size: 0.9rem;">{{ user_audit_count|default:"0" }}</div>
+                                <div class="fw-bold text-primary small">{{ user_audit_count|default:"0" }}</div>
                                 <small class="text-muted" style="font-size: 0.75rem;">My Audits</small>
                             </div>
                         </div>
                         <div class="col-4">
                             <div class="border-end">
-                                <div class="fw-bold text-success" style="font-size: 0.9rem;">{{ user_avg_score|default:"0"|floatformat:1 }}%</div>
+                                <div class="fw-bold text-success small">{{ user_avg_score|default:"0"|floatformat:1 }}%</div>
                                 <small class="text-muted" style="font-size: 0.75rem;">Avg Score</small>
                             </div>
                         </div>
                         <div class="col-4">
-                            <div class="fw-bold text-info" style="font-size: 0.9rem;">{{ user_restaurants|default:"0" }}</div>
+                            <div class="fw-bold text-info small">{{ user_restaurants|default:"0" }}</div>
                             <small class="text-muted" style="font-size: 0.75rem;">Locations</small>
                         </div>
                     </div>
 
-                    <div class="d-grid gap-2">
-                        <a href="{% url 'accounts:profile' %}" class="btn btn-outline-danger btn-sm" style="font-size: 0.8rem;">
+                    <div class="d-grid">
+                        <a href="{% url 'accounts:profile' %}" class="btn btn-outline-danger btn-sm">
                             <i class="fas fa-user-edit me-2"></i> Edit Profile
                         </a>
                     </div>
@@ -307,18 +310,21 @@
         <div class="col-lg-8">
             <!-- Recent Audits -->
             <div class="mcd-card mb-4 fade-in-up" data-delay="0.5">
-                <div class="mcd-card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0" style="font-size: 0.95rem;">
-                        <i class="fas fa-history me-2"></i> Recent Audits
+                <div class="mcd-card-header d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center">
+                    <h5 class="mb-2 mb-md-0">
+                        <i class="fas fa-history me-2"></i>
+                        <span class="d-none d-md-inline">Recent Audits</span>
+                        <span class="d-md-none">Recent</span>
                         <small class="text-muted ms-2" style="font-size: 0.8rem;">(Last 30 days)</small>
                     </h5>
-                    <a href="{% url 'core:audit_list' %}" class="btn btn-sm mcd-btn-outline" style="font-size: 0.8rem;">
-                        View All <i class="fas fa-arrow-right ms-1"></i>
+                    <a href="{% url 'core:audit_list' %}" class="btn btn-sm mcd-btn-outline align-self-start align-self-md-center">
+                        View All <i class="fas fa-arrow-right ms-1 d-none d-md-inline"></i>
                     </a>
                 </div>
-                <div class="mcd-card-body">
+                <div class="mcd-card-body p-0 p-md-3">
                     {% if recent_audits %}
-                    <div class="table-responsive">
+                    <!-- Desktop Table View -->
+                    <div class="d-none d-md-block table-responsive">
                         <table class="table table-hover mcd-table mb-0">
                             <thead>
                                 <tr>
@@ -340,19 +346,15 @@
                                                 <i class="fas fa-store text-danger" style="font-size: 0.9rem;"></i>
                                             </div>
                                             <div>
-                                                <strong class="d-block text-dark" style="font-size: 0.85rem;">{{ audit.restaurant.name }}</strong>
+                                                <strong class="d-block text-dark" style="font-size: 0.85rem;">{{ audit.restaurant.name|truncatechars:20 }}</strong>
                                                 <small class="text-muted" style="font-size: 0.75rem;">
-                                                    {{ audit.auditor_name.get_full_name|default:audit.auditor_name.username }}
+                                                    {{ audit.auditor_name.get_full_name|default:audit.auditor_name.username|truncatechars:15 }}
                                                 </small>
                                             </div>
                                         </div>
                                     </td>
                                     <td>
-                                        <strong class="text-dark" style="font-size: 0.85rem;">{{ audit.audit_date|date:"M d, Y" }}</strong>
-                                        {% if audit.created_at %}
-                                        <br>
-                                        <small class="text-muted" style="font-size: 0.75rem;">Created: {{ audit.created_at|date:"M d, Y" }}</small>
-                                        {% endif %}
+                                        <strong class="text-dark" style="font-size: 0.85rem;">{{ audit.audit_date|date:"M d" }}</strong>
                                     </td>
                                     <td>
                                         <span class="mcd-badge d-inline-flex align-items-center" style="font-size: 0.75rem; white-space: nowrap;
@@ -371,39 +373,32 @@
                                             {% else %}mcd-badge-danger{% endif %}">
                                             {{ audit.grade }}
                                         </span>
-                                        {% if audit.has_critical_failure %}
-                                        <br><small class="text-danger" style="font-size: 0.7rem;"><i class="fas fa-exclamation-triangle"></i> Critical</small>
-                                        {% endif %}
                                     </td>
                                     <td>
                                         {% if audit.is_submitted %}
                                         <span class="mcd-badge mcd-badge-success d-inline-flex align-items-center"
                                               style="font-size: 0.7rem; padding: 4px 8px; white-space: nowrap;">
-                                            <i class="fas fa-check me-1" style="font-size: 0.65rem;"></i>Submitted
+                                            Submitted
                                         </span>
                                         {% else %}
                                         <span class="mcd-badge mcd-badge-warning d-inline-flex align-items-center"
                                               style="font-size: 0.7rem; padding: 4px 8px; white-space: nowrap;">
-                                            <i class="fas fa-edit me-1" style="font-size: 0.65rem;"></i>In Progress
+                                            In Progress
                                         </span>
                                         {% endif %}
                                     </td>
                                     <td>
-                                        <div class="btn-group btn-group-sm">
-                                            <a href="{% url 'core:audit_results' audit.id %}" class="btn btn-outline-primary"
-                                               data-bs-toggle="tooltip" title="View Results" style="font-size: 0.75rem;">
+                                        <div class="d-flex gap-1">
+                                            <a href="{% url 'core:audit_results' audit.id %}" class="btn btn-sm btn-outline-primary"
+                                               data-bs-toggle="tooltip" title="View Results">
                                                 <i class="fas fa-eye"></i>
                                             </a>
                                             {% if not audit.is_submitted %}
-                                            <a href="{% url 'core:audit_form' audit.id %}" class="btn btn-outline-success"
-                                               data-bs-toggle="tooltip" title="Continue Audit" style="font-size: 0.75rem;">
+                                            <a href="{% url 'core:audit_form' audit.id %}" class="btn btn-sm btn-outline-success"
+                                               data-bs-toggle="tooltip" title="Continue Audit">
                                                 <i class="fas fa-edit"></i>
                                             </a>
                                             {% endif %}
-                                            <a href="{% url 'core:audit_detail' audit.id %}" class="btn btn-outline-info"
-                                               data-bs-toggle="tooltip" title="View Details" style="font-size: 0.75rem;">
-                                                <i class="fas fa-info-circle"></i>
-                                            </a>
                                         </div>
                                     </td>
                                 </tr>
@@ -411,12 +406,68 @@
                             </tbody>
                         </table>
                     </div>
+
+                    <!-- Mobile Card View -->
+                    <div class="d-md-none">
+                        {% for audit in recent_audits %}
+                        <div class="mcd-card mx-2 my-2">
+                            <div class="mcd-card-body p-2">
+                                <!-- Header -->
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <h6 class="mb-1 text-danger">{{ audit.restaurant.name|truncatechars:25 }}</h6>
+                                        <small class="text-muted">{{ audit.audit_date|date:"M d, Y" }}</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="mcd-badge {% if audit.is_submitted %}mcd-badge-success{% else %}mcd-badge-warning{% endif %}">
+                                            {% if audit.is_submitted %}Done{% else %}Draft{% endif %}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Scores -->
+                                <div class="row mb-2">
+                                    <div class="col-6">
+                                        <small class="text-muted d-block">Score:</small>
+                                        <span class="mcd-badge {% if audit.total_percentage >= 90 %}mcd-badge-success{% elif audit.total_percentage >= 80 %}mcd-badge-warning{% else %}mcd-badge-danger{% endif %}">
+                                            {{ audit.total_percentage|floatformat:1 }}%
+                                        </span>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted d-block">Grade:</small>
+                                        <span class="mcd-badge {% if audit.grade == 'A' %}mcd-badge-success{% elif audit.grade == 'B' %}mcd-badge-primary{% elif audit.grade == 'C' %}mcd-badge-warning{% else %}mcd-badge-danger{% endif %}">
+                                            {{ audit.grade }}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Auditor -->
+                                <div class="mb-2">
+                                    <small class="text-muted">Auditor:</small>
+                                    <p class="mb-0 small">{{ audit.auditor_name.get_full_name|default:audit.auditor_name.username }}</p>
+                                </div>
+
+                                <!-- Actions -->
+                                <div class="d-flex gap-2">
+                                    <a href="{% url 'core:audit_results' audit.id %}" class="btn mcd-btn-outline flex-grow-1 flex-md-grow-0">
+                                        <i class="fas fa-eye me-1"></i> View
+                                    </a>
+                                    {% if not audit.is_submitted %}
+                                    <a href="{% url 'core:audit_form' audit.id %}" class="btn btn-outline-success flex-grow-1">
+                                        <i class="fas fa-edit me-1"></i> Edit
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
                     {% else %}
-                    <div class="table-empty-state">
-                        <i class="fas fa-clipboard-list text-muted"></i>
-                        <h5>No Recent Audits</h5>
-                        <p>Start by creating your first quality audit</p>
-                        <a href="{% url 'core:create_audit' %}" class="btn mcd-btn-primary" style="font-size: 0.85rem;">
+                    <div class="text-center py-4 px-3">
+                        <i class="fas fa-clipboard-list text-muted mb-3" style="font-size: 2.5rem;"></i>
+                        <h5 class="text-muted">No Recent Audits</h5>
+                        <p class="text-muted" style="font-size: 0.85rem;">Start by creating your first quality audit</p>
+                        <a href="{% url 'core:create_audit' %}" class="btn mcd-btn-primary">
                             <i class="fas fa-plus-circle me-2"></i> Create First Audit
                         </a>
                     </div>
@@ -426,17 +477,20 @@
 
             <!-- Recent Corrective Actions -->
             <div class="mcd-card mb-4 fade-in-up" data-delay="0.6">
-                <div class="mcd-card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0" style="font-size: 0.95rem;">
-                        <i class="fas fa-tasks me-2"></i> Recent Corrective Actions
+                <div class="mcd-card-header d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center">
+                    <h5 class="mb-2 mb-md-0">
+                        <i class="fas fa-tasks me-2"></i>
+                        <span class="d-none d-md-inline">Recent Corrective Actions</span>
+                        <span class="d-md-none">Actions</span>
                     </h5>
-                    <a href="{% url 'core:action_list' %}" class="btn btn-sm mcd-btn-outline" style="font-size: 0.8rem;">
-                        View All <i class="fas fa-arrow-right ms-1"></i>
+                    <a href="{% url 'core:action_list' %}" class="btn btn-sm mcd-btn-outline align-self-start align-self-md-center">
+                        View All <i class="fas fa-arrow-right ms-1 d-none d-md-inline"></i>
                     </a>
                 </div>
-                <div class="mcd-card-body">
+                <div class="mcd-card-body p-0 p-md-3">
                     {% if recent_corrective_actions %}
-                    <div class="table-responsive">
+                    <!-- Desktop Table View -->
+                    <div class="d-none d-md-block table-responsive">
                         <table class="table table-hover mcd-table mb-0">
                             <thead>
                                 <tr>
@@ -458,7 +512,7 @@
                                                 <i class="fas fa-store text-danger" style="font-size: 0.9rem;"></i>
                                             </div>
                                             <div>
-                                                <strong class="d-block text-dark" style="font-size: 0.85rem;">{{ action.audit.restaurant.name }}</strong>
+                                                <strong class="d-block text-dark" style="font-size: 0.85rem;">{{ action.audit.restaurant.name|truncatechars:20 }}</strong>
                                                 <small class="text-muted" style="font-size: 0.75rem;">{{ action.audit.audit_date|date:"M d, Y" }}</small>
                                             </div>
                                         </div>
@@ -468,7 +522,7 @@
                                     </td>
                                     <td>
                                         <span class="risk-badge risk-badge-{{ action.risk_level|lower }}" style="font-size: 0.75rem;">
-                                            {{ action.get_risk_level_display }}
+                                            {{ action.get_risk_level_display|truncatechars:10 }}
                                         </span>
                                     </td>
                                     <td>
@@ -481,29 +535,21 @@
                                         {% if action.completed %}
                                         <span class="mcd-badge mcd-badge-success d-inline-flex align-items-center"
                                               style="font-size: 0.7rem; padding: 4px 8px; white-space: nowrap;">
-                                            <i class="fas fa-check me-1" style="font-size: 0.65rem;"></i>Completed
+                                            Completed
                                         </span>
                                         {% else %}
                                         <span class="mcd-badge mcd-badge-warning d-inline-flex align-items-center"
                                               style="font-size: 0.7rem; padding: 4px 8px; white-space: nowrap;">
-                                            <i class="fas fa-clock me-1" style="font-size: 0.65rem;"></i>Pending
+                                            Pending
                                         </span>
                                         {% endif %}
                                     </td>
                                     <td>
-                                        <div class="btn-group btn-group-sm">
-                                            <a href="{% url 'core:corrective_action_detail' action.id %}" class="btn btn-outline-primary"
-                                               data-bs-toggle="tooltip" title="View Details" style="font-size: 0.75rem;">
+                                        <div class="d-flex gap-1">
+                                            <a href="{% url 'core:corrective_action_detail' action.id %}" class="btn btn-sm btn-outline-primary"
+                                               data-bs-toggle="tooltip" title="View Details">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            {% if not action.completed %}
-                                            <button class="btn btn-outline-success completion-toggle"
-                                                    data-action-id="{{ action.id }}"
-                                                    data-completed="{{ action.completed|yesno:'true,false' }}"
-                                                    data-bs-toggle="tooltip" title="Mark Complete" style="font-size: 0.75rem;">
-                                                <i class="fas fa-check"></i>
-                                            </button>
-                                            {% endif %}
                                         </div>
                                     </td>
                                 </tr>
@@ -511,12 +557,65 @@
                             </tbody>
                         </table>
                     </div>
+
+                    <!-- Mobile Card View -->
+                    <div class="d-md-none">
+                        {% for action in recent_corrective_actions %}
+                        <div class="mcd-card mx-2 my-2">
+                            <div class="mcd-card-body p-2">
+                                <!-- Header -->
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <h6 class="mb-1 text-danger">{{ action.audit.restaurant.name|truncatechars:25 }}</h6>
+                                        <small class="text-muted">{{ action.audit.audit_date|date:"M d, Y" }}</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="risk-badge risk-badge-{{ action.risk_level|lower }}">
+                                            {{ action.get_risk_level_display|slice:":1" }}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Description -->
+                                <div class="mb-2">
+                                    <small class="text-muted">Description:</small>
+                                    <p class="mb-0 small">{{ action.description|truncatechars:80 }}</p>
+                                </div>
+
+                                <!-- Status and Due Date -->
+                                <div class="row mb-2">
+                                    <div class="col-6">
+                                        <small class="text-muted d-block">Status:</small>
+                                        {% if action.completed %}
+                                        <span class="badge bg-success">Done</span>
+                                        {% else %}
+                                        <span class="badge bg-warning">Pending</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted d-block">Due:</small>
+                                        <span class="{% if action.deadline < today %}text-danger{% elif action.deadline <= today|add:7 %}text-warning{% else %}text-success{% endif %}">
+                                            {{ action.deadline|date:"M d, Y" }}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Actions -->
+                                <div class="d-flex gap-2">
+                                    <a href="{% url 'core:corrective_action_detail' action.id %}" class="btn mcd-btn-outline flex-grow-1 flex-md-grow-0">
+                                        <i class="fas fa-eye me-1"></i> View
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
                     {% else %}
-                    <div class="table-empty-state">
-                        <i class="fas fa-tasks text-muted"></i>
-                        <h5>No Corrective Actions</h5>
-                        <p>All action items are completed</p>
-                        <a href="{% url 'core:audit_list' %}" class="btn mcd-btn-primary" style="font-size: 0.85rem;">
+                    <div class="text-center py-4 px-3">
+                        <i class="fas fa-tasks text-muted mb-3" style="font-size: 2.5rem;"></i>
+                        <h5 class="text-muted">No Corrective Actions</h5>
+                        <p class="text-muted" style="font-size: 0.85rem;">All action items are completed</p>
+                        <a href="{% url 'core:audit_list' %}" class="btn mcd-btn-primary">
                             <i class="fas fa-clipboard-list me-2"></i> View Audits
                         </a>
                     </div>
@@ -525,51 +624,39 @@
             </div>
 
             <!-- Performance Overview -->
-            <div class="row">
-                <!-- Grade Distribution -->
-                <div class="col-md-6 mb-4">
+            <div class="row g-2">
+                <!-- Grade Distribution with Chart.js -->
+                <div class="col-12 col-md-6 mb-2 mb-md-4">
                     <div class="mcd-card h-100 fade-in-up" data-delay="0.7">
                         <div class="mcd-card-header">
-                            <h5 class="mb-0" style="font-size: 0.95rem;"><i class="fas fa-chart-pie me-2"></i> Grade Distribution</h5>
+                            <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i> Grade Distribution</h5>
                         </div>
-                        <div class="mcd-card-body">
+                        <div class="mcd-card-body p-2 p-md-3">
                             {% if grade_distribution %}
                             <div class="text-center">
-                                <div class="mb-4" style="height: 160px;">
-                                    <!-- Simple CSS-based chart -->
-                                    <div class="d-flex align-items-center justify-content-center h-100">
-                                        <div class="position-relative" style="width: 140px; height: 140px;">
-                                            {% for grade in grade_distribution %}
-                                            <div class="position-absolute top-50 start-50 translate-middle grade-chart"
-                                                 data-grade="{{ grade.grade }}"
-                                                 data-percentage="{{ grade.percentage }}"
-                                                 style="width: {{ grade.percentage }}%; height: {{ grade.percentage }}%;
-                                                        border-radius: 50%;">
-                                            </div>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
+                                <!-- Chart Container -->
+                                <div class="mb-3 mb-md-4" style="height: 180px;">
+                                    <canvas id="gradeChart"></canvas>
                                 </div>
-                                <div class="row">
+
+                                <!-- Legends -->
+                                <div class="row g-2 justify-content-center">
                                     {% for grade in grade_distribution %}
-                                    <div class="col-3 text-center">
-                                        <div class="mcd-badge mb-1" style="font-size: 0.75rem;
-                                            {% if grade.grade == 'A' %}mcd-badge-success
-                                            {% elif grade.grade == 'B' %}mcd-badge-primary
-                                            {% elif grade.grade == 'C' %}mcd-badge-warning
-                                            {% else %}mcd-badge-danger{% endif %}">
-                                            {{ grade.grade }}
+                                    <div class="col-3 col-md-3 text-center">
+                                        <div class="d-flex flex-column align-items-center">
+                                            <!-- Grade Badge -->
+                                            <div class="mcd-badge mb-1 small grade-badge grade-badge-{{ grade.grade|lower }}">{{ grade.grade }}</div>
+                                            <div class="fw-bold small">{{ grade.count }}</div>
+                                            <small class="text-muted" style="font-size: 0.65rem;">{{ grade.percentage|floatformat:0 }}%</small>
                                         </div>
-                                        <div class="fw-bold" style="font-size: 0.85rem;">{{ grade.count }}</div>
-                                        <small class="text-muted" style="font-size: 0.75rem;">{{ grade.percentage|floatformat:1 }}%</small>
                                     </div>
                                     {% endfor %}
                                 </div>
                             </div>
                             {% else %}
                             <div class="text-center py-4">
-                                <i class="fas fa-chart-pie text-muted mb-3" style="font-size: 2.5rem;"></i>
-                                <p class="text-muted" style="font-size: 0.85rem;">No grade data available</p>
+                                <i class="fas fa-chart-pie text-muted mb-3"></i>
+                                <p class="text-muted small">No grade data available</p>
                             </div>
                             {% endif %}
                         </div>
@@ -577,38 +664,38 @@
                 </div>
 
                 <!-- Quick Reports -->
-                <div class="col-md-6 mb-4">
+                <div class="col-md-6 mb-2 mb-md-4">
                     <div class="mcd-card h-100 fade-in-up" data-delay="0.8">
                         <div class="mcd-card-header">
-                            <h5 class="mb-0" style="font-size: 0.95rem;"><i class="fas fa-chart-bar me-2"></i> Quick Reports</h5>
+                            <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i> Reports</h5>
                         </div>
-                        <div class="mcd-card-body">
+                        <div class="mcd-card-body p-2 p-md-3">
                             <div class="d-grid gap-2">
-                                <a href="{% url 'core:restaurant_performance_report' %}" class="btn btn-outline-primary text-start p-2" style="font-size: 0.85rem;">
+                                <a href="{% url 'core:restaurant_performance_report' %}" class="btn btn-outline-primary text-start p-2">
                                     <div class="d-flex align-items-center">
-                                        <i class="fas fa-store me-3 text-primary" style="font-size: 1.5rem;"></i>
+                                        <i class="fas fa-store me-3 text-primary"></i>
                                         <div>
-                                            <div class="fw-bold">Restaurant Performance</div>
+                                            <div class="fw-bold small">Restaurant Performance</div>
                                             <small class="text-muted" style="font-size: 0.75rem;">Compare location scores</small>
                                         </div>
                                     </div>
                                 </a>
 
-                                <a href="{% url 'core:reports_overview' %}" class="btn btn-outline-success text-start p-2" style="font-size: 0.85rem;">
+                                <a href="{% url 'core:reports_overview' %}" class="btn btn-outline-success text-start p-2">
                                     <div class="d-flex align-items-center">
-                                        <i class="fas fa-chart-line me-3 text-success" style="font-size: 1.5rem;"></i>
+                                        <i class="fas fa-chart-line me-3 text-success"></i>
                                         <div>
-                                            <div class="fw-bold">Analytics Overview</div>
+                                            <div class="fw-bold small">Analytics Overview</div>
                                             <small class="text-muted" style="font-size: 0.75rem;">Detailed performance insights</small>
                                         </div>
                                     </div>
                                 </a>
 
-                                <a href="{% url 'core:corrective_action_dashboard' %}" class="btn btn-outline-warning text-start p-2" style="font-size: 0.85rem;">
+                                <a href="{% url 'core:corrective_action_dashboard' %}" class="btn btn-outline-warning text-start p-2">
                                     <div class="d-flex align-items-center">
-                                        <i class="fas fa-tachometer-alt me-3 text-warning" style="font-size: 1.5rem;"></i>
+                                        <i class="fas fa-tachometer-alt me-3 text-warning"></i>
                                         <div>
-                                            <div class="fw-bold">Corrective Actions</div>
+                                            <div class="fw-bold small">Corrective Actions</div>
                                             <small class="text-muted" style="font-size: 0.75rem;">Dashboard & analytics</small>
                                         </div>
                                     </div>
@@ -626,11 +713,13 @@
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Initialize tooltips
-        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-        const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl);
-        });
+        // Initialize tooltips only for desktop
+        if (window.innerWidth >= 768) {
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        }
 
         // Handle fade-in animations
         const fadeElements = document.querySelectorAll('.fade-in-up');
@@ -654,28 +743,309 @@
             });
         });
 
-        // Initialize grade chart colors
-        const gradeElements = document.querySelectorAll('.grade-chart');
-        gradeElements.forEach(element => {
-            const grade = element.getAttribute('data-grade');
-            let color;
-            switch(grade) {
-                case 'A': color = '#28a745'; break;
-                case 'B': color = '#007bff'; break;
-                case 'C': color = '#ffc107'; break;
-                default: color = '#dc3545';
-            }
-            element.style.background = color;
-            element.style.opacity = '0.7';
+        // Initialize grade chart
+        function initializeGradeChart() {
+            const canvas = document.getElementById('gradeChart');
+            if (!canvas) return;
 
-            // Add animation delay based on index
-            const index = Array.from(gradeElements).indexOf(element);
-            element.style.animationDelay = `${index * 0.2}s`;
-        });
+            const ctx = canvas.getContext('2d');
 
-        // Initialize corrective action functionality
-        initCorrectiveActions();
-        initDueDateCalculations();
+            // Get grade data from Django template
+            const gradeData = [
+                {% for grade in grade_distribution %}
+                {
+                    grade: '{{ grade.grade }}',
+                    percentage: Math.round({{ grade.percentage }}),
+                    count: {{ grade.count }},
+                    color:
+                        '{{ grade.grade }}' === 'A' ? '#28a745' :  // Green
+                        '{{ grade.grade }}' === 'B' ? '#007bff' : // Blue
+                        '{{ grade.grade }}' === 'C' ? '#ffc107' : // Yellow
+                        '#dc3545'  // Red for D/F
+                },
+                {% endfor %}
+            ];
+
+            // Prepare chart data
+            const labels = gradeData.map(item => `Grade ${item.grade}`);
+            const data = gradeData.map(item => item.percentage);
+            const backgroundColors = gradeData.map(item => item.color);
+
+            // Create donut chart
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: backgroundColors,
+                        borderColor: '#ffffff',
+                        borderWidth: 2,
+                        hoverBorderWidth: 3,
+                        hoverOffset: 15
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '65%',
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const item = gradeData[context.dataIndex];
+                                    return `${item.count} audits (${context.parsed}%)`;
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        animateScale: true,
+                        animateRotate: true,
+                        duration: 1000
+                    }
+                }
+            });
+
+            // Apply colors to legends
+            gradeData.forEach(item => {
+                const dots = document.querySelectorAll(`.grade-dot-${item.grade.toLowerCase()}`);
+                const badges = document.querySelectorAll(`.grade-badge-${item.grade.toLowerCase()}`);
+
+                badges.forEach(badge => {
+                    badge.style.backgroundColor = item.color;
+                    badge.style.color = item.grade === 'C' ? '#212529' : '#ffffff';
+                    badge.style.border = 'none';
+                    badge.style.minWidth = '32px';
+                });
+            });
+        }
+
+        // Initialize chart when DOM is loaded
+        setTimeout(initializeGradeChart, 300);
+
+        // Calculate due date statuses
+        function calculateDueDates() {
+            document.querySelectorAll('.due-date').forEach(element => {
+                const dueDate = new Date(element.getAttribute('data-due-date'));
+                const today = new Date();
+                const diffTime = dueDate - today;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                if (diffDays < 0) {
+                    element.classList.add('text-danger');
+                } else if (diffDays <= 7) {
+                    element.classList.add('text-warning');
+                } else {
+                    element.classList.add('text-success');
+                }
+            });
+        }
+
+        calculateDueDates();
     });
 </script>
+
+<style>
+/* Grade Chart Styles */
+.grade-chart-container {
+    position: relative;
+    width: 100%;
+    height: 180px;
+}
+
+.color-dot {
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-bottom: 5px;
+}
+
+/* Grade Colors (same for chart and legends) */
+.grade-dot-a, .grade-badge-a {
+    background-color: #28a745 !important; /* Green for A */
+}
+
+.grade-dot-b, .grade-badge-b {
+    background-color: #007bff !important; /* Blue for B */
+}
+
+.grade-dot-c, .grade-badge-c {
+    background-color: #ffc107 !important; /* Yellow for C */
+}
+
+.grade-dot-d, .grade-dot-f, .grade-badge-d, .grade-badge-f {
+    background-color: #dc3545 !important; /* Red for D/F */
+}
+
+.grade-badge {
+    color: white !important;
+    min-width: 32px;
+    border: none !important;
+}
+
+.grade-badge-c {
+    color: #212529 !important; /* Dark text for yellow background */
+}
+
+/* Mobile-specific styles */
+@media (max-width: 767.98px) {
+    .container-fluid {
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    .mcd-card {
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    .mcd-card-header {
+        border-radius: 0;
+    }
+
+    .btn {
+        min-height: 44px;
+        padding: 0.5rem 0.75rem;
+    }
+
+    .mcd-badge, .badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+
+    .risk-badge {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.4rem;
+    }
+
+    /* Statistics card adjustments */
+    .mcd-card-body {
+        padding: 1rem !important;
+    }
+
+    .stats-card {
+        padding: 0.75rem !important;
+    }
+
+    .stats-number {
+        font-size: 1.2rem !important;
+    }
+
+    /* Chart adjustments for mobile */
+    #gradeChart {
+        height: 150px !important;
+    }
+
+    .color-dot {
+        width: 12px !important;
+        height: 12px !important;
+    }
+
+    /* Ensure text doesn't overflow */
+    .text-truncate {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}
+
+/* Card hover effects for desktop */
+@media (min-width: 768px) {
+    .mcd-card {
+        transition: transform var(--trans-mid), box-shadow var(--trans-mid);
+    }
+
+    .mcd-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-medium);
+    }
+}
+
+/* Fade-in animation */
+.fade-in-up {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+/* Risk badge styles */
+.risk-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.risk-badge-critical {
+    background-color: #dc3545;
+    color: white;
+}
+
+.risk-badge-high {
+    background-color: #fd7e14;
+    color: white;
+}
+
+.risk-badge-medium {
+    background-color: #ffc107;
+    color: black;
+}
+
+.risk-badge-low {
+    background-color: #28a745;
+    color: white;
+}
+
+/* Pulse animation for user profile */
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.pulse {
+    animation: pulse 2s infinite;
+}
+
+/* Responsive grid adjustments */
+@media (max-width: 767.98px) {
+    .row {
+        margin-left: -0.5rem;
+        margin-right: -0.5rem;
+    }
+
+    .col-6, .col-4, .col-12 {
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+}
+
+/* Print styles */
+@media print {
+    .btn, .badge, .mcd-badge {
+        border: 1px solid #000 !important;
+        background-color: #fff !important;
+        color: #000 !important;
+    }
+
+    .mcd-card {
+        break-inside: avoid;
+        border: 1px solid #ddd !important;
+    }
+}
+</style>
 {% endblock %}

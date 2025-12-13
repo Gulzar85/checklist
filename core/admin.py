@@ -70,7 +70,7 @@ class AuditAdmin(admin.ModelAdmin, ExportCsvMixin):
     date_hierarchy = 'audit_date'
     readonly_fields = (
         'total_scored', 'total_possible', 'total_percentage',
-        'grade', 'has_critical_failure', 'submitted_at',
+        'grade', 'submitted_at',
         'previous_audit_date', 'previous_audit_score', 'previous_auditor',
         'created_at', 'updated_at'
     )
@@ -119,7 +119,7 @@ class SectionAdmin(admin.ModelAdmin):
     inlines = []
 
     def question_count(self, obj):
-        return obj.question_set.count()
+        return obj.questions.count()
 
     question_count.short_description = 'Questions'
 

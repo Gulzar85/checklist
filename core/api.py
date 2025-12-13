@@ -66,7 +66,7 @@ class AuditViewSet(viewsets.ModelViewSet):
 
 
 class SectionViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Section.objects.prefetch_related('question_set').all()
+    queryset = Section.objects.prefetch_related('questions').all()
     serializer_class = SectionSerializer
     permission_classes = [permissions.IsAuthenticated]
 

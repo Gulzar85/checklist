@@ -4,110 +4,129 @@
 {% block title %}Restaurants - McDonald's QA Audit System{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
+<div class="container-fluid px-0 px-md-3">
     <!-- Page Header -->
-    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
-        <div>
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center pt-3 pb-2 mb-4 border-bottom px-3 px-md-0">
+        <div class="mb-3 mb-md-0">
             <h1 class="h2 mcd-text-red mb-1">
                 <i class="fas fa-store me-2"></i>
-                McDonald's Restaurants - Pakistan
+                McDonald's Restaurants
             </h1>
-            <p class="text-muted mb-0">Manage and view all restaurant locations and their audit history</p>
+            <p class="text-muted mb-0 d-none d-md-block">Manage and view all restaurant locations and their audit history</p>
+            <div class="d-md-none mt-2">
+                <div class="d-flex flex-wrap gap-1">
+                    <span class="badge bg-primary">
+                        <i class="fas fa-map-marker-alt me-1"></i> {{ total_restaurants }}
+                    </span>
+                    <span class="badge bg-success">
+                        <i class="fas fa-clipboard-check me-1"></i> {{ total_audits }}
+                    </span>
+                </div>
+            </div>
         </div>
-        <div class="btn-toolbar mb-2 mb-md-0">
-            <span class="mcd-badge mcd-badge-primary me-2 p-2">
+        <div class="d-flex flex-wrap gap-2 align-self-stretch align-self-md-center">
+            <span class="mcd-badge mcd-badge-primary d-none d-md-flex me-2 p-2">
                 <i class="fas fa-map-marker-alt me-1"></i> {{ total_restaurants }} Locations
             </span>
-            <span class="mcd-badge bg-success me-2 p-2">
+            <span class="mcd-badge bg-success d-none d-md-flex me-2 p-2">
                 <i class="fas fa-clipboard-check me-1"></i> {{ total_audits }} Audits
             </span>
         </div>
     </div>
 
     <!-- McDonald's Location Banner -->
-    <div class="mcd-alert mcd-alert-info mb-4">
-        <div class="d-flex align-items-center">
-            <i class="fas fa-info-circle fa-2x me-3 text-info"></i>
+    <div class="mcd-alert mcd-alert-info mb-4 mx-2 mx-md-0">
+        <div class="d-flex align-items-start">
+            <i class="fas fa-info-circle fa-lg me-2 me-md-3 text-info flex-shrink-0"></i>
             <div>
-                <strong>Quality Assurance Coverage:</strong> All McDonald's locations across Pakistan are subject to regular quality audits to maintain our brand standards and ensure customer satisfaction.
-                <br><small class="text-muted">Overall Average Score: <strong>{{ overall_avg_score|floatformat:1 }}%</strong> | Critical Issues: <strong>{{ critical_audits_count }}</strong></small>
+                <strong>Quality Assurance Coverage:</strong> All McDonald's locations across Pakistan are subject to regular quality audits.
+                <div class="mt-1 d-flex flex-wrap gap-2 align-items-center">
+                    <small class="text-muted">
+                        <i class="fas fa-chart-line me-1"></i>Overall: <strong>{{ overall_avg_score|floatformat:1 }}%</strong>
+                    </small>
+                    <small class="text-muted">
+                        <i class="fas fa-exclamation-triangle me-1"></i>Critical: <strong>{{ critical_audits_count }}</strong>
+                    </small>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Quick Statistics -->
-    <div class="row mb-4">
-        <div class="col-xl-2 col-md-4 col-6 mb-3">
+    <div class="row g-2 mb-4 px-2 px-md-0">
+        <div class="col-6 col-md-4 col-xl-2">
             <div class="mcd-card text-center h-100">
-                <div class="mcd-card-body">
-                    <h3 class="text-primary fw-bold">{{ total_restaurants }}</h3>
-                    <p class="mb-0 small text-muted">Total Locations</p>
+                <div class="mcd-card-body p-2 p-md-3">
+                    <h3 class="text-primary fw-bold fs-4 fs-md-3">{{ total_restaurants }}</h3>
+                    <p class="mb-0 small text-muted">Locations</p>
                 </div>
             </div>
         </div>
-        <div class="col-xl-2 col-md-4 col-6 mb-3">
+        <div class="col-6 col-md-4 col-xl-2">
             <div class="mcd-card text-center h-100">
-                <div class="mcd-card-body">
-                    <h3 class="text-success fw-bold">{{ total_audits }}</h3>
-                    <p class="mb-0 small text-muted">Total Audits</p>
+                <div class="mcd-card-body p-2 p-md-3">
+                    <h3 class="text-success fw-bold fs-4 fs-md-3">{{ total_audits }}</h3>
+                    <p class="mb-0 small text-muted">Audits</p>
                 </div>
             </div>
         </div>
-        <div class="col-xl-2 col-md-4 col-6 mb-3">
+        <div class="col-6 col-md-4 col-xl-2">
             <div class="mcd-card text-center h-100">
-                <div class="mcd-card-body">
-                    <h3 class="text-info fw-bold">{{ restaurants_with_audits|default:0 }}</h3>
-                    <p class="mb-0 small text-muted">With Audits</p>
+                <div class="mcd-card-body p-2 p-md-3">
+                    <h3 class="text-info fw-bold fs-4 fs-md-3">{{ restaurants_with_audits|default:0 }}</h3>
+                    <p class="mb-0 small text-muted">Audited</p>
                 </div>
             </div>
         </div>
-        <div class="col-xl-2 col-md-4 col-6 mb-3">
+        <div class="col-6 col-md-4 col-xl-2">
             <div class="mcd-card text-center h-100">
-                <div class="mcd-card-body">
-                    <h3 class="text-warning fw-bold">{{ restaurants_without_audits|default:0 }}</h3>
-                    <p class="mb-0 small text-muted">Needs First Audit</p>
+                <div class="mcd-card-body p-2 p-md-3">
+                    <h3 class="text-warning fw-bold fs-4 fs-md-3">{{ restaurants_without_audits|default:0 }}</h3>
+                    <p class="mb-0 small text-muted">Needs Audit</p>
                 </div>
             </div>
         </div>
-        <div class="col-xl-2 col-md-4 col-6 mb-3">
+        <div class="col-6 col-md-4 col-xl-2">
             <div class="mcd-card text-center h-100">
-                <div class="mcd-card-body">
-                    <h3 class="text-danger fw-bold">{{ critical_audits_count }}</h3>
-                    <p class="mb-0 small text-muted">Critical Issues</p>
+                <div class="mcd-card-body p-2 p-md-3">
+                    <h3 class="text-danger fw-bold fs-4 fs-md-3">{{ critical_audits_count }}</h3>
+                    <p class="mb-0 small text-muted">Critical</p>
                 </div>
             </div>
         </div>
-        <div class="col-xl-2 col-md-4 col-6 mb-3">
+        <div class="col-6 col-md-4 col-xl-2">
             <div class="mcd-card text-center h-100">
-                <div class="mcd-card-body">
-                    <h3 class="text-success fw-bold">{{ overall_avg_score|floatformat:1 }}%</h3>
+                <div class="mcd-card-body p-2 p-md-3">
+                    <h3 class="text-success fw-bold fs-4 fs-md-3">{{ overall_avg_score|floatformat:1 }}%</h3>
                     <p class="mb-0 small text-muted">Avg Score</p>
                 </div>
             </div>
         </div>
     </div>
 
-
     <!-- Performance Highlights -->
     {% if top_performers or attention_needed %}
-    <div class="row mb-4">
+    <div class="row mb-4 px-2 px-md-0">
         {% if top_performers %}
-        <div class="col-md-6">
+        <div class="col-md-6 mb-3 mb-md-0">
             <div class="mcd-card h-100">
                 <div class="mcd-card-header bg-success text-white">
-                    <h6 class="mb-0"><i class="fas fa-trophy me-2"></i> Top Performers</h6>
+                    <h6 class="mb-0">
+                        <i class="fas fa-trophy me-2"></i>
+                        <span class="d-none d-md-inline">Top Performers</span>
+                        <span class="d-md-none">Top</span>
+                    </h6>
                 </div>
-                <div class="mcd-card-body">
+                <div class="mcd-card-body p-2">
                     {% for restaurant in top_performers %}
                     <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
-                        <div>
-                            <strong class="d-block">{{ restaurant.name }}</strong>
+                        <div class="flex-grow-1">
+                            <strong class="d-block text-truncate">{{ restaurant.name|truncatechars:20 }}</strong>
                             <small class="text-muted">{{ restaurant.city }}</small>
                         </div>
-                        <div class="text-end">
-                            <span class="mcd-badge mcd-badge-success">{{ restaurant.avg_score|floatformat:1 }}%</span>
-                            <br>
-                            <small class="text-muted">{{ restaurant.audit_count }} audit{{ restaurant.audit_count|pluralize }}</small>
+                        <div class="text-end flex-shrink-0">
+                            <span class="mcd-badge mcd-badge-success d-block">{{ restaurant.avg_score|floatformat:1 }}%</span>
+                            <small class="text-muted">{{ restaurant.total_audits }} audit{{ restaurant.total_audits|pluralize }}</small>
                         </div>
                     </div>
                     {% endfor %}
@@ -120,22 +139,25 @@
         <div class="col-md-6">
             <div class="mcd-card h-100">
                 <div class="mcd-card-header bg-warning text-dark">
-                    <h6 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i> Needs Attention</h6>
+                    <h6 class="mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <span class="d-none d-md-inline">Needs Attention</span>
+                        <span class="d-md-none">Attention</span>
+                    </h6>
                 </div>
-                <div class="mcd-card-body">
+                <div class="mcd-card-body p-2">
                     {% for restaurant in attention_needed %}
                     <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
-                        <div>
-                            <strong class="d-block">{{ restaurant.name }}</strong>
+                        <div class="flex-grow-1">
+                            <strong class="d-block text-truncate">{{ restaurant.name|truncatechars:20 }}</strong>
                             <small class="text-muted">{{ restaurant.city }}</small>
                         </div>
-                        <div class="text-end">
-                            {% if restaurant.audit_count == 0 %}
-                            <span class="mcd-badge bg-secondary">No Audits</span>
+                        <div class="text-end flex-shrink-0">
+                            {% if restaurant.total_audits == 0 %}
+                            <span class="mcd-badge bg-secondary d-block">No Audits</span>
                             {% else %}
-                            <span class="mcd-badge mcd-badge-warning">{{ restaurant.avg_score|floatformat:1 }}%</span>
-                            <br>
-                            <small class="text-muted">{{ restaurant.audit_count }} audit{{ restaurant.audit_count|pluralize }}</small>
+                            <span class="mcd-badge mcd-badge-warning d-block">{{ restaurant.avg_score|floatformat:1 }}%</span>
+                            <small class="text-muted">{{ restaurant.total_audits }} audit{{ restaurant.total_audits|pluralize }}</small>
                             {% endif %}
                         </div>
                     </div>
@@ -148,52 +170,57 @@
     {% endif %}
 
     <!-- Restaurants Grid -->
-    <div class="mcd-card">
-        <div class="mcd-card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">
-                <i class="fas fa-list me-2"></i> Restaurant Locations
-                <small class="text-muted ms-2">(Showing {{ restaurants.count }} locations)</small>
-            </h5>
-            <div class="d-flex gap-2">
+    <div class="mcd-card mx-2 mx-md-0">
+        <div class="mcd-card-header d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center">
+            <div class="mb-2 mb-md-0">
+                <h5 class="mb-0">
+                    <i class="fas fa-list me-2"></i>
+                    <span class="d-none d-md-inline">Restaurant Locations</span>
+                    <span class="d-md-none">Locations</span>
+                </h5>
+                <small class="text-muted">({{ restaurants.count }} locations)</small>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
                 {% if user_is_admin %}
-                <a href="/admin/core/restaurant/add/" class="btn btn-sm mcd-btn-primary" target="_blank">
-                    <i class="fas fa-plus me-1"></i> Add Restaurant
+                <a href="/admin/core/restaurant/add/" class="btn btn-sm mcd-btn-primary flex-grow-1 flex-md-grow-0" target="_blank">
+                    <i class="fas fa-plus me-1"></i>
+                    <span class="d-none d-md-inline">Add Restaurant</span>
                 </a>
                 {% endif %}
             </div>
         </div>
-        <div class="mcd-card-body">
+        <div class="mcd-card-body p-0 p-md-3">
             {% if restaurants %}
-            <div class="row" id="restaurantsGrid">
+            <div class="row g-2 g-md-3 p-2 p-md-0" id="restaurantsGrid">
                 {% for restaurant in restaurants %}
-                <div class="col-xl-4 col-lg-6 mb-4 restaurant-item"
+                <div class="col-12 col-md-6 col-xl-4 restaurant-item"
                      data-name="{{ restaurant.name|lower }}"
                      data-code="{{ restaurant.code|lower }}"
                      data-city="{{ restaurant.city|lower }}"
                      data-address="{{ restaurant.address|default:''|lower }}">
                     <div class="mcd-card h-100">
-                        <div class="mcd-card-body">
+                        <div class="mcd-card-body p-2 p-md-3">
                             <!-- Restaurant Header -->
-                            <div class="d-flex align-items-start mb-3">
-                                <div class="bg-warning rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0"
-                                     style="width: 50px; height: 50px;">
+                            <div class="d-flex align-items-start mb-2">
+                                <div class="bg-warning rounded-circle me-2 me-md-3 d-flex align-items-center justify-content-center flex-shrink-0"
+                                     style="width: 40px; height: 40px;">
                                     <i class="fas fa-store text-dark"></i>
                                 </div>
                                 <div class="flex-grow-1">
                                     <h6 class="text-danger mb-1">
                                         <a href="{% url 'core:restaurant_audits' restaurant.id %}"
                                            class="text-danger text-decoration-none">
-                                            {{ restaurant.name }}
+                                            {{ restaurant.name|truncatechars:25 }}
                                         </a>
                                     </h6>
                                     <div class="d-flex flex-wrap gap-1">
-                                        <span class="mcd-badge mcd-badge-primary">{{ restaurant.code }}</span>
+                                        <span class="badge bg-primary">{{ restaurant.code }}</span>
                                         {% if restaurant.audit_count == 0 %}
-                                        <span class="mcd-badge bg-secondary">No Audits</span>
+                                        <span class="badge bg-secondary">No Audits</span>
                                         {% endif %}
                                         {% if restaurant.critical_audits > 0 %}
-                                        <span class="mcd-badge mcd-badge-danger">
-                                            <i class="fas fa-exclamation-triangle me-1"></i>{{ restaurant.critical_audits }} Critical
+                                        <span class="badge bg-danger">
+                                            <i class="fas fa-exclamation-triangle me-1"></i>{{ restaurant.critical_audits }}
                                         </span>
                                         {% endif %}
                                     </div>
@@ -201,43 +228,43 @@
                             </div>
 
                             <!-- Location Info -->
-                            <div class="mb-3">
+                            <div class="mb-2">
                                 {% if restaurant.address %}
-                                <p class="text-muted small mb-2">
+                                <p class="text-muted small mb-2 text-truncate">
                                     <i class="fas fa-map-marker-alt me-1"></i>
-                                    {{ restaurant.address }}
+                                    {{ restaurant.address|truncatechars:30 }}
                                 </p>
                                 {% endif %}
                                 <div class="d-flex flex-wrap gap-1">
-                                    <span class="mcd-badge bg-dark text-white">{{ restaurant.city }}</span>
-                                    <span class="mcd-badge bg-secondary">{{ restaurant.country }}</span>
+                                    <span class="badge bg-dark">{{ restaurant.city|truncatechars:15 }}</span>
+                                    <span class="badge bg-secondary">{{ restaurant.country }}</span>
                                 </div>
                             </div>
 
                             <!-- Audit Statistics -->
-                            <div class="border-top pt-3">
-                                <div class="row text-center">
+                            <div class="border-top pt-2 mt-2">
+                                <div class="row text-center g-1">
                                     <div class="col-4">
-                                        <small class="text-muted d-block">Total Audits</small>
-                                        <strong class="text-primary">{{ restaurant.audit_count }}</strong>
+                                        <small class="text-muted d-block">Audits</small>
+                                        <strong class="text-primary fs-5">{{ restaurant.total_audits }}</strong>
                                     </div>
                                     <div class="col-4">
-                                        <small class="text-muted d-block">Avg Score</small>
-                                        <strong class="{% if restaurant.avg_score >= 90 %}text-success{% elif restaurant.avg_score >= 80 %}text-warning{% else %}text-danger{% endif %}">
+                                        <small class="text-muted d-block">Score</small>
+                                        <strong class="{% if restaurant.avg_score >= 90 %}text-success{% elif restaurant.avg_score >= 80 %}text-warning{% else %}text-danger{% endif %} fs-5">
                                             {% if restaurant.avg_score %}
-                                                {{ restaurant.avg_score|floatformat:1 }}%
+                                                {{ restaurant.avg_score|floatformat:0 }}%
                                             {% else %}
                                                 N/A
                                             {% endif %}
                                         </strong>
                                     </div>
                                     <div class="col-4">
-                                        <small class="text-muted d-block">Last Audit</small>
-                                        <strong class="text-info">
+                                        <small class="text-muted d-block">Last</small>
+                                        <strong class="text-info fs-5">
                                             {% if restaurant.latest_audit_date %}
-                                                {{ restaurant.latest_audit_date|date:"M d, Y" }}
+                                                {{ restaurant.latest_audit_date|date:"M d" }}
                                             {% else %}
-                                                Never
+                                                -
                                             {% endif %}
                                         </strong>
                                     </div>
@@ -248,19 +275,19 @@
                                 <div class="mt-2">
                                     <div class="d-flex justify-content-around text-center">
                                         <small>
-                                            <span class="mcd-badge mcd-badge-success me-1">A</span>
+                                            <span class="badge bg-success me-1">A</span>
                                             {{ restaurant.grade_a_count }}
                                         </small>
                                         <small>
-                                            <span class="mcd-badge mcd-badge-primary me-1">B</span>
+                                            <span class="badge bg-primary me-1">B</span>
                                             {{ restaurant.grade_b_count }}
                                         </small>
                                         <small>
-                                            <span class="mcd-badge mcd-badge-warning me-1">C</span>
+                                            <span class="badge bg-warning me-1">C</span>
                                             {{ restaurant.grade_c_count }}
                                         </small>
                                         <small>
-                                            <span class="mcd-badge mcd-badge-danger me-1">F</span>
+                                            <span class="badge bg-danger me-1">F</span>
                                             {{ restaurant.grade_f_count }}
                                         </small>
                                     </div>
@@ -269,14 +296,16 @@
                             </div>
 
                             <!-- Action Buttons -->
-                            <div class="mt-3 d-grid gap-2">
+                            <div class="mt-3 d-flex gap-1">
                                 <a href="{% url 'core:restaurant_audits' restaurant.id %}"
-                                   class="btn btn-sm mcd-btn-outline">
-                                    <i class="fas fa-clipboard-list me-1"></i> View Audits
+                                   class="btn btn-sm mcd-btn-outline flex-grow-1">
+                                    <i class="fas fa-clipboard-list me-1"></i>
+                                    <span class="d-none d-md-inline">Audits</span>
                                 </a>
                                 <a href="{% url 'core:create_audit' %}"
-                                   class="btn btn-sm mcd-btn-primary">
-                                    <i class="fas fa-plus-circle me-1"></i> New Audit
+                                   class="btn btn-sm mcd-btn-primary flex-grow-1">
+                                    <i class="fas fa-plus-circle me-1"></i>
+                                    <span class="d-none d-md-inline">New</span>
                                 </a>
                             </div>
                         </div>
@@ -286,7 +315,7 @@
             </div>
 
             <!-- No Results Message (Hidden by default) -->
-            <div id="noResults" class="text-center py-5" style="display: none;">
+            <div id="noResults" class="text-center py-5 px-3" style="display: none;">
                 <div class="mb-4">
                     <i class="fas fa-search fa-3x text-muted"></i>
                 </div>
@@ -299,12 +328,13 @@
 
             <!-- Pagination -->
             {% if is_paginated %}
-            <nav aria-label="Restaurant pagination" class="mt-4">
-                <ul class="pagination justify-content-center">
+            <nav aria-label="Restaurant pagination" class="mt-4 px-3">
+                <ul class="pagination justify-content-center flex-wrap">
                     {% if page_obj.has_previous %}
                     <li class="page-item">
                         <a class="page-link text-danger" href="?page={{ page_obj.previous_page_number }}">
-                            <i class="fas fa-chevron-left me-1"></i> Previous
+                            <i class="fas fa-chevron-left me-1 d-none d-sm-inline"></i>
+                            <span>Prev</span>
                         </a>
                     </li>
                     {% endif %}
@@ -324,25 +354,29 @@
                     {% if page_obj.has_next %}
                     <li class="page-item">
                         <a class="page-link text-danger" href="?page={{ page_obj.next_page_number }}">
-                            Next <i class="fas fa-chevron-right ms-1"></i>
+                            <span>Next</span>
+                            <i class="fas fa-chevron-right ms-1 d-none d-sm-inline"></i>
                         </a>
                     </li>
                     {% endif %}
                 </ul>
+                <div class="text-center mt-2">
+                    <small class="text-muted">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</small>
+                </div>
             </nav>
             {% endif %}
 
             {% else %}
             <!-- No Restaurants Placeholder -->
-            <div class="text-center py-5">
+            <div class="text-center py-5 px-3">
                 <div class="mb-4">
                     <i class="fas fa-store fa-4x text-muted"></i>
                 </div>
                 <h5 class="text-muted">No Restaurants Available</h5>
-                <p class="text-muted mb-4">Please contact system administrator to add McDonald's restaurant locations.</p>
+                <p class="text-muted mb-4">Please contact system administrator to add restaurant locations.</p>
                 {% if user_is_admin %}
                 <a href="/admin/core/restaurant/add/" class="btn mcd-btn-primary" target="_blank">
-                    <i class="fas fa-plus-circle me-2"></i> Add Restaurant via Admin
+                    <i class="fas fa-plus-circle me-2"></i> Add Restaurant
                 </a>
                 {% else %}
                 <button class="btn mcd-btn-secondary" disabled>
@@ -355,45 +389,70 @@
     </div>
 
     <!-- McDonald's Pakistan Coverage Map -->
-    <div class="row mt-4">
+    <div class="row mt-4 px-2 px-md-0">
         <div class="col-12">
             <div class="mcd-card">
                 <div class="mcd-card-header bg-warning text-dark">
                     <h5 class="mb-0">
                         <i class="fas fa-map me-2"></i>
-                        McDonald's Pakistan Audit Coverage
+                        <span class="d-none d-md-inline">McDonald's Pakistan Coverage</span>
+                        <span class="d-md-none">Coverage Map</span>
                     </h5>
                 </div>
-                <div class="mcd-card-body">
-                    <div class="row text-center">
-                        {% for city in major_cities %}
-                        <div class="col-md-2 col-4 mb-3">
-                            <div class="mcd-bg-red text-white rounded-circle mx-auto d-flex align-items-center justify-content-center"
-                                 style="width: 70px; height: 70px;">
-                                <i class="fas fa-city fa-lg"></i>
+                <div class="mcd-card-body p-2 p-md-3">
+                    <!-- Desktop View -->
+                    <div class="d-none d-md-block">
+                        <div class="row text-center">
+                            {% for city in major_cities %}
+                            <div class="col-md-2 mb-3">
+                                <div class="mcd-bg-red text-white rounded-circle mx-auto d-flex align-items-center justify-content-center"
+                                     style="width: 70px; height: 70px;">
+                                    <i class="fas fa-city fa-lg"></i>
+                                </div>
+                                <strong class="d-block mt-2 text-dark">{{ city.name }}</strong>
+                                <small class="text-muted">{{ city.total_audits }} audit{{ city.total_audits|pluralize }}</small>
+                                {% if city.avg_score > 0 %}
+                                <br>
+                                <small class="text-success">
+                                    <i class="fas fa-chart-line me-1"></i>{{ city.avg_score|floatformat:1 }}%
+                                </small>
+                                {% endif %}
+                                {% if city.critical_audits > 0 %}
+                                <br>
+                                <small class="text-danger">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>{{ city.critical_audits }} critical
+                                </small>
+                                {% endif %}
                             </div>
-                            <strong class="d-block mt-2 text-dark">{{ city.name }}</strong>
-                            <small class="text-muted">{{ city.total_audits }} audit{{ city.total_audits|pluralize }}</small>
-                            {% if city.avg_score > 0 %}
-                            <br>
-                            <small class="text-success">
-                                <i class="fas fa-chart-line me-1"></i>{{ city.avg_score|floatformat:1 }}%
-                            </small>
-                            {% endif %}
-                            {% if city.critical_audits > 0 %}
-                            <br>
-                            <small class="text-danger">
-                                <i class="fas fa-exclamation-triangle me-1"></i>{{ city.critical_audits }} critical
-                            </small>
-                            {% endif %}
+                            {% endfor %}
                         </div>
-                        {% endfor %}
+                    </div>
+
+                    <!-- Mobile View - Horizontal Scroll -->
+                    <div class="d-md-none">
+                        <div class="d-flex overflow-auto pb-2" style="scrollbar-width: thin;">
+                            {% for city in major_cities %}
+                            <div class="flex-shrink-0 text-center mx-2" style="width: 100px;">
+                                <div class="mcd-bg-red text-white rounded-circle mx-auto d-flex align-items-center justify-content-center"
+                                     style="width: 60px; height: 60px;">
+                                    <i class="fas fa-city"></i>
+                                </div>
+                                <strong class="d-block mt-1 text-dark small">{{ city.name|truncatechars:12 }}</strong>
+                                <small class="text-muted d-block">{{ city.total_audits }} audit{{ city.total_audits|pluralize }}</small>
+                                {% if city.avg_score > 0 %}
+                                <small class="text-success d-block">
+                                    {{ city.avg_score|floatformat:0 }}%
+                                </small>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
                     </div>
 
                     <!-- City Audit Statistics Summary -->
                     <div class="row mt-4">
                         <div class="col-12">
-                            <div class="table-responsive">
+                            <div class="d-none d-md-block table-responsive">
                                 <table class="table mcd-table">
                                     <thead>
                                         <tr>
@@ -438,6 +497,48 @@
                                     </tbody>
                                 </table>
                             </div>
+
+                            <!-- Mobile City Statistics -->
+                            <div class="d-md-none">
+                                {% for city in major_cities %}
+                                {% if city.total_audits > 0 %}
+                                <div class="mcd-card mb-2">
+                                    <div class="mcd-card-body p-2">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <strong>{{ city.name }}</strong>
+                                            <span class="mcd-badge {% if city.avg_score >= 90 %}mcd-badge-success{% elif city.avg_score >= 80 %}mcd-badge-primary{% elif city.avg_score >= 70 %}mcd-badge-warning{% else %}mcd-badge-danger{% endif %}">
+                                                {{ city.avg_score|floatformat:1 }}%
+                                            </span>
+                                        </div>
+                                        <div class="row text-center">
+                                            <div class="col-4">
+                                                <small class="text-muted d-block">Restaurants</small>
+                                                <strong>{{ city.restaurant_count }}</strong>
+                                            </div>
+                                            <div class="col-4">
+                                                <small class="text-muted d-block">Audits</small>
+                                                <strong>{{ city.total_audits }}</strong>
+                                            </div>
+                                            <div class="col-4">
+                                                <small class="text-muted d-block">Critical</small>
+                                                <strong class="{% if city.critical_audits > 0 %}text-danger{% else %}text-success{% endif %}">
+                                                    {{ city.critical_audits }}
+                                                </strong>
+                                            </div>
+                                        </div>
+                                        <div class="mt-2 text-center">
+                                            <div class="d-flex justify-content-around">
+                                                <small class="text-success">A:{{ city.grade_a_count }}</small>
+                                                <small class="text-primary">B:{{ city.grade_b_count }}</small>
+                                                <small class="text-warning">C:{{ city.grade_c_count }}</small>
+                                                <small class="text-danger">F:{{ city.grade_f_count }}</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% endfor %}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -450,16 +551,13 @@
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const searchInput = document.getElementById('searchInput');
-        const cityFilter = document.getElementById('cityFilter');
-        const resetFiltersBtn = document.getElementById('resetFilters');
-        const restaurantItems = document.querySelectorAll('.restaurant-item');
-        const noResults = document.getElementById('noResults');
-        const restaurantsGrid = document.getElementById('restaurantsGrid');
-
         function filterRestaurants() {
-            const searchTerm = searchInput.value.toLowerCase().trim();
-            const cityValue = cityFilter.value.toLowerCase();
+            const searchTerm = document.getElementById('searchInput')?.value.toLowerCase().trim() || '';
+            const cityValue = document.getElementById('cityFilter')?.value.toLowerCase() || '';
+            const restaurantItems = document.querySelectorAll('.restaurant-item');
+            const noResults = document.getElementById('noResults');
+            const restaurantsGrid = document.getElementById('restaurantsGrid');
+
             let visibleCount = 0;
 
             restaurantItems.forEach(item => {
@@ -486,63 +584,106 @@
 
             // Show/hide no results message
             if (visibleCount === 0 && (searchTerm !== '' || cityValue !== '')) {
-                noResults.style.display = 'block';
+                if (noResults) noResults.style.display = 'block';
                 if (restaurantsGrid) restaurantsGrid.style.display = 'none';
             } else {
-                noResults.style.display = 'none';
+                if (noResults) noResults.style.display = 'none';
                 if (restaurantsGrid) restaurantsGrid.style.display = 'flex';
             }
         }
 
         function resetFilters() {
-            searchInput.value = '';
-            cityFilter.value = '';
+            const searchInput = document.getElementById('searchInput');
+            const cityFilter = document.getElementById('cityFilter');
+            if (searchInput) searchInput.value = '';
+            if (cityFilter) cityFilter.value = '';
             filterRestaurants();
-            searchInput.focus();
+            if (searchInput) searchInput.focus();
         }
 
-        function exportToCSV() {
-            // Use the actual export URL from urls.py
-            window.location.href = "{% url 'core:export_audits_csv' %}";
+        // Debounce function for search input
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
         }
 
-        // Event listeners
-        searchInput.addEventListener('input', McD.debounce(filterRestaurants, 300));
-        cityFilter.addEventListener('change', filterRestaurants);
-        resetFiltersBtn.addEventListener('click', resetFilters);
+        // Set up event listeners if elements exist
+        const searchInput = document.getElementById('searchInput');
+        const cityFilter = document.getElementById('cityFilter');
+        const resetFiltersBtn = document.getElementById('resetFilters');
 
-        // Initialize filters on page load
+        if (searchInput) {
+            searchInput.addEventListener('input', debounce(filterRestaurants, 300));
+        }
+
+        if (cityFilter) {
+            cityFilter.addEventListener('change', filterRestaurants);
+        }
+
+        if (resetFiltersBtn) {
+            resetFiltersBtn.addEventListener('click', resetFilters);
+        }
+
+        // Initialize
         filterRestaurants();
     });
 </script>
 
 <style>
+@media (max-width: 767.98px) {
+    .container-fluid {
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    .mcd-card {
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    .mcd-card-header {
+        border-radius: 0;
+    }
+
     .restaurant-item {
-        transition: all var(--trans-fast);
+        margin-bottom: 1rem;
     }
 
-    .page-link {
-        color: var(--mcd-red);
-        border: 1px solid #dee2e6;
-        font-weight: 500;
+    .btn {
+        min-height: 44px;
+        padding: 0.5rem 0.75rem;
     }
 
-    .page-item.active .page-link {
-        background-color: var(--mcd-red);
-        border-color: var(--mcd-red);
-        color: white;
+    .mcd-badge, .badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
     }
 
-    .page-link:hover {
-        color: var(--mcd-dark-red);
-        border-color: var(--mcd-red);
+    /* Ensure text doesn't overflow */
+    .text-truncate {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
-    #restaurantsGrid {
-        display: flex;
-        flex-wrap: wrap;
+    /* Better card layout for mobile */
+    .mcd-card-body {
+        padding: 1rem !important;
     }
+}
 
+/* Restaurant card hover effects for desktop */
+@media (min-width: 768px) {
     .mcd-card {
         transition: transform var(--trans-mid), box-shadow var(--trans-mid);
     }
@@ -551,5 +692,60 @@
         transform: translateY(-4px);
         box-shadow: var(--shadow-medium);
     }
+}
+
+/* Pagination adjustments */
+.page-link {
+    color: var(--mcd-red);
+    border: 1px solid #dee2e6;
+    font-weight: 500;
+}
+
+.page-item.active .page-link {
+    background-color: var(--mcd-red);
+    border-color: var(--mcd-red);
+    color: white;
+}
+
+.page-link:hover {
+    color: var(--mcd-dark-red);
+    border-color: var(--mcd-red);
+}
+
+/* Grid layout */
+#restaurantsGrid {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+/* Responsive table adjustments */
+@media (max-width: 767.98px) {
+    .table-responsive {
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .d-flex.overflow-auto {
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+    }
+}
+
+/* Print styles */
+@media print {
+    .btn, .badge, .mcd-badge {
+        border: 1px solid #000 !important;
+        background-color: #fff !important;
+        color: #000 !important;
+    }
+
+    .mcd-card {
+        break-inside: avoid;
+        border: 1px solid #ddd !important;
+    }
+
+    .d-none {
+        display: none !important;
+    }
+}
 </style>
 {% endblock %}

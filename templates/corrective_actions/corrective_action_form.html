@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Create Corrective Action</h2>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+
+    {% for field in form %}
+        <div class="mb-3">
+            <label>{{ field.label }}:</label>
+            {{ field }}
+            <small class="text-muted">{{ field.help_text }}</small>
+            {{ field.errors }}
+        </div>
+    {% endfor %}
+
+    <button type="submit" class="btn btn-primary">Save</button>
+</form>
+{% endblock %}

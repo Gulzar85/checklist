@@ -1,7 +1,10 @@
 from django import forms
 from django.core.exceptions import ValidationError
 from django.utils import timezone
-from .models import Audit, CorrectiveAction, Restaurant
+from django.utils.translation import gettext_lazy as _
+
+from .models import Audit, Restaurant
+from .models import CorrectiveAction
 
 
 class McDonaldDateInput(forms.DateInput):
@@ -66,7 +69,7 @@ class CreateAuditForm(forms.ModelForm):
 class CorrectiveActionForm(forms.ModelForm):
     class Meta:
         model = CorrectiveAction
-        fields = ['description', 'risk_level', 'assigned_to', 'deadline', 'completed', 'comments']
+        fields = ['audit', 'question_response','description', 'risk_level', 'assigned_to', 'deadline', 'completed', 'comments']
         widgets = {
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
@@ -102,3 +105,4 @@ class RestaurantFilterForm(forms.Form):
         # Dynamically set city choices
         cities = Restaurant.objects.values_list('city', flat=True).distinct()
         self.fields['city'].choices = [('', 'All Cities')] + [(city, city) for city in cities]
+

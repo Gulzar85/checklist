@@ -197,8 +197,7 @@
                                                         {% if audit.is_submitted %}
                                                         <div class="form-control bg-light">
                                                             <strong>{{ question.scored_points }}</strong>
-                                                            <small class="text-muted float-end">/ {{
-                                                                question.possible_points }}</small>
+                                                            <small class="text-muted float-end">/ {{ question.possible_points }}</small>
                                                         </div>
                                                         {% else %}
                                                         <input type="number"
@@ -589,18 +588,32 @@
         function populateSectionJump(resp){
             $sectionJump.empty().append('<option value="">Select Section...</option>');
 
+            const progressMap = {};
+
+            // Create a map of section_id to progress percentage if available
             if (resp && resp.progress && resp.progress.length){
                 resp.progress.forEach(s => {
-                    const id = `section-${s.section_id}`;
-                    $sectionJump.append(`<option value="${id}">${s.section_name} (${Math.round(s.percentage)}%)</option>`);
-                });
-            } else {
-                $('.section-container').each(function(){
-                    const id = $(this).attr('id');
-                    const name = $(this).find('.section-title').text().split(': ').slice(1).join(': ');
-                    $sectionJump.append(`<option value="${id}">${name}</option>`);
+                    progressMap[s.section_id] = Math.round(s.percentage);
                 });
             }
+
+            // Always use the sections from the DOM
+            $('.section-container').each(function(){
+                const id = $(this).attr('id');
+                const name = $(this).find('.section-title').text().split(': ').slice(1).join(': ');
+
+                // Extract section_id from the container (assuming format like section-123)
+                const sectionIdMatch = id.match(/section-(\d+)/);
+                const sectionId = sectionIdMatch ? sectionIdMatch[1] : null;
+
+                // If we have progress for this section, show percentage
+                if (sectionId && progressMap[sectionId] !== undefined) {
+                    $sectionJump.append(`<option value="${id}">${name} (${progressMap[sectionId]}%)</option>`);
+                } else {
+                    $sectionJump.append(`<option value="${id}">${name}</option>`);
+                }
+            });
+
             $sectionJump.val(sectionIds[currentSectionIndex] || '');
         }
 

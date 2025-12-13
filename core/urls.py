@@ -1,5 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
+
 from . import views
 from .api import RestaurantViewSet, AuditViewSet, SectionViewSet, CorrectiveActionViewSet
 
@@ -7,10 +8,11 @@ app_name = 'core'
 
 # Initialize router
 router = DefaultRouter()
-router.register(r'restaurants', RestaurantViewSet, basename='restaurant')
+router.register(r'restaurants-list', RestaurantViewSet, basename='restaurant')
 router.register(r'audits', AuditViewSet, basename='audit')
 router.register(r'sections', SectionViewSet, basename='section')
 router.register(r'corrective-actions', CorrectiveActionViewSet, basename='correctiveaction')
+router.register(r'powerbi/audits', views.PowerBIAuditViewSet, basename='powerbi-audits')
 
 urlpatterns = [
     # Dashboard
@@ -45,14 +47,20 @@ urlpatterns = [
     # Corrective Actions
     path('corrective-actions/', views.corrective_action_list, name='action_list'),
     path('corrective-actions/dashboard/', views.corrective_action_dashboard, name='corrective_action_dashboard'),
-    path('corrective-actions/create/<int:response_id>/', views.create_corrective_action, name='corrective_action_create'),
+    path('corrective-actions/create/<int:response_id>/', views.create_corrective_action,
+         name='corrective_action_create'),
     path('corrective-actions/<int:pk>/', views.CorrectiveActionDetailView.as_view(), name='corrective_action_detail'),
-    path('corrective-actions/<int:pk>/update/', views.CorrectiveActionUpdateView.as_view(), name='corrective_action_update'),
-    path('corrective-actions/<int:pk>/delete/', views.CorrectiveActionDeleteView.as_view(), name='corrective_action_delete'),
+    path('corrective-actions/<int:pk>/update/', views.CorrectiveActionUpdateView.as_view(),
+         name='corrective_action_update'),
+    path('corrective-actions/<int:pk>/delete/', views.CorrectiveActionDeleteView.as_view(),
+         name='corrective_action_delete'),
     path('corrective-actions/<int:pk>/complete/', views.mark_action_completed, name='corrective_action_mark_completed'),
+    path('audit/<int:audit_id>/corrective-action/create/',
+         views.create_audit_corrective_action,
+         name='create_audit_corrective_action'),
 
     # Export
-    path('export/audits/csv/', views.export_audits_csv, name='export_audits_csv'),
+    path('audits/export-csv/', views.export_audits_csv, name='export_audits_csv'),
 
     # API Endpoints
     path('api/statistics/', views.api_audit_statistics, name='api_audit_statistics'),

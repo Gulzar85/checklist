@@ -224,7 +224,9 @@
                                     <br><small class="text-muted">{{ response.comments }}</small>
                                     {% endif %}
                                 </div>
+                                {% if response.question.is_critical %}
                                 <span class="badge bg-danger">Critical</span>
+                                {% endif %}
                             </div>
                         </li>
                         {% empty %}
@@ -236,19 +238,32 @@
                 </div>
             </div>
         </div>
+        <div class="card mt-4 border-0 shadow-sm">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">Corrective Actions Management</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-0">Create and manage corrective actions for this audit</p>
+                <div class="mt-3 d-flex gap-2">
+                    <a href="{% url 'core:create_audit_corrective_action' audit.id %}" class="btn mcd-btn-outline flex-grow-1 flex-md-grow-0">
+                        <i class="fas fa-plus-circle me-1"></i> Create New Corrective Action
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
 <!-- Action Buttons -->
-<div class="row mt-4">
-    <div class="col-12 text-center">
-        <button class="btn mcd-btn-primary" onclick="showPrintPreview()">
+<div class="row mb-3 mb-md-4 px-3 px-md-0 mt-3">
+    <div class="d-flex flex-wrap gap-2 justify-content-center w-100">
+        <button class="btn mcd-btn-outline flex-grow-1 flex-md-grow-0" onclick="showPrintPreview()">
             <i class="fas fa-print"></i> Print Report
         </button>
-        <button class="btn btn-success" onclick="downloadPDF()">
+        <button class="btn mcd-btn-outline flex-grow-1 flex-md-grow-0" onclick="downloadPDF()">
             <i class="fas fa-download"></i> Download PDF
         </button>
-        <a href="{% url 'core:audit_list' %}" class="btn btn-secondary">
+        <a href="{% url 'core:audit_list' %}" class="btn mcd-btn-outline flex-grow-1 flex-md-grow-0">
             <i class="fas fa-arrow-left"></i> Back to Audits
         </a>
     </div>
@@ -494,282 +509,334 @@
         `;
     }
 
-    function getPrintStyles() {
-        return `
-            @media print {
-                /* Reset and base styles */
-                * {
-                    margin: 0;
-                    padding: 0;
-                    box-sizing: border-box;
-                }
-
-                body {
-                    font-family: "Arial", sans-serif !important;
-                    font-size: 12px !important;
-                    line-height: 1.4 !important;
-                    color: #000 !important;
-                    background: white !important;
-                    -webkit-print-color-adjust: exact !important;
-                    print-color-adjust: exact !important;
-                    margin: 0 !important;
-                    padding: 20px !important;
-                }
-
-                /* Hide unnecessary elements */
-                .navbar, footer, .btn, .modal, .action-buttons,
-                .card-header .badge, .d-print-none,
-                .modal-backdrop, .alert-dismissible .btn-close {
-                    display: none !important;
-                }
-
-                /* Page breaks */
-                .page-break-before {
-                    page-break-before: always !important;
-                }
-
-                .page-break-after {
-                    page-break-after: always !important;
-                }
-
-                .page-break-inside-avoid {
-                    page-break-inside: avoid !important;
-                }
-
-                /* Print container */
-                .print-container {
-                    max-width: 100% !important;
-                    margin: 0 !important;
-                    padding: 0 !important;
-                    background: white !important;
-                }
-
-                /* Header */
-                .print-header {
-                    border-bottom: 3px solid #da291c !important;
-                    padding-bottom: 15px !important;
-                    margin-bottom: 20px !important;
-                    text-align: center !important;
-                }
-
-                .print-title {
-                    font-size: 24px !important;
-                    font-weight: bold !important;
-                    color: #da291c !important;
-                    margin-bottom: 5px !important;
-                }
-
-                .print-subtitle {
-                    font-size: 18px !important;
-                    color: #333 !important;
-                    margin-bottom: 5px !important;
-                }
-
-                .print-date {
-                    font-size: 12px !important;
-                    color: #666 !important;
-                }
-
-                /* Summary section */
-                .print-summary {
-                    background: #f8f9fa !important;
-                    border: 1px solid #dee2e6 !important;
-                    border-radius: 4px !important;
-                }
-
-                .print-summary table {
-                    width: 100% !important;
-                    border-collapse: collapse !important;
-                    margin-bottom: 0 !important;
-                }
-
-                .print-summary th,
-                .print-summary td {
-                    padding: 8px 12px !important;
-                    border: 1px solid #dee2e6 !important;
-                    font-size: 11px !important;
-                }
-
-                .print-summary th {
-                    background: #e9ecef !important;
-                    font-weight: bold !important;
-                }
-
-                /* Previous audit */
-                .print-previous-audit {
-                    border: 1px solid #dee2e6 !important;
-                    border-radius: 4px !important;
-                }
-
-                /* Sections */
-                .print-section-main-title {
-                    font-size: 16px !important;
-                    font-weight: bold !important;
-                    border-bottom: 2px solid #da291c !important;
-                }
-
-                .print-section {
-                    margin-bottom: 25px !important;
-                    page-break-inside: avoid !important;
-                }
-
-                .print-section-header {
-                    border: 1px solid #dee2e6 !important;
-                    border-bottom: none !important;
-                }
-
-                .print-section-title {
-                    font-size: 14px !important;
-                    font-weight: bold !important;
-                }
-
-                .print-section-questions {
-                    border: 1px solid #dee2e6 !important;
-                }
-
-                .print-question {
-                    border-bottom: 1px solid #dee2e6 !important;
-                    page-break-inside: avoid !important;
-                }
-
-                .print-question:last-child {
-                    border-bottom: none !important;
-                }
-
-                .print-question-text {
-                    font-size: 11px !important;
-                }
-
-                .print-comments {
-                    font-size: 10px !important;
-                    color: #666 !important;
-                }
-
-                /* Badges in print */
-                .badge {
-                    font-size: 9px !important;
-                    padding: 4px 8px !important;
-                    border-radius: 3px !important;
-                    -webkit-print-color-adjust: exact !important;
-                    print-color-adjust: exact !important;
-                }
-
-                /* Progress bars */
-                .progress {
-                    height: 20px !important;
-                    background: #e9ecef !important;
-                    border: 1px solid #dee2e6 !important;
-                    border-radius: 3px !important;
-                    overflow: hidden !important;
-                }
-
-                .progress-bar {
-                    height: 100% !important;
-                    text-align: center !important;
-                    font-size: 10px !important;
-                    line-height: 20px !important;
-                    -webkit-print-color-adjust: exact !important;
-                    print-color-adjust: exact !important;
-                }
-
-                /* Alerts */
-                .alert {
-                    padding: 10px !important;
-                    border: 1px solid !important;
-                    border-radius: 4px !important;
-                    margin-bottom: 15px !important;
-                    -webkit-print-color-adjust: exact !important;
-                    print-color-adjust: exact !important;
-                }
-
-                .alert-danger {
-                    background: #f8d7da !important;
-                    border-color: #f5c6cb !important;
-                    color: #721c24 !important;
-                }
-
-                .alert-success {
-                    background: #d1edff !important;
-                    border-color: #b3d9ff !important;
-                    color: #155724 !important;
-                }
-
-                .alert-warning {
-                    background: #fff3cd !important;
-                    border-color: #ffeaa7 !important;
-                    color: #856404 !important;
-                }
-
-                /* Signatures */
-                .print-signatures {
-                    margin-top: 40px !important;
-                    page-break-inside: avoid !important;
-                }
-
-                .signature-box-print {
-                    border: 2px solid #333 !important;
-                    border-radius: 8px !important;
-                    background: white !important;
-                    min-height: 150px !important;
-                    display: flex !important;
-                    flex-direction: column !important;
-                    justify-content: center !important;
-                }
-
-                .signature-line-print {
-                    border-bottom: 2px solid #000 !important;
-                    width: 80% !important;
-                    margin: 0 auto 15px auto !important;
-                }
-
-                .signature-label-print {
-                    font-size: 12px !important;
-                    font-weight: bold !important;
-                    margin: 0 !important;
-                    text-transform: uppercase !important;
-                }
-
-                .signature-name-print {
-                    font-size: 11px !important;
-                    margin: 5px 0 !important;
-                    font-weight: bold !important;
-                }
-
-                .signature-date-print {
-                    font-size: 10px !important;
-                    color: #666 !important;
-                    margin: 0 !important;
-                }
-
-                /* Footer */
-                .print-footer {
-                    font-size: 9px !important;
-                    color: #666 !important;
-                    margin-top: 30px !important;
-                    border-top: 1px solid #dee2e6 !important;
-                }
-
-                /* Utility classes */
-                .text-danger { color: #da291c !important; }
-                .text-success { color: #28a745 !important; }
-                .text-warning { color: #ffc107 !important; }
-                .text-primary { color: #007bff !important; }
-
-                .bg-danger { background-color: #dc3545 !important; color: white !important; }
-                .bg-success { background-color: #28a745 !important; color: white !important; }
-                .bg-warning { background-color: #ffc107 !important; color: black !important; }
-                .bg-primary { background-color: #007bff !important; color: white !important; }
-                .bg-light { background-color: #f8f9fa !important; color: black !important; }
+function getPrintStyles() {
+    return `
+        @media print {
+            /* Base styles for compact printing */
+            * {
+                margin: 0 !important;
+                padding: 0 !important;
+                box-sizing: border-box !important;
             }
 
-            /* Screen-only styles */
-            @media screen {
-                .print-only {
-                    display: none !important;
-                }
+            body {
+                font-family: "Arial", sans-serif !important;
+                font-size: 10px !important; /* Reduced from 12px */
+                line-height: 1.2 !important; /* Reduced from 1.4 */
+                color: #000 !important;
+                background: white !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                margin: 10px !important; /* Reduced margin */
+                padding: 0 !important;
             }
-        `;
-    }
+
+            /* Hide unnecessary elements */
+            .navbar, footer, .btn, .modal, .action-buttons,
+            .card-header .badge, .d-print-none,
+            .modal-backdrop, .alert-dismissible .btn-close,
+            .no-print {
+                display: none !important;
+            }
+
+            /* Page breaks optimization */
+            .page-break {
+                page-break-before: always !important;
+                break-before: page !important;
+            }
+
+            .avoid-break {
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
+
+            /* Print container */
+            .print-container {
+                width: 100% !important;
+                margin: 0 auto !important;
+                padding: 0 !important;
+            }
+
+            /* Header - Compact */
+            .print-header {
+                border-bottom: 2px solid #da291c !important;
+                padding-bottom: 8px !important;
+                margin-bottom: 12px !important;
+                text-align: center !important;
+            }
+
+            .print-title {
+                font-size: 18px !important; /* Reduced from 24px */
+                font-weight: bold !important;
+                color: #da291c !important;
+                margin-bottom: 3px !important;
+            }
+
+            .print-subtitle {
+                font-size: 14px !important; /* Reduced from 18px */
+                color: #333 !important;
+                margin-bottom: 3px !important;
+            }
+
+            .print-date {
+                font-size: 9px !important; /* Reduced from 12px */
+                color: #666 !important;
+            }
+
+            /* Summary section - Compact */
+            .print-summary {
+                background: #f8f9fa !important;
+                border: 1px solid #dee2e6 !important;
+                border-radius: 2px !important;
+                padding: 8px !important; /* Reduced padding */
+                margin-bottom: 12px !important;
+            }
+
+            .print-summary table {
+                width: 100% !important;
+                border-collapse: collapse !important;
+                font-size: 9px !important; /* Reduced table font */
+            }
+
+            .print-summary th,
+            .print-summary td {
+                padding: 4px 6px !important; /* Reduced padding */
+                border: 1px solid #dee2e6 !important;
+                height: 24px !important; /* Fixed height */
+            }
+
+            .print-summary th {
+                background: #e9ecef !important;
+                font-weight: bold !important;
+                width: 35% !important; /* Fixed width for consistency */
+            }
+
+            .print-summary .alert {
+                padding: 4px 6px !important; /* Reduced alert padding */
+                margin-top: 8px !important;
+                font-size: 9px !important;
+                border-radius: 2px !important;
+            }
+
+            /* Previous audit - Compact */
+            .print-previous-audit {
+                border: 1px solid #dee2e6 !important;
+                border-radius: 2px !important;
+                padding: 8px !important; /* Reduced */
+                margin-bottom: 12px !important;
+            }
+
+            .print-previous-audit h4 {
+                font-size: 12px !important; /* Reduced */
+                margin-bottom: 8px !important;
+                color: #da291c !important;
+            }
+
+            .print-previous-audit .col-4 {
+                padding: 0 4px !important; /* Reduced padding */
+            }
+
+            .print-previous-audit .border.p-2 {
+                padding: 6px !important; /* Reduced */
+                font-size: 9px !important;
+            }
+
+            .print-previous-audit .progress {
+                height: 16px !important; /* Reduced from 20px */
+                margin-top: 8px !important;
+                font-size: 8px !important;
+            }
+
+            .progress-bar {
+                font-size: 8px !important;
+                line-height: 16px !important;
+            }
+
+            /* Sections - Ultra Compact */
+            .print-section-main-title {
+                font-size: 13px !important; /* Reduced from 16px */
+                font-weight: bold !important;
+                color: #da291c !important;
+                border-bottom: 1px solid #da291c !important;
+                padding-bottom: 4px !important;
+                margin-bottom: 8px !important;
+            }
+
+            .print-section {
+                margin-bottom: 15px !important; /* Reduced spacing */
+                break-inside: avoid !important;
+            }
+
+            .print-section-header {
+                background: #f8f9fa !important;
+                border: 1px solid #dee2e6 !important;
+                padding: 6px 8px !important; /* Reduced padding */
+                margin-bottom: 0 !important;
+            }
+
+            .print-section-title {
+                font-size: 11px !important; /* Reduced */
+                font-weight: bold !important;
+                color: #da291c !important;
+                margin: 0 !important;
+            }
+
+            .print-section-questions {
+                border: 1px solid #dee2e6 !important;
+                border-top: none !important;
+            }
+
+            .print-question {
+                padding: 5px 6px !important; /* Reduced padding */
+                border-bottom: 1px solid #eee !important;
+                min-height: 45px !important; /* Fixed minimum height */
+                display: flex !important;
+                align-items: center !important;
+            }
+
+            .print-question:last-child {
+                border-bottom: none !important;
+            }
+
+            .print-question-text {
+                font-size: 9px !important; /* Ultra compact */
+                line-height: 1.3 !important;
+                flex: 1 !important;
+            }
+
+            .print-comments {
+                font-size: 8px !important;
+                color: #666 !important;
+                margin-top: 2px !important;
+                font-style: italic !important;
+            }
+
+            /* Badges - Compact */
+            .badge {
+                font-size: 8px !important; /* Ultra small */
+                padding: 2px 4px !important;
+                border-radius: 2px !important;
+                margin-left: 4px !important;
+            }
+
+            /* Score column - Fixed width */
+            .score-col {
+                width: 70px !important; /* Fixed width for scores */
+                text-align: center !important;
+                flex-shrink: 0 !important;
+            }
+
+            /* Corrective Actions - Compact */
+            .print-corrective-actions {
+                border: 1px solid #dee2e6 !important;
+                border-radius: 2px !important;
+                padding: 8px !important;
+                margin-top: 15px !important;
+                break-inside: avoid !important;
+            }
+
+            .print-corrective-actions h4 {
+                font-size: 12px !important;
+                color: #da291c !important;
+                margin-bottom: 8px !important;
+            }
+
+            .print-corrective-actions .alert {
+                padding: 6px 8px !important;
+                margin-bottom: 8px !important;
+                font-size: 9px !important;
+            }
+
+            .print-corrective-actions h5 {
+                font-size: 10px !important;
+                margin-bottom: 6px !important;
+            }
+
+            /* Signatures - Compact */
+            .print-signatures {
+                margin-top: 25px !important; /* Reduced */
+                break-inside: avoid !important;
+            }
+
+            .print-signatures h4 {
+                font-size: 12px !important;
+                color: #da291c !important;
+                border-bottom: 1px solid #da291c !important;
+                padding-bottom: 4px !important;
+                margin-bottom: 12px !important;
+            }
+
+            .signature-box-print {
+                border: 1px solid #333 !important; /* Thinner border */
+                border-radius: 4px !important;
+                padding: 12px !important; /* Reduced padding */
+                min-height: 100px !important; /* Reduced height */
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: center !important;
+            }
+
+            .signature-line-print {
+                border-bottom: 1px solid #000 !important;
+                width: 70% !important;
+                margin: 0 auto 10px auto !important;
+                height: 1px !important;
+            }
+
+            .signature-label-print {
+                font-size: 9px !important; /* Smaller font */
+                font-weight: bold !important;
+                text-transform: uppercase !important;
+                margin: 0 !important;
+            }
+
+            .signature-name-print {
+                font-size: 9px !important;
+                margin: 3px 0 !important;
+                font-weight: bold !important;
+            }
+
+            .signature-date-print {
+                font-size: 8px !important;
+                color: #666 !important;
+                margin: 0 !important;
+            }
+
+            /* Footer - Compact */
+            .print-footer {
+                font-size: 8px !important; /* Very small */
+                color: #666 !important;
+                margin-top: 20px !important;
+                border-top: 1px solid #dee2e6 !important;
+                padding-top: 8px !important;
+            }
+
+            /* Utility classes */
+            .text-danger { color: #da291c !important; }
+            .text-success { color: #28a745 !important; }
+            .text-warning { color: #ffc107 !important; }
+
+            .bg-danger { background-color: #dc3545 !important; color: white !important; }
+            .bg-success { background-color: #28a745 !important; color: white !important; }
+            .bg-warning { background-color: #ffc107 !important; color: black !important; }
+            .bg-light { background-color: #f8f9fa !important; }
+
+            /* Table specific */
+            .table-sm th,
+            .table-sm td {
+                padding: 3px 4px !important;
+                font-size: 9px !important;
+            }
+
+            /* Remove all box shadows and transitions */
+            * {
+                box-shadow: none !important;
+                text-shadow: none !important;
+                transition: none !important;
+            }
+        }
+    `;
+}
 
     function generateSectionsPrintContent() {
         let sectionsHtml = '';

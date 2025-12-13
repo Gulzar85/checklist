@@ -4,6 +4,7 @@ from datetime import timedelta
 from decimal import Decimal, InvalidOperation
 from typing import Any, Dict
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -16,6 +17,8 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.generic import DetailView, UpdateView, DeleteView, ListView, TemplateView, View
+from rest_framework.response import Response
+from rest_framework.viewsets import ViewSet
 
 from .models import (
     Restaurant, Audit, Section, Question,
@@ -43,7 +46,8 @@ class AuditDashboardView(LoginRequiredMixin, TemplateView):
                     'restaurant', 'auditor_name'
                 ).order_by('-audit_date')[:10]
                 total_audits = Audit.objects.count()
-                avg_score = Audit.objects.aggregate(
+                submitted_audits = Audit.objects.filter(is_submitted=True).count()
+                avg_score = Audit.objects.filter(is_submitted=True).aggregate(
                     avg=Avg('total_percentage')
                 )['avg'] or Decimal('0.00')
                 restaurants = Restaurant.objects.annotate(
@@ -85,9 +89,11 @@ class AuditDashboardView(LoginRequiredMixin, TemplateView):
                     auditor_name=user
                 ).select_related('restaurant').order_by('-audit_date')[:10]
                 total_audits = Audit.objects.filter(auditor_name=user).count()
-                avg_score = Audit.objects.filter(auditor_name=user).aggregate(
-                    avg=Avg('total_percentage')
-                )['avg'] or Decimal('0.00')
+                submitted_audits = Audit.objects.filter(auditor_name=user, is_submitted=True).count()
+                avg_score = (Audit.objects
+                                .filter(auditor_name=user, is_submitted=True)
+                                .aggregate(avg_score=Avg('total_percentage'))
+                            )['avg_score'] or Decimal('0.00')
                 restaurants = Restaurant.objects.filter(
                     audit__auditor_name=user
                 ).distinct().annotate(
@@ -127,22 +133,35 @@ class AuditDashboardView(LoginRequiredMixin, TemplateView):
             grade_distribution = []
             for grade in ['A', 'B', 'C', 'F']:
                 if user.is_superuser or getattr(user, 'role', None) == 'admin':
-                    count = Audit.objects.filter(grade=grade).count()
-                    avg_grade_score = Audit.objects.filter(grade=grade).aggregate(
-                        avg=Avg('total_percentage')
-                    )['avg'] or Decimal('0.00')
-                else:
                     count = Audit.objects.filter(
-                        auditor_name=user, grade=grade
+                        grade=grade,
+                        is_submitted=True
                     ).count()
+
                     avg_grade_score = Audit.objects.filter(
-                        auditor_name=user, grade=grade
+                        grade=grade,
+                        is_submitted=True
                     ).aggregate(
                         avg=Avg('total_percentage')
                     )['avg'] or Decimal('0.00')
 
-                if total_audits > 0:
-                    percentage = (count / total_audits) * 100
+                else:
+                    count = Audit.objects.filter(
+                        auditor_name=user,
+                        grade=grade,
+                        is_submitted=True
+                    ).count()
+
+                    avg_grade_score = Audit.objects.filter(
+                        auditor_name=user,
+                        grade=grade,
+                        is_submitted=True
+                    ).aggregate(
+                        avg=Avg('total_percentage')
+                    )['avg'] or Decimal('0.00')
+
+                if submitted_audits > 0:
+                    percentage = (count / submitted_audits) * 100
                 else:
                     percentage = 0
 
@@ -264,47 +283,31 @@ class AuditDashboardView(LoginRequiredMixin, TemplateView):
 
 
 @login_required
-def create_audit(request: HttpRequest):
-    """Create a new audit"""
+def create_audit(request):
+    """Create new audit"""
     if request.method == 'POST':
-        try:
-            restaurant_id = request.POST.get('restaurant')
-            audit_date = request.POST.get('audit_date')
-            manager_name = request.POST.get('manager_name')
+        restaurant_id = request.POST.get('restaurant')
+        audit_date = request.POST.get('audit_date')
+        manager_name = request.POST.get('manager_name')
+        # auditor_name = request.POST.get('auditor_name')
 
-            if not all([restaurant_id, audit_date, manager_name]):
-                messages.error(request, "All fields are required.")
-                return render(request, 'core/create_audit.html', {
-                    'restaurants': Restaurant.objects.all(),
-                    'today': timezone.now().date()
-                })
+        restaurant = get_object_or_404(Restaurant, id=restaurant_id)
 
-            restaurant = get_object_or_404(Restaurant, id=restaurant_id)
+        audit = Audit.objects.create(
+            restaurant=restaurant,
+            audit_date=audit_date,
+            manager_on_duty=manager_name,
+            auditor_name=request.user
+        )
 
-            with transaction.atomic():
-                audit = Audit.objects.create(
-                    restaurant=restaurant,
-                    audit_date=audit_date,
-                    manager_on_duty=manager_name,
-                    auditor_name=request.user
-                )
+        return redirect('core:audit_form', audit_id=audit.id)
 
-                # Create audit sections for all sections
-                sections = Section.objects.all()
-                for section in sections:
-                    AuditSection.objects.create(audit=audit, section=section)
-
-            messages.success(request, "Audit created successfully!")
-            return redirect('core:audit_form', audit_id=audit.id)
-
-        except Exception as e:
-            logger.exception("Error creating audit for user id=%s", request.user.id)
-            messages.error(request, "Error creating audit. Please try again.")
-
-    return render(request, 'core/create_audit.html', {
-        'restaurants': Restaurant.objects.all(),
+    restaurants = Restaurant.objects.all()
+    context = {
+        'restaurants': restaurants,
         'today': timezone.now().date()
-    })
+    }
+    return render(request, 'core/create_audit.html', context)
 
 
 class AuditListView(LoginRequiredMixin, ListView):
@@ -397,82 +400,53 @@ class AuditListView(LoginRequiredMixin, ListView):
 
 
 @login_required
-def audit_form(request: HttpRequest, audit_id: int):
-    """Enhanced audit form with better performance and error handling"""
+def audit_form(request, audit_id):
+    """Main audit form with section-wise questions"""
     audit = get_object_or_404(Audit, id=audit_id)
+    sections = Section.objects.all().order_by('id')
 
-    # Permission check
-    if not (request.user.is_superuser or getattr(request.user, 'role', None) == 'admin'):
-        if audit.auditor_name != request.user:
-            messages.error(request, "You don't have permission to access this audit.")
-            return redirect('core:dashboard')
+    # Prepare section data with questions and responses
+    section_data = []
+    for section in sections:
+        questions = section.questions.all().order_by('order')
+        section_questions = []
 
-    if audit.is_submitted:
-        messages.warning(request, "This audit has been submitted and is read-only.")
-
-    try:
-        # Optimized query with prefetching - FIXED: use 'questions' instead of 'question_set'
-        sections = Section.objects.prefetch_related(
-            'questions'  # CHANGED from 'question_set' to 'questions'
-        ).all().order_by('order')
-
-        section_data = []
-        for section in sections:
-            audit_section, created = AuditSection.objects.get_or_create(
-                audit=audit,
-                section=section
-            )
-
-            # Get or create responses for all questions in this section
-            questions = section.questions.all().order_by('order')  # CHANGED from question_set to questions
-            q_data = []
-
-            for question in questions:
-                response, response_created = AuditQuestionResponse.objects.get_or_create(
-                    audit_section=audit_section,
-                    question=question,
-                    defaults={
-                        'scored_points': Decimal('0.00'),
-                        'comments': '',
-                        'needs_corrective_action': False
-                    }
+        for question in questions:
+            # Get existing response if available
+            try:
+                response = AuditQuestionResponse.objects.get(
+                    audit_section__audit=audit,
+                    audit_section__section=section,
+                    question=question
                 )
+                scored_points = float(response.scored_points)
+                comments = response.comments
+                needs_corrective_action = response.needs_corrective_action
+            except AuditQuestionResponse.DoesNotExist:
+                scored_points = 0
+                comments = ''
+                needs_corrective_action = False
 
-                q_data.append({
-                    'id': question.id,
-                    'text': question.question_text,
-                    'possible_points': float(question.possible_points),
-                    'is_critical': question.is_critical,
-                    'critical_failure_condition': question.critical_failure_condition,
-                    'scored_points': float(response.scored_points),
-                    'comments': response.comments,
-                    'needs_corrective_action': response.needs_corrective_action,
-                    'response_id': response.id,
-                })
-
-            section_data.append({
-                'section': section,
-                'audit_section': audit_section,
-                'questions': q_data,
-                'section_score': float(audit_section.scored_points),
-                'section_percentage': float(audit_section.section_percentage),
-                'has_critical_failure': audit_section.has_critical_failure,
-                'progress_percentage': audit_section.progress_percentage,
+            section_questions.append({
+                'id': question.id,
+                'text': question.question_text,
+                'possible_points': float(question.possible_points),
+                'is_critical': question.is_critical,
+                'scored_points': scored_points,
+                'comments': comments,
+                'needs_corrective_action': needs_corrective_action
             })
 
-        context = {
-            'audit': audit,
-            'section_data': section_data,
-            'progress_percentage': audit.get_progress_percentage(),
-            'can_be_submitted': audit.can_be_submitted,
-            'status_description': audit.status_description,
-        }
-        return render(request, 'core/audit_form.html', context)
+        section_data.append({
+            'section': section,
+            'questions': section_questions
+        })
 
-    except Exception as e:
-        logger.exception("Error loading audit form for audit id=%s", audit_id)
-        messages.error(request, "Error loading audit form. Please try again.")
-        return redirect('core:dashboard')
+    context = {
+        'audit': audit,
+        'section_data': section_data,
+    }
+    return render(request, 'core/audit_form.html', context)
 
 @csrf_exempt
 @login_required
@@ -1562,50 +1536,30 @@ def corrective_action_dashboard(request: HttpRequest):
 
 
 @login_required
-def export_audits_csv(request: HttpRequest):
-    """Export audits to CSV"""
-    try:
-        user = request.user
-        audits = Audit.objects.select_related('restaurant', 'auditor_name').filter(is_submitted=True)
+def export_audits_csv(request):
+    # Create the HttpResponse object with CSV header
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="audits-export-{timezone.now().date()}.csv"'
 
-        if not (user.is_superuser or getattr(user, 'role', None) == 'admin'):
-            audits = audits.filter(auditor_name=user)
+    writer = csv.writer(response)
+    writer.writerow(
+        ['Restaurant', 'Restaurant Code', 'Date', 'Manager', 'Auditor', 'Score', 'Grade', 'Status', 'Critical'])
 
-        response = HttpResponse(
-            content_type='text/csv',
-            headers={'Content-Disposition': 'attachment; filename="audits_export.csv"'},
-        )
-
-        writer = csv.writer(response)
+    audits = Audit.objects.all().select_related('restaurant', 'auditor_name')
+    for audit in audits:
         writer.writerow([
-            'Restaurant', 'Code', 'Audit Date', 'Auditor', 'Manager',
-            'Total Score', 'Total Possible', 'Percentage', 'Grade',
-            'Critical Failure', 'Submitted', 'Submitted At'
+            audit.restaurant.name,
+            audit.restaurant.code,
+            audit.audit_date.strftime('%b %d, %Y'),
+            audit.manager_on_duty,
+            audit.auditor_name.get_full_name() or audit.auditor_name.username,
+            f"{audit.total_percentage:.1f}%",
+            audit.grade,
+            'Submitted' if audit.is_submitted else 'In Progress',
+            'Yes' if audit.has_critical_failure else 'No'
         ])
 
-        for audit in audits:
-            writer.writerow([
-                audit.restaurant.name,
-                audit.restaurant.code,
-                audit.audit_date,
-                audit.auditor_name.get_full_name() or audit.auditor_name.username,
-                audit.manager_on_duty,
-                audit.total_scored,
-                audit.total_possible,
-                audit.total_percentage,
-                audit.grade,
-                'Yes' if audit.has_critical_failure else 'No',
-                'Yes' if audit.is_submitted else 'No',
-                audit.submitted_at.strftime('%Y-%m-%d %H:%M:%S') if audit.submitted_at else ''
-            ])
-
-        return response
-
-    except Exception as e:
-        logger.exception("Error exporting audits to CSV: %s", str(e))
-        messages.error(request, "Error exporting data. Please try again.")
-        return redirect('core:audit_list')
-
+    return response
 
 # API Views for AJAX endpoints
 
@@ -1858,3 +1812,214 @@ class RestaurantListView(LoginRequiredMixin, ListView):
             context['attention_needed'] = attention_needed
 
         return context
+
+
+@login_required
+def create_audit_corrective_action(request: HttpRequest, audit_id: int):
+    """Create corrective action from audit level (user selects question)"""
+    try:
+        user = request.user
+
+        # Get audit with permission check
+        audit_qs = Audit.objects.select_related('restaurant')
+        if not (user.is_superuser or getattr(user, 'role', None) == 'admin'):
+            audit_qs = audit_qs.filter(auditor_name=user)
+
+        audit = get_object_or_404(audit_qs, id=audit_id)
+
+        # Get all question responses for this audit
+        responses = AuditQuestionResponse.objects.filter(
+            audit_section__audit=audit
+        ).select_related(
+            'question',
+            'audit_section__section'
+        ).order_by('audit_section__section__order', 'question__order')
+
+        if request.method == 'POST':
+            try:
+                response_id = request.POST.get('response_id')
+                if not response_id:
+                    messages.error(request, 'Please select a question for corrective action.')
+                    return redirect('core:create_audit_corrective_action', audit_id=audit_id)
+
+                # Get the selected response
+                response = get_object_or_404(AuditQuestionResponse, id=response_id)
+
+                with transaction.atomic():
+                    # Create corrective action
+                    corrective_action = CorrectiveAction.objects.create(
+                        audit=audit,
+                        question_response=response,
+                        description=request.POST.get('description', ''),
+                        risk_level=request.POST.get('risk_level', 'MEDIUM'),
+                        assigned_to=request.POST.get('assigned_to', ''),
+                        deadline=request.POST.get('deadline'),
+                        comments=request.POST.get('comments', '')
+                    )
+
+                    # Mark the question response as needing corrective action
+                    response.needs_corrective_action = True
+                    response.save()
+
+                    messages.success(
+                        request,
+                        f'Corrective action created successfully! Risk Level: {corrective_action.get_risk_level_display()}'
+                    )
+
+                    # Option 1: Redirect to corrective action detail
+                    # return redirect('core:corrective_action_detail', pk=corrective_action.id)
+
+                    # Option 2: Redirect back to audit results
+                    return redirect('core:audit_results', audit_id=audit_id)
+
+            except Exception as e:
+                logger.exception("Error creating corrective action from audit: %s", str(e))
+                messages.error(request, 'Error creating corrective action. Please check all fields and try again.')
+
+        context = {
+            'audit': audit,
+            'responses': responses,
+            'risk_levels': CorrectiveAction.RISK_LEVELS,
+            'today': timezone.now().date(),
+        }
+
+        return render(request, 'corrective_actions/audit_corrective_action_create.html', context)
+
+    except Exception as e:
+        logger.exception("Error loading corrective action creation page for audit id=%s", audit_id)
+        messages.error(request, 'Error loading page. Please try again.')
+        return redirect('core:audit_results', audit_id=audit_id)
+
+
+
+
+
+class PowerBIAuditViewSet(ViewSet):
+    """
+    Power BI optimized audit data API
+    Accessible only via API KEY (no login required)
+    """
+
+    def list(self, request):
+
+        # ---------------------------
+        # 🔐 API KEY VALIDATION
+        # ---------------------------
+        api_key = (
+                request.headers.get("X-API-KEY") or
+                request.GET.get("key")  # <--- allow key via URL
+        )
+
+        print(f"Expected: {settings.POWERBI_API_KEY}")
+        print(f"Received: {api_key}")
+
+        if api_key != settings.POWERBI_API_KEY:
+            return Response({
+                "success": False,
+                "error": "Invalid or missing API key"
+            }, status=403)
+
+        # All audits
+        audits = Audit.objects.filter(is_submitted=True)\
+            .select_related('restaurant', 'auditor_name')\
+            .prefetch_related(
+                'auditsection_set__section',
+                'auditsection_set__auditquestionresponse_set__question'
+            ).order_by('-audit_date')
+
+        powerbi_data = []
+
+        for audit in audits:
+            audit_base_data = {
+                'audit_id': audit.id,
+                'restaurant_id': audit.restaurant.id,
+                'restaurant_code': audit.restaurant.code,
+                'restaurant_name': audit.restaurant.name,
+                'restaurant_address': audit.restaurant.address,
+                'restaurant_city': audit.restaurant.city,
+                'restaurant_country': audit.restaurant.country,
+                'audit_date': audit.audit_date.isoformat(),
+                'audit_year': audit.audit_date.year,
+                'audit_month': audit.audit_date.month,
+                'audit_quarter': (audit.audit_date.month - 1)//3 + 1,
+                'manager_on_duty': audit.manager_on_duty,
+                'auditor_id': audit.auditor_name.id,
+                'auditor_name': audit.auditor_name.get_full_name() or audit.auditor_name.username,
+                'auditor_email': audit.auditor_name.email,
+                'total_possible_score': float(audit.total_possible),
+                'total_scored': float(audit.total_scored),
+                'total_percentage': float(audit.total_percentage),
+                'grade': audit.grade,
+                'has_critical_failure': audit.has_critical_failure,
+                'is_submitted': audit.is_submitted,
+                'submitted_at': audit.submitted_at.isoformat() if audit.submitted_at else None,
+                'created_at': audit.created_at.isoformat() if audit.created_at else None,
+                'updated_at': audit.updated_at.isoformat() if audit.updated_at else None,
+                'previous_audit_score': float(audit.previous_audit_score) if audit.previous_audit_score else None,
+                'previous_audit_date': audit.previous_audit_date.isoformat() if audit.previous_audit_date else None,
+                'duration_days': audit.duration.days if audit.duration else None,
+                'progress_percentage': audit.get_progress_percentage(),
+                'status': audit.status,
+                'grade_with_reason': audit.grade_with_reason,
+            }
+
+            # Sections
+            sections = audit.auditsection_set.all()
+
+            if sections.exists():
+                for section in sections:
+                    section_data = audit_base_data.copy()
+                    section_data.update({
+                        'section_id': section.section.id,
+                        'section_name': section.section.name,
+                        'section_description': section.section.description,
+                        'section_order': section.section.order,
+                        'section_possible_points': float(section.possible_points),
+                        'section_scored_points': float(section.scored_points),
+                        'section_percentage': float(section.section_percentage),
+                        'section_has_critical_failure': section.has_critical_failure,
+                        'section_progress_percentage': section.progress_percentage,
+                        'question_responses': [
+                            {
+                                'question_id': q.question.id,
+                                'question_text': q.question.question_text[:200],
+                                'question_is_critical': q.question.is_critical,
+                                'question_possible_points': float(q.question.possible_points),
+                                'response_scored_points': float(q.scored_points),
+                                'response_comments': q.comments[:500] if q.comments else "",
+                                'response_needs_corrective_action': q.needs_corrective_action
+                            }
+                            for q in section.auditquestionresponse_set.all()
+                        ]
+                    })
+                    powerbi_data.append(section_data)
+            else:
+                powerbi_data.append(audit_base_data)
+
+        # Metadata
+        total_audits = audits.count()
+        avg_score = audits.aggregate(avg=Avg('total_percentage'))['avg'] or 0
+        critical_count = audits.filter(has_critical_failure=True).count()
+
+        grade_distribution = {}
+        for grade in ['A', 'B', 'C', 'F']:
+            count = audits.filter(grade=grade).count()
+            grade_distribution[f"grade_{grade.lower()}_count"] = count
+            grade_distribution[f"grade_{grade.lower()}_percentage"] = (
+                count / total_audits * 100 if total_audits > 0 else 0
+            )
+
+        metadata = {
+            'total_records': len(powerbi_data),
+            'total_audits': total_audits,
+            'average_score': round(float(avg_score), 2),
+            'critical_failures': critical_count,
+            'grade_distribution': grade_distribution,
+            'date_generated': timezone.now().isoformat(),
+        }
+
+        return Response({
+            "success": True,
+            "metadata": metadata,
+            "data": powerbi_data
+        })
